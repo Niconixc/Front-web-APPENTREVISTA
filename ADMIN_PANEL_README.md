@@ -28,6 +28,34 @@ cd admin-panel
 npm install
 ```
 
+## ⚙️ Configuración
+
+### Variables de Entorno
+
+El proyecto utiliza variables de entorno para configurar la URL del backend.
+
+1. **Copia el archivo de ejemplo**:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Edita el archivo `.env`** con la URL de tu backend:
+   ```bash
+   VITE_API_URL=http://localhost:8080
+   ```
+
+   Para producción, cambia la URL:
+   ```bash
+   VITE_API_URL=https://api.tudominio.com
+   ```
+
+3. **Reinicia el servidor** después de cambiar las variables:
+   ```bash
+   npm run dev
+   ```
+
+**Nota**: El archivo `.env` no se sube al repositorio (está en `.gitignore`). Usa `.env.example` como plantilla.
+
 ## ▶️ Ejecutar
 
 ```bash

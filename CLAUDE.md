@@ -637,11 +637,11 @@ export const newApiFunction = async (params) => {
 
 ### Task: Change API base URL for production
 
-**File**: `src/services/api.js:4`
+**File**: `src/services/api.js:5`
 
-**Current**: `baseURL: 'http://localhost:8080'`
+**Status**: ✅ Already implemented using environment variables
 
-**Production approach**:
+**Current implementation**:
 ```javascript
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
@@ -649,10 +649,22 @@ const api = axios.create({
 });
 ```
 
-Then create `.env.production`:
-```
-VITE_API_URL=https://api.production.com
-```
+**To change the URL**:
+
+1. Edit `.env` file in project root:
+   ```bash
+   VITE_API_URL=https://api.production.com
+   ```
+
+2. Or create `.env.production` for production builds:
+   ```bash
+   VITE_API_URL=https://api.production.com
+   ```
+
+3. Restart dev server to apply changes:
+   ```bash
+   npm run dev
+   ```
 
 ---
 
@@ -676,22 +688,54 @@ VITE_API_URL=https://api.production.com
 
 ## Environment Variables
 
-**Current**: No environment variables used.
+**Current**: Environment variables configured with `.env` file.
 
-**Recommended for production**:
+### Configuration Files
+
+- **`.env`**: Local development configuration (not committed to git)
+- **`.env.example`**: Template file with example values (committed to git)
+
+### Available Variables
 
 ```env
-# .env.production
+# .env (desarrollo)
+VITE_API_URL=http://localhost:8080
+```
+
+```env
+# .env.production (producción)
 VITE_API_URL=https://api.production.com
-VITE_APP_NAME=EntrevistaApp Admin
 ```
 
-**Usage in code**:
+### Usage in Code
+
+The API base URL is configured in `src/services/api.js:5`:
+
 ```javascript
-const apiUrl = import.meta.env.VITE_API_URL;
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
+  // ...
+});
 ```
 
-**Note**: Vite requires `VITE_` prefix for env vars to be exposed to client code.
+### Setup Instructions
+
+1. Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit `.env` with your backend URL:
+   ```bash
+   VITE_API_URL=http://localhost:8080  # or your backend URL
+   ```
+
+3. Restart dev server after changing `.env`:
+   ```bash
+   npm run dev
+   ```
+
+**Note**: Vite requires `VITE_` prefix for env vars to be exposed to client code. The `.env` file is already included in `.gitignore` to prevent committing sensitive data.
 
 ---
 
