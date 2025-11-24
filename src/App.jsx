@@ -4,6 +4,8 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import UserList from './components/UserList';
 import CreateUser from './components/CreateUser';
+import QuestionList from './components/QuestionList';
+import QuestionForm from './components/QuestionForm';
 import Navbar from './components/Navbar';
 import './App.css';
 
@@ -92,6 +94,28 @@ function App() {
               <ProtectedRoute isAuthenticated={isAuthenticated}>
                 <ProtectedLayout setIsAuthenticated={setIsAuthenticated}>
                   <CreateUser />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/preguntas"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedLayout setIsAuthenticated={setIsAuthenticated}>
+                  <QuestionList />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/crear-pregunta"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedLayout setIsAuthenticated={setIsAuthenticated}>
+                  <QuestionForm />
                 </ProtectedLayout>
               </ProtectedRoute>
             }

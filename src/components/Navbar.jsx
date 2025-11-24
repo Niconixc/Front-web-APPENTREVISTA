@@ -29,6 +29,12 @@ const Navbar = ({ setIsAuthenticated }) => {
           <Link to="/crear-usuario" className="nav-link">
             Crear Usuario
           </Link>
+          <Link to="/preguntas" className="nav-link">
+            Preguntas
+          </Link>
+          <Link to="/crear-pregunta" className="nav-link">
+            Crear Pregunta
+          </Link>
         </div>
 
         <div className="navbar-user">

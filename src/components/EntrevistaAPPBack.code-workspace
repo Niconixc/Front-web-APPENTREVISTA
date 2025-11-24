@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "../../../EntrevistaAPPBack"
+		},
+		{
+			"path": "../../../admin-panel"
+		},
+		{
+			"path": "../.."
+		}
+	],
+	"settings": {
+		"powershell.cwd": "EntrevistaAPPBack"
+	}
+}

@@ -102,4 +102,33 @@ export const resetPassword = async (usuarioId, nuevaContrasena) => {
   return response.data;
 };
 
+// ============================================
+// FUNCIONES DE ADMINISTRACIÓN DE PREGUNTAS
+// ============================================
+
+export const getQuestions = async () => {
+  const response = await api.get('/admin/preguntas');
+  return response.data;
+};
+
+export const getQuestion = async (preguntaId) => {
+  const response = await api.get(`/admin/preguntas/${preguntaId}`);
+  return response.data;
+};
+
+export const createQuestion = async (questionData) => {
+  const response = await api.post('/admin/preguntas', questionData);
+  return response.data;
+};
+
+export const updateQuestion = async (preguntaId, questionData) => {
+  const response = await api.patch(`/admin/preguntas/${preguntaId}`, questionData);
+  return response.data;
+};
+
+export const deleteQuestion = async (preguntaId) => {
+  const response = await api.delete(`/admin/preguntas/${preguntaId}`);
+  return response.data;
+};
+
 export default api;
