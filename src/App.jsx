@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import Informes from './components/Informes';
 import UserList from './components/UserList';
 import CreateUser from './components/CreateUser';
 import QuestionList from './components/QuestionList';
 import QuestionForm from './components/QuestionForm';
+import QuestionEdit from './components/QuestionEdit';
 import Navbar from './components/Navbar';
 import './App.css';
 
@@ -89,6 +91,17 @@ function App() {
           />
 
           <Route
+            path="/informes"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedLayout setIsAuthenticated={setIsAuthenticated}>
+                  <Informes />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/crear-usuario"
             element={
               <ProtectedRoute isAuthenticated={isAuthenticated}>
@@ -116,6 +129,17 @@ function App() {
               <ProtectedRoute isAuthenticated={isAuthenticated}>
                 <ProtectedLayout setIsAuthenticated={setIsAuthenticated}>
                   <QuestionForm />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/editar-pregunta/:id"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedLayout setIsAuthenticated={setIsAuthenticated}>
+                  <QuestionEdit />
                 </ProtectedLayout>
               </ProtectedRoute>
             }

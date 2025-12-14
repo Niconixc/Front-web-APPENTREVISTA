@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getUsers, updateUserRole, deleteUser, resetPassword } from '../services/api';
+import { getUsers, updateUserRole, deleteUser, activateUser, resetPassword } from '../services/api';
 import './UserList.css';
 
 const UserList = () => {
@@ -50,18 +50,35 @@ const UserList = () => {
   };
 
   const handleDeleteUser = async (usuarioId, correo) => {
-    if (!window.confirm(`¿Eliminar usuario ${correo}?`)) {
+    if (!window.confirm(`¿Desactivar usuario ${correo}?`)) {
       return;
     }
 
     try {
       await deleteUser(usuarioId);
-      setSuccessMessage('Usuario eliminado exitosamente');
+      setSuccessMessage('Usuario desactivado exitosamente');
       fetchUsers();
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      console.error('Error al eliminar usuario:', err);
-      setError(err.response?.data?.error || 'Error al eliminar usuario');
+      console.error('Error al desactivar usuario:', err);
+      setError(err.response?.data?.error || 'Error al desactivar usuario');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleActivateUser = async (usuarioId, correo) => {
+    if (!window.confirm(`¿Activar usuario ${correo}?`)) {
+      return;
+    }
+
+    try {
+      await activateUser(usuarioId);
+      setSuccessMessage('Usuario activado exitosamente');
+      fetchUsers();
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error('Error al activar usuario:', err);
+      setError(err.response?.data?.error || 'Error al activar usuario');
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -166,15 +183,27 @@ const UserList = () => {
                     >
                       🔒
                     </button>
-                    <button
-                      onClick={() =>
-                        handleDeleteUser(user.usuarioId, user.correo)
-                      }
-                      className="btn btn-sm btn-danger"
-                      title="Eliminar usuario"
-                    >
-                      🗑️
-                    </button>
+                    {user.estado === 'activo' ? (
+                      <button
+                        onClick={() =>
+                          handleDeleteUser(user.usuarioId, user.correo)
+                        }
+                        className="btn btn-sm btn-danger"
+                        title="Desactivar usuario"
+                      >
+                        ❌
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() =>
+                          handleActivateUser(user.usuarioId, user.correo)
+                        }
+                        className="btn btn-sm btn-success"
+                        title="Activar usuario"
+                      >
+                        ✅
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
