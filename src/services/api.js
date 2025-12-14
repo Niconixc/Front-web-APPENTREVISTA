@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-// Configuraci�n base de axios
+// Configuración base de axios
 const api = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -97,6 +97,11 @@ export const deleteUser = async (usuarioId) => {
   return response.data;
 };
 
+export const activateUser = async (usuarioId) => {
+  const response = await api.patch(`/admin/usuarios/${usuarioId}/activar`);
+  return response.data;
+};
+
 export const resetPassword = async (usuarioId, nuevaContrasena) => {
   const response = await api.patch(`/admin/usuarios/${usuarioId}/password`, { nuevaContrasena });
   return response.data;
@@ -106,8 +111,9 @@ export const resetPassword = async (usuarioId, nuevaContrasena) => {
 // FUNCIONES DE ADMINISTRACIÓN DE PREGUNTAS
 // ============================================
 
-export const getQuestions = async () => {
-  const response = await api.get('/admin/preguntas');
+export const getQuestions = async (queryParams = '') => {
+  const url = queryParams ? `/admin/preguntas?${queryParams}` : '/admin/preguntas';
+  const response = await api.get(url);
   return response.data;
 };
 
@@ -128,6 +134,29 @@ export const updateQuestion = async (preguntaId, questionData) => {
 
 export const deleteQuestion = async (preguntaId) => {
   const response = await api.delete(`/admin/preguntas/${preguntaId}`);
+  return response.data;
+};
+
+// ============================================
+// FUNCIONES DE INFORMES Y ESTADÍSTICAS
+// ============================================
+
+export const getInformeGestion = async () => {
+  const response = await api.get('/admin/informes/gestion');
+  return response.data;
+};
+
+export const downloadInformeExcel = async () => {
+  const response = await api.get('/admin/informes/gestion/excel', {
+    responseType: 'blob', // Importante para archivos binarios
+  });
+  return response.data;
+};
+
+export const downloadInformeCsv = async () => {
+  const response = await api.get('/admin/informes/gestion/csv', {
+    responseType: 'blob',
+  });
   return response.data;
 };
 

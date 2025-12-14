@@ -23,6 +23,9 @@ const Navbar = ({ setIsAuthenticated }) => {
           <Link to="/dashboard" className="nav-link">
             Dashboard
           </Link>
+          <Link to="/informes" className="nav-link">
+            Informes
+          </Link>
           <Link to="/usuarios" className="nav-link">
             Usuarios
           </Link>

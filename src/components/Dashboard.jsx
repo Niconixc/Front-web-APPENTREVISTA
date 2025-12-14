@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { getUsers } from '../services/api';
+import { getUsers, getQuestions } from '../services/api';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -8,30 +8,41 @@ const Dashboard = () => {
     totalUsers: 0,
     adminUsers: 0,
     regularUsers: 0,
+    totalQuestions: 0,
+    activeQuestions: 0,
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
-      const users = await getUsers();
+      const [users, questionsData] = await Promise.all([
+        getUsers(),
+        getQuestions('size=10000')
+      ]);
+
       const adminCount = users.filter((u) => u.rol === 'admin').length;
       const regularCount = users.filter((u) => u.rol === 'user').length;
+
+      const questions = questionsData.items || questionsData || [];
+      const activeCount = questions.filter((q) => q.activa !== false).length;
 
       setStats({
         totalUsers: users.length,
         adminUsers: adminCount,
         regularUsers: regularCount,
+        totalQuestions: questions.length,
+        activeQuestions: activeCount,
       });
     } catch (error) {
       console.error('Error al cargar estadísticas:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   if (loading) {
     return (
@@ -43,35 +54,37 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
-      <h1>Dashboard</h1>
-      <p className="welcome">Bienvenido al panel de administración</p>
+      <div className="dashboard-header">
+        <h1>Dashboard</h1>
+        <p className="welcome">Bienvenido al panel de administración</p>
+      </div>
 
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">👥</div>
-          <div className="stat-content">
-            <h3>{stats.totalUsers}</h3>
+      {/* Métricas principales en 2 columnas */}
+      <div className="main-stats">
+        <div className="stat-card-large">
+          <div className="stat-icon-large">👥</div>
+          <div className="stat-content-large">
+            <h2>{stats.totalUsers}</h2>
             <p>Total Usuarios</p>
+            <div className="stat-detail">
+              {stats.adminUsers} Admin · {stats.regularUsers} Regulares
+            </div>
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-icon">🔑</div>
-          <div className="stat-content">
-            <h3>{stats.adminUsers}</h3>
-            <p>Administradores</p>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">👤</div>
-          <div className="stat-content">
-            <h3>{stats.regularUsers}</h3>
-            <p>Usuarios Regulares</p>
+        <div className="stat-card-large">
+          <div className="stat-icon-large">✅</div>
+          <div className="stat-content-large">
+            <h2>{stats.activeQuestions}</h2>
+            <p>Preguntas Activas</p>
+            <div className="stat-detail">
+              {stats.totalQuestions} Total
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Acciones Rápidas */}
       <div className="quick-actions">
         <h2>Acciones Rápidas</h2>
         <div className="actions-grid">
@@ -85,6 +98,18 @@ const Dashboard = () => {
             <div className="action-icon">➕</div>
             <h3>Crear Usuario</h3>
             <p>Agregar nuevo usuario al sistema</p>
+          </Link>
+
+          <Link to="/preguntas" className="action-card">
+            <div className="action-icon">📝</div>
+            <h3>Ver Preguntas</h3>
+            <p>Gestionar banco de preguntas</p>
+          </Link>
+
+          <Link to="/crear-pregunta" className="action-card">
+            <div className="action-icon">✏️</div>
+            <h3>Crear Pregunta</h3>
+            <p>Agregar nueva pregunta al banco</p>
           </Link>
         </div>
       </div>
