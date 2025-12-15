@@ -8,6 +8,7 @@ import CreateUser from './components/CreateUser';
 import QuestionList from './components/QuestionList';
 import QuestionForm from './components/QuestionForm';
 import QuestionEdit from './components/QuestionEdit';
+import BillingCodes from './components/BillingCodes';
 import Navbar from './components/Navbar';
 import './App.css';
 
@@ -140,6 +141,17 @@ function App() {
               <ProtectedRoute isAuthenticated={isAuthenticated}>
                 <ProtectedLayout setIsAuthenticated={setIsAuthenticated}>
                   <QuestionEdit />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/codigos"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedLayout setIsAuthenticated={setIsAuthenticated}>
+                  <BillingCodes />
                 </ProtectedLayout>
               </ProtectedRoute>
             }

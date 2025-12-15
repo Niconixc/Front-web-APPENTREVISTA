@@ -160,4 +160,15 @@ export const downloadInformeCsv = async () => {
   return response.data;
 };
 
+// ========== BILLING CODES ==========
+export const getBillingCodes = async () => {
+  const response = await api.get('/billing/admin/codes');
+  return response.data;
+};
+
+export const createBillingCode = async (data) => {
+  const response = await api.post('/billing/admin/codes', data);
+  return response.data;
+};
+
 export default api;
