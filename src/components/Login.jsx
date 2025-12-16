@@ -33,10 +33,16 @@ const Login = ({ setIsAuthenticated }) => {
       navigate('/dashboard');
     } catch (err) {
       console.error('Error de login:', err);
-      setError(
-        err.response?.data?.error ||
-          'Error al iniciar sesión. Verifica tus credenciales.'
-      );
+      const errorMsg = err.response?.data?.error;
+      // Aseguramos que sea string para no romper React (Error #31)
+      if (typeof errorMsg === 'string') {
+        setError(errorMsg);
+      } else if (typeof errorMsg === 'object' && errorMsg !== null) {
+        // Si es un objeto, intentamos mostrar su mensaje o lo pasamos a string
+        setError(errorMsg.message || JSON.stringify(errorMsg));
+      } else {
+        setError('Error al iniciar sesión. Verifica tus credenciales.');
+      }
     } finally {
       setLoading(false);
     }
