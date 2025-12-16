@@ -18,13 +18,13 @@ export default async function handler(req, res) {
 
     // Definir headers de CORS para responder al navegador
     const corsHeaders = {
-        'Access-Control-Allow-Origin': '*', // O especifica tu dominio si prefieres seguridad estricta
+        'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+        'Access-Control-Max-Age': '86400', // Cache preflight 24h
     };
 
     // 1. Manejar preflight (OPTIONS) directamente en el proxy
-    // El backend probablemente no sabe manejar OPTIONS o fallará sin CORS configurado
     if (req.method === 'OPTIONS') {
         Object.entries(corsHeaders).forEach(([key, value]) => {
             res.setHeader(key, value);
