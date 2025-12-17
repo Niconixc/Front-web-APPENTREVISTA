@@ -74,6 +74,16 @@ export default async function handler(req, res) {
         });
 
         // Devolver la respuesta del backend al frontend
+        // Si el backend devuelve 404, agregamos info de depuración para saber qué URL intentó contactar
+        if (response.status === 404) {
+            return res.status(404).json({
+                error: 'Backend 404: Resource not found',
+                targetUrl: targetUrl,
+                originalPath: pathStr,
+                backendStatus: response.status
+            });
+        }
+
         res.status(response.status).send(response.data);
 
     } catch (error) {
