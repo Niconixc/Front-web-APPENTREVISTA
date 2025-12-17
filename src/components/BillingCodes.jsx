@@ -9,7 +9,7 @@ const BillingCodes = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [copiedCode, setCopiedCode] = useState('');
-  
+
   // Form state
   const [formData, setFormData] = useState({
     days: 30,
@@ -18,17 +18,23 @@ const BillingCodes = () => {
     license_type: 'PROM'
   });
 
+  /* 
+   * NOTA: Deshabilitamos fetchCodes al inicio porque el backend no tiene un endpoint GET /billing/admin/codes
+   * Solo soportan POST para crear. Mantendremos una lista local de la sesión actual.
+   */
   const fetchCodes = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await getBillingCodes();
-      setCodes(data);
-    } catch (err) {
-      console.error('Error fetching codes:', err);
-      setError('Error al cargar los códigos');
-    } finally {
-      setLoading(false);
-    }
+    // try {
+    //   setLoading(true);
+    //   const data = await getBillingCodes();
+    //   setCodes(data);
+    // } catch (err) {
+    //   console.error('Error fetching codes:', err);
+    //   // Silenciamos el error para no alarmar al usuario, ya que sabemos que GET no existe
+    //   // setError('Error al cargar los códigos'); 
+    // } finally {
+    //   setLoading(false);
+    // }
+    setLoading(false); // Simplemente terminamos carga
   }, []);
 
   useEffect(() => {
@@ -53,10 +59,26 @@ const BillingCodes = () => {
       const newCode = await createBillingCode(formData);
       setSuccess(`Código creado: ${newCode.code}`);
       setFormData({ days: 30, label: '', max_uses: 1, license_type: 'PROM' });
-      fetchCodes();
+
+      // Agregamos manualmente el código a la lista (ya que no podemos hacer refetch)
+      setCodes(prev => [
+        {
+          ...newCode,
+          // Mapeamos campos para que coincidan con la tabla si es necesario
+          codigo_id: newCode.code,
+          duracion_dias: formData.days,
+          uses_count: 0,
+          created_at: new Date().toISOString(),
+          activo: true
+        },
+        ...prev
+      ]);
+
     } catch (err) {
       console.error('Error creating code:', err);
-      setError(err.response?.data || 'Error al crear el código');
+      // Extraer mensaje de error seguro del proxy
+      const msg = err.response?.data?.error || err.response?.data || 'Error al crear el código';
+      setError(typeof msg === 'object' ? JSON.stringify(msg) : msg);
     } finally {
       setCreating(false);
     }
@@ -178,10 +200,11 @@ const BillingCodes = () => {
       {/* Lista de códigos */}
       <div className="codes-list-section">
         <h2>Códigos Existentes ({codes.length})</h2>
-        
+
         {codes.length === 0 ? (
           <div className="empty-state">
-            <p>No hay códigos creados aún</p>
+            <p>No hay códigos creados en esta sesión.</p>
+            <small>(El historial completo no está disponible en este momento)</small>
           </div>
         ) : (
           <div className="codes-table-container">
@@ -204,7 +227,7 @@ const BillingCodes = () => {
                   const badge = getLicenseTypeBadge(code.license_type);
                   const isExpired = code.expires_at && new Date(code.expires_at) < new Date();
                   const isFullyUsed = code.uses_count >= code.max_uses;
-                  
+
                   return (
                     <tr key={code.codigo_id} className={!code.activo || isExpired || isFullyUsed ? 'inactive-row' : ''}>
                       <td className="code-cell">
