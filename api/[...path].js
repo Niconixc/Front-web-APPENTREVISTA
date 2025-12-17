@@ -2,14 +2,27 @@ import axios from 'axios';
 
 export default async function handler(req, res) {
     // obtener la ruta dinámica capturada por el archivo [...path].js
-    const { path } = req.query;
+    // 1. Intentar obtener el path desde req.query (Estándar de Vercel)
+    let { path } = req.query;
+    let pathStr = '';
 
-    if (!path) {
-        return res.status(400).json({ error: 'Path not provided' });
+    if (path) {
+        pathStr = Array.isArray(path) ? path.join('/') : path;
+    } else {
+        // 2. Fallback: Parsear manualmente req.url si req.query falla
+        // req.url ej: "/api/auth/login?foo=bar"
+        const urlPath = req.url.split('?')[0];
+        // Eliminamos el prefijo "/api/" para obtener "auth/login"
+        pathStr = urlPath.replace(/^\/?api\//, '');
     }
 
-    // Reconstruir el path (ej: ['auth', 'login'] -> 'auth/login')
-    const pathStr = Array.isArray(path) ? path.join('/') : path;
+    if (!pathStr) {
+        return res.status(400).json({
+            error: 'Path not provided',
+            details: 'Could not extract path from query or URL',
+            debug: { url: req.url, query: req.query }
+        });
+    }
 
     // URL Real del Backend
     const targetUrl = `http://68.211.160.206:8080/${pathStr}`;
