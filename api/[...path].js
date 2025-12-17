@@ -84,6 +84,16 @@ export default async function handler(req, res) {
             });
         }
 
+        if (response.status === 405) {
+            return res.status(405).json({
+                error: 'Backend 405: Method Not Allowed',
+                targetUrl: targetUrl,
+                method: req.method,
+                allowedMethods: response.headers['allow'] || 'Not Specified',
+                backendStatus: response.status
+            });
+        }
+
         res.status(response.status).send(response.data);
 
     } catch (error) {
