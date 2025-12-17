@@ -18,9 +18,10 @@ export default async function handler(req, res) {
 
     // Definir headers de CORS para responder al navegador
     const corsHeaders = {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': req.headers.origin || '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+        'Access-Control-Allow-Credentials': 'true',
         'Access-Control-Max-Age': '86400', // Cache preflight 24h
     };
 
@@ -44,6 +45,7 @@ export default async function handler(req, res) {
         delete headers.host;
         delete headers.origin;
         delete headers.referer;
+        delete headers['content-length']; // Important: axios recalculates this
 
         // Eliminamos 'path' de los query params para no enviarlo duplicado
         const queryParams = { ...req.query };
