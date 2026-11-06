@@ -24,8 +24,10 @@ export default async function handler(req, res) {
         });
     }
 
-    // URL Real del Backend
-    const targetUrl = `http://68.211.160.206:8080/${pathStr}`;
+    // URL real del backend: se configura con BACKEND_URL en las variables de entorno de Vercel.
+    // Si no está definida se usa la IP del backend anterior para no romper el despliegue actual.
+    const backendUrl = (process.env.BACKEND_URL || 'http://68.211.160.206:8080').replace(/\/+$/, '');
+    const targetUrl = `${backendUrl}/${pathStr}`;
 
     console.log(`Proxying request to: ${targetUrl}`);
 

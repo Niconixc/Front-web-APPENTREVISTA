@@ -2,12 +2,12 @@ import axios from 'axios';
 
 // Configuración base de axios
 const api = axios.create({
-  // En entorno de producción (Vercel), usamor '/api' para que pase por el proxy de Vercel (vercel.json)
-  // y evite el problema de Mixed Content (HTTPS -> HTTP).
-  // En desarrollo local o si falla, usa la URL directa.
-  baseURL: import.meta.env.PROD || import.meta.env.VITE_API_URL
+  // En producción (Vercel) se usa '/api' para pasar por el proxy de Vercel (api/[...path].js),
+  // que reenvía al backend definido en BACKEND_URL y evita el Mixed Content (HTTPS -> HTTP).
+  // En desarrollo se llama directo al backend de VITE_API_URL (por defecto el local en 8080).
+  baseURL: import.meta.env.PROD
     ? '/api'
-    : 'http://68.211.160.206:8080',
+    : (import.meta.env.VITE_API_URL || 'http://localhost:8080'),
   headers: {
     'Content-Type': 'application/json',
   },
