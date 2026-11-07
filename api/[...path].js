@@ -1,108 +1,83 @@
 import axios from 'axios';
 
+/**
+ * Proxy de Vercel hacia el backend V2: el panel se sirve por HTTPS y así evita el Mixed Content (HTTPS -> HTTP).
+ * Reenvía la solicitud tal cual y devuelve la respuesta del backend sin tocarla (incluidos sus errores
+ * {error, mensaje, message}, que el panel muestra). La URL del backend nunca llega al navegador.
+ */
+
+// Un poco menos que maxDuration (60 s, vercel.json): así el proxy alcanza a responder su propio 504 'servidor_tardo'
+// en vez de que Vercel corte la función con un error en texto. Una generación con IA que tarde más de esto no se
+// puede esperar a través de Vercel (puede haber terminado y cobrado: el panel manda a revisar las pendientes).
+const TIEMPO_MAXIMO_MS = 55000;
+
 export default async function handler(req, res) {
-    // obtener la ruta dinámica capturada por el archivo [...path].js
-    // 1. Intentar obtener el path desde req.query (Estándar de Vercel)
+    // Ruta capturada por [...path].js: desde req.query (estándar de Vercel) o, si falta, desde req.url.
     let { path } = req.query;
-    let pathStr = '';
+    let pathStr = path ? (Array.isArray(path) ? path.join('/') : path) : req.url.split('?')[0].replace(/^\/?api\//, '');
 
-    if (path) {
-        pathStr = Array.isArray(path) ? path.join('/') : path;
-    } else {
-        // 2. Fallback: Parsear manualmente req.url si req.query falla
-        // req.url ej: "/api/auth/login?foo=bar"
-        const urlPath = req.url.split('?')[0];
-        // Eliminamos el prefijo "/api/" para obtener "auth/login"
-        pathStr = urlPath.replace(/^\/?api\//, '');
-    }
-
-    if (!pathStr) {
-        return res.status(400).json({
-            error: 'Path not provided',
-            details: 'Could not extract path from query or URL',
-            debug: { url: req.url, query: req.query }
-        });
-    }
-
-    // URL real del backend: se configura con BACKEND_URL en las variables de entorno de Vercel.
-    // Si no está definida se usa la IP del backend anterior para no romper el despliegue actual.
-    const backendUrl = (process.env.BACKEND_URL || 'http://68.211.160.206:8080').replace(/\/+$/, '');
-    const targetUrl = `${backendUrl}/${pathStr}`;
-
-    console.log(`Proxying request to: ${targetUrl}`);
-
-    // Definir headers de CORS para responder al navegador
     const corsHeaders = {
         'Access-Control-Allow-Origin': req.headers.origin || '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
         'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Max-Age': '86400', // Cache preflight 24h
+        'Access-Control-Max-Age': '86400',
     };
+    Object.entries(corsHeaders).forEach(([clave, valor]) => res.setHeader(clave, valor));
 
-    // 1. Manejar preflight (OPTIONS) directamente en el proxy
-    if (req.method === 'OPTIONS') {
-        Object.entries(corsHeaders).forEach(([key, value]) => {
-            res.setHeader(key, value);
-        });
-        return res.status(200).end();
+    if (req.method === 'OPTIONS') return res.status(200).end();
+
+    if (!pathStr) {
+        return res.status(400).json({ error: 'ruta_requerida', mensaje: 'Falta la ruta a la que llamar' });
     }
 
-    // Asegurarnos de que los headers CORS estén presentes en cualquier respuesta
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-        res.setHeader(key, value);
-    });
+    // Sin BACKEND_URL no se adivina: antes se caía en silencio a la IP del backend viejo.
+    const backendUrl = (process.env.BACKEND_URL || '').replace(/\/+$/, '');
+    if (!backendUrl) {
+        console.error('Proxy: falta la variable BACKEND_URL en Vercel');
+        return res.status(500).json({ error: 'backend_no_configurado', mensaje: 'El panel no tiene configurada la dirección del servidor (BACKEND_URL)' });
+    }
+    const targetUrl = `${backendUrl}/${pathStr}`;
 
     try {
-        // Limpiamos los headers conflictivos
-        // Al eliminar 'host', 'origin' y 'referer', el backend pensará que es una petición directa (como Postman o Android)
+        // Sin host/origin/referer: el backend la ve como una solicitud directa (como la app Android).
         const headers = { ...req.headers };
         delete headers.host;
         delete headers.origin;
         delete headers.referer;
-        delete headers['content-length']; // Important: axios recalculates this
+        delete headers['content-length']; // axios lo recalcula
 
-        // Eliminamos 'path' de los query params para no enviarlo duplicado
         const queryParams = { ...req.query };
         delete queryParams.path;
 
         const response = await axios({
             method: req.method,
             url: targetUrl,
-            headers: headers,
+            headers,
             data: req.body,
             params: queryParams,
-            validateStatus: () => true, // No lanzar error en 401/403/500, queremos devolver la respuesta tal cual
+            timeout: TIEMPO_MAXIMO_MS,
+            validateStatus: () => true, // los 4xx/5xx del backend se devuelven tal cual
         });
 
-        // Devolver la respuesta del backend al frontend
-        // Si el backend devuelve 404, agregamos info de depuración para saber qué URL intentó contactar
-        if (response.status === 404) {
-            return res.status(404).json({
-                error: 'Backend 404: Resource not found',
-                targetUrl: targetUrl,
-                originalPath: pathStr,
-                backendStatus: response.status
-            });
+        if (response.status >= 400) console.warn(`Proxy: ${req.method} /${pathStr} → ${response.status}`);
+        if (response.headers['content-type']) res.setHeader('content-type', response.headers['content-type']);
+
+        // Una ruta o método que el backend no tiene (404/405 sin cuerpo): un error legible con el mismo formato.
+        const sinCuerpo = response.data === undefined || response.data === null || response.data === '';
+        if (sinCuerpo && response.status === 404) {
+            return res.status(404).json({ error: 'ruta_no_encontrada', mensaje: 'El servidor no tiene esta ruta' });
         }
-
-        if (response.status === 405) {
-            return res.status(405).json({
-                error: 'Backend 405: Method Not Allowed',
-                targetUrl: targetUrl,
-                method: req.method,
-                allowedMethods: response.headers['allow'] || 'Not Specified',
-                backendStatus: response.status
-            });
+        if (sinCuerpo && response.status === 405) {
+            return res.status(405).json({ error: 'metodo_no_permitido', mensaje: 'El servidor no permite esta operación en esta ruta' });
         }
-
-        res.status(response.status).send(response.data);
-
+        return res.status(response.status).send(response.data);
     } catch (error) {
-        console.error('Proxy Error:', error.message);
-        res.status(500).json({
-            error: 'Error interno del proxy',
-            details: error.message
+        console.error('Proxy: no se pudo contactar al backend', error.code || error.message);
+        const tardo = error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT';
+        return res.status(tardo ? 504 : 502).json({
+            error: tardo ? 'servidor_tardo' : 'proxy_error',
+            mensaje: tardo ? 'El servidor tardó demasiado en responder' : 'No se pudo contactar al servidor',
         });
     }
 }

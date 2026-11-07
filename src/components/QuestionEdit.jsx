@@ -1,97 +1,170 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getQuestion, updateQuestion } from '../services/api';
+import {
+  approveQuestion,
+  codigoDeError,
+  getQuestion,
+  mensajeDeError,
+  rejectQuestion,
+  updateQuestion,
+} from '../services/api';
+import {
+  ESTADOS_PREGUNTA,
+  LIMITES,
+  aSolicitudPregunta,
+  desdeRespuestaPregunta,
+  etiqueta,
+  formatearFecha,
+  validarFormularioPregunta,
+} from '../services/etiquetas';
+import QuestionFields from './QuestionFields';
 import './QuestionForm.css';
 
 const QuestionEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    texto: '',
-    tipo: 'tec',
-    nivel: 'mid',
-    sector: '',
-    respuestaModelo: '',
-    pistas: '',
-    activa: true,
-  });
+
+  const [pregunta, setPregunta] = useState(null);
+  const [form, setForm] = useState(null);
+  const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState(null); // {mensaje, noExiste}
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [exito, setExito] = useState('');
+  const [accion, setAccion] = useState(null); // 'guardar' | 'aprobar' | 'rechazar'
 
-  useEffect(() => {
-    loadQuestion();
-  }, [id]);
+  const [modalRechazo, setModalRechazo] = useState(false);
+  const [motivo, setMotivo] = useState('');
+  const [errorRechazo, setErrorRechazo] = useState('');
 
-  const loadQuestion = async () => {
+  const cargarPregunta = useCallback(async () => {
+    setCargando(true);
+    setErrorCarga(null);
+    setError('');
+    setExito('');
     try {
-      setLoading(true);
-      const question = await getQuestion(id);
-
-      setFormData({
-        texto: question.texto || '',
-        tipo: question.tipoBanco || 'tec',
-        nivel: question.nivel || 'mid',
-        sector: question.sector || '',
-        respuestaModelo: question.respuestaModelo || '',
-        pistas: question.pistas ? JSON.stringify(question.pistas, null, 2) : '',
-        activa: question.activa !== false,
-      });
-      setError('');
+      const data = await getQuestion(id);
+      setPregunta(data);
+      setForm(desdeRespuestaPregunta(data));
     } catch (err) {
       console.error('Error al cargar pregunta:', err);
-      setError('Error al cargar la pregunta');
+      const noExiste = err?.response?.status === 404 || codigoDeError(err) === 'pregunta_no_encontrada'
+        || codigoDeError(err) === 'id_invalido';
+      setErrorCarga({
+        noExiste,
+        mensaje: noExiste ? 'La pregunta no existe' : mensajeDeError(err, 'Error al cargar la pregunta'),
+      });
     } finally {
-      setLoading(false);
+      setCargando(false);
     }
+  }, [id]);
+
+  useEffect(() => {
+    cargarPregunta();
+  }, [cargarPregunta]);
+
+  /** Refresca la cabecera y el formulario con la pregunta que devolvió V2. */
+  const aplicarRespuesta = (data) => {
+    if (!data || typeof data !== 'object' || !data.id) return;
+    setPregunta(data);
+    setForm(desdeRespuestaPregunta(data));
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const guardar = async (aprobar) => {
+    if (accion) return;
     setError('');
-    setSubmitting(true);
+    setExito('');
 
-    let pistasJson = null;
-    if (formData.pistas.trim()) {
-      try {
-        pistasJson = JSON.parse(formData.pistas);
-      } catch (err) {
-        setError('El campo Pistas debe ser un JSON válido (ej: {"pista1": "..."})');
-        setSubmitting(false);
-        return;
-      }
+    const problema = validarFormularioPregunta(form);
+    if (problema) {
+      setError(problema);
+      return;
     }
 
-    const payload = {
-      texto: formData.texto,
-      sector: formData.sector || null,
-      activa: formData.activa,
-      pistas: pistasJson,
-    };
-
+    setAccion(aprobar ? 'aprobar' : 'guardar');
+    let guardada = null;
     try {
-      await updateQuestion(id, payload);
-      alert('Pregunta actualizada exitosamente');
-      navigate('/preguntas');
+      guardada = await updateQuestion(id, aSolicitudPregunta(form));
+      aplicarRespuesta(guardada);
     } catch (err) {
       console.error('Error al actualizar pregunta:', err);
+      setError(mensajeDeError(err, 'Error al guardar la pregunta'));
+      setAccion(null);
+      return;
+    }
+
+    if (!aprobar) {
+      setExito(guardada?.mensaje || 'Pregunta actualizada; queda pendiente de aprobación');
+      setAccion(null);
+      return;
+    }
+
+    try {
+      const aprobada = await approveQuestion(id);
+      aplicarRespuesta(aprobada);
+      setExito(aprobada?.mensaje ? `Cambios guardados. ${aprobada.mensaje}` : 'Cambios guardados. Pregunta aprobada');
+    } catch (err) {
+      console.error('Error al aprobar pregunta:', err);
       setError(
-        err.response?.data?.error || 'Error al actualizar la pregunta'
+        `La pregunta se guardó, pero no se pudo aprobar: ${mensajeDeError(err, 'error desconocido')}. Quedó pendiente.`
       );
     } finally {
-      setSubmitting(false);
+      setAccion(null);
     }
   };
 
-  if (loading) {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    guardar(false);
+  };
+
+  const abrirRechazo = () => {
+    setMotivo('');
+    setErrorRechazo('');
+    setModalRechazo(true);
+  };
+
+  const cerrarRechazo = () => {
+    if (accion === 'rechazar') return;
+    setModalRechazo(false);
+  };
+
+  const confirmarRechazo = async () => {
+    const texto = motivo.trim();
+    if (!texto) {
+      setErrorRechazo('Escribe el motivo del rechazo');
+      return;
+    }
+    if (texto.length > LIMITES.motivoRechazo) {
+      setErrorRechazo(`El motivo no puede superar ${LIMITES.motivoRechazo} caracteres`);
+      return;
+    }
+    setAccion('rechazar');
+    setErrorRechazo('');
+    try {
+      const data = await rejectQuestion(id, texto);
+      // Solo se actualiza la cabecera: los cambios del formulario que no se guardaron se mantienen.
+      if (data?.id) setPregunta(data);
+      setModalRechazo(false);
+      setError('');
+      setExito(data?.mensaje || 'Pregunta rechazada');
+    } catch (err) {
+      console.error('Error al rechazar pregunta:', err);
+      setErrorRechazo(mensajeDeError(err, 'Error al rechazar la pregunta'));
+    } finally {
+      setAccion(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!modalRechazo) return undefined;
+    const alPresionar = (e) => { if (e.key === 'Escape') cerrarRechazo(); };
+    window.addEventListener('keydown', alPresionar);
+    return () => window.removeEventListener('keydown', alPresionar);
+  });
+
+  // ---------- Estados de carga ----------
+
+  if (cargando) {
     return (
       <div className="create-question">
         <div className="loading">Cargando pregunta...</div>
@@ -99,129 +172,138 @@ const QuestionEdit = () => {
     );
   }
 
+  if (errorCarga || !pregunta || !form) {
+    return (
+      <div className="create-question">
+        <div className="form-container qf-estado-vacio">
+          <h1>{errorCarga?.noExiste ? 'La pregunta no existe' : 'No se pudo cargar la pregunta'}</h1>
+          {!errorCarga?.noExiste && <div className="error-message">{errorCarga?.mensaje || 'Error al cargar la pregunta'}</div>}
+          {errorCarga?.noExiste && (
+            <p className="subtitle">Puede que se haya eliminado o que el enlace no sea correcto.</p>
+          )}
+          <div className="form-actions">
+            {!errorCarga?.noExiste && (
+              <button type="button" className="btn btn-secondary" onClick={cargarPregunta}>
+                Reintentar
+              </button>
+            )}
+            <button type="button" className="btn btn-primary" onClick={() => navigate('/preguntas')}>
+              Volver al listado
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const ocupado = Boolean(accion);
+  const reemplazaOpciones = pregunta.vecesUsada > 0 && form.tipo === 'opcion_multiple';
+
   return (
     <div className="create-question">
       <div className="form-container">
         <h1>Editar Pregunta</h1>
-        <p className="subtitle">Modifica los campos que desees actualizar</p>
+        <p className="subtitle">Puedes cambiar todos los campos, incluidos tipo, categoría y nivel</p>
 
-        <form onSubmit={handleSubmit} className="question-form">
-          <div className="form-grid">
-            <div className="form-group full-width">
-              <label htmlFor="texto">
-                Texto de la Pregunta <span className="required">*</span>
-              </label>
-              <textarea
-                id="texto"
-                name="texto"
-                value={formData.texto}
-                onChange={handleChange}
-                required
-                placeholder="Escribe la pregunta..."
-                rows={4}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="tipo">
-                Tipo <span className="info-text">(No editable)</span>
-              </label>
-              <select
-                id="tipo"
-                name="tipo"
-                value={formData.tipo}
-                disabled
-                className="disabled-field"
-              >
-                <option value="tec">Técnica</option>
-                <option value="soft">Habilidad Blanda</option>
-                <option value="mix">Mixta</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="nivel">
-                Nivel <span className="info-text">(No editable)</span>
-              </label>
-              <select
-                id="nivel"
-                name="nivel"
-                value={formData.nivel}
-                disabled
-                className="disabled-field"
-              >
-                <option value="jr">Junior</option>
-                <option value="mid">Mid-Level</option>
-                <option value="sr">Senior</option>
-              </select>
-            </div>
-
-            <div className="form-group full-width">
-              <label htmlFor="sector">
-                Sector (Opcional)
-              </label>
-              <input
-                type="text"
-                id="sector"
-                name="sector"
-                value={formData.sector}
-                onChange={handleChange}
-                placeholder="ej: Backend, Frontend, DevOps"
-              />
-            </div>
-
-            <div className="form-group full-width">
-              <label htmlFor="pistas">
-                Pistas (JSON Opcional)
-              </label>
-              <textarea
-                id="pistas"
-                name="pistas"
-                value={formData.pistas}
-                onChange={handleChange}
-                placeholder='{"pista1": "Primera pista...", "pista2": "Segunda pista..."}'
-                rows={3}
-              />
-              <small className="form-help">Formato JSON válido</small>
-            </div>
-
-            <div className="form-group full-width">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  name="activa"
-                  checked={formData.activa}
-                  onChange={handleChange}
-                />
-                <span>Pregunta Activa</span>
-              </label>
-              <small className="form-help">
-                Las preguntas inactivas no aparecen en las entrevistas
-              </small>
-            </div>
+        {/* Cabecera informativa (solo lectura) */}
+        <div className="qf-cabecera">
+          <span className={`qf-badge qf-estado-${pregunta.estado}`}>{etiqueta(ESTADOS_PREGUNTA, pregunta.estado)}</span>
+          {pregunta.generadaPorIa && <span className="qf-badge qf-badge-ia">Generada con IA</span>}
+          <span className="qf-dato">
+            {pregunta.vecesUsada === 1 ? 'Usada 1 vez' : `Usada ${pregunta.vecesUsada ?? 0} veces`}
+          </span>
+          <span className="qf-dato">Creada el {formatearFecha(pregunta.fechaCreacion)}</span>
+        </div>
+        {pregunta.estado === 'rechazada' && (
+          <div className="qf-aviso qf-aviso-rechazo">
+            <strong>Motivo del rechazo:</strong> {pregunta.motivoRechazo || 'Sin motivo registrado'}
           </div>
+        )}
 
-          {error && <div className="error-message">{error}</div>}
+        <form onSubmit={handleSubmit} className="question-form" noValidate>
+          <fieldset className="qf-fieldset" disabled={ocupado}>
+            <QuestionFields form={form} setForm={setForm} />
+          </fieldset>
 
-          <div className="form-actions">
-            <button
-              type="button"
-              onClick={() => navigate('/preguntas')}
-              className="btn btn-secondary"
-              disabled={submitting}
-            >
-              Cancelar
+          <div className="qf-aviso qf-aviso-alerta">
+            Al guardar, la pregunta vuelve a <strong>Pendiente</strong> y deja de mostrarse a los usuarios hasta que se
+            apruebe.
+          </div>
+          {reemplazaOpciones && (
+            <div className="qf-aviso qf-aviso-alerta">
+              Esta pregunta ya se usó en entrevistas: editar reemplaza las opciones (cambian sus IDs).
+            </div>
+          )}
+
+          {error && <div className="error-message" role="alert">{error}</div>}
+          {exito && <div className="qf-exito" role="status">{exito}</div>}
+
+          <div className="form-actions qf-acciones">
+            <button type="button" onClick={() => navigate('/preguntas')} className="btn btn-secondary" disabled={ocupado}>
+              Volver al listado
             </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={submitting}
-            >
-              {submitting ? 'Actualizando...' : 'Actualizar Pregunta'}
+            {pregunta.estado !== 'rechazada' && (
+              <button type="button" onClick={abrirRechazo} className="btn qf-btn-peligro" disabled={ocupado}>
+                Rechazar
+              </button>
+            )}
+            <button type="submit" className="btn btn-secondary" disabled={ocupado}>
+              {accion === 'guardar' ? 'Guardando...' : 'Guardar (queda pendiente)'}
+            </button>
+            <button type="button" onClick={() => guardar(true)} className="btn btn-primary" disabled={ocupado}>
+              {accion === 'aprobar' ? 'Guardando y aprobando...' : 'Guardar y aprobar'}
             </button>
           </div>
         </form>
       </div>
+
+      {modalRechazo && (
+        <div className="qf-modal-fondo" onClick={cerrarRechazo}>
+          <div
+            className="qf-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="qf-modal-titulo"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="qf-modal-titulo">Rechazar pregunta</h2>
+            <p className="qf-modal-texto">
+              La pregunta dejará de mostrarse a los usuarios. Los cambios del formulario que no hayas guardado no se
+              envían al rechazar.
+            </p>
+            <div className="form-group">
+              <label htmlFor="motivoRechazo">
+                Motivo <span className="required">*</span>
+              </label>
+              <textarea
+                id="motivoRechazo"
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+                maxLength={LIMITES.motivoRechazo}
+                rows={4}
+                placeholder="Explica por qué se rechaza..."
+                autoFocus
+                disabled={accion === 'rechazar'}
+              />
+              <small className="form-help qf-contador">{motivo.length}/{LIMITES.motivoRechazo}</small>
+            </div>
+            {errorRechazo && <div className="error-message" role="alert">{errorRechazo}</div>}
+            <div className="form-actions">
+              <button type="button" className="btn btn-secondary" onClick={cerrarRechazo} disabled={accion === 'rechazar'}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn qf-btn-peligro"
+                onClick={confirmarRechazo}
+                disabled={accion === 'rechazar' || !motivo.trim()}
+              >
+                {accion === 'rechazar' ? 'Rechazando...' : 'Rechazar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

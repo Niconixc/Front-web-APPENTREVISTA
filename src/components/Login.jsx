@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../services/api';
+import { login, mensajeDeError } from '../services/api';
 import './Login.css';
 
 const Login = ({ setIsAuthenticated }) => {
@@ -16,33 +16,13 @@ const Login = ({ setIsAuthenticated }) => {
     setLoading(true);
 
     try {
-      const data = await login(correo, contrasena);
-
-      // Verificar que el usuario sea admin
-      if (data.usuario.rol !== 'admin') {
-        setError('Acceso denegado. Solo administradores pueden acceder.');
-        setLoading(false);
-        return;
-      }
-
-      // Guardar token y datos del usuario
-      localStorage.setItem('token', data.accessToken);
-      localStorage.setItem('user', JSON.stringify(data.usuario));
-
+      // login() guarda la sesión y rechaza a quien no es admin (cerrándole la sesión recién creada).
+      await login(correo, contrasena);
       setIsAuthenticated(true);
       navigate('/dashboard');
     } catch (err) {
-      console.error('Error de login:', err);
-      const errorMsg = err.response?.data?.error;
-      // Aseguramos que sea string para no romper React (Error #31)
-      if (typeof errorMsg === 'string') {
-        setError(errorMsg);
-      } else if (typeof errorMsg === 'object' && errorMsg !== null) {
-        // Si es un objeto, intentamos mostrar su mensaje o lo pasamos a string
-        setError(errorMsg.message || JSON.stringify(errorMsg));
-      } else {
-        setError('Error al iniciar sesión. Verifica tus credenciales.');
-      }
+      // Mensajes de V2: credenciales incorrectas (401), demasiados intentos (429), cuenta inactiva (403).
+      setError(mensajeDeError(err, 'Error al iniciar sesión. Verifica tus credenciales.'));
     } finally {
       setLoading(false);
     }

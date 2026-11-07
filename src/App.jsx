@@ -9,7 +9,9 @@ import QuestionList from './components/QuestionList';
 import QuestionForm from './components/QuestionForm';
 import QuestionEdit from './components/QuestionEdit';
 import BillingCodes from './components/BillingCodes';
+import GenerarPreguntas from './components/GenerarPreguntas';
 import Navbar from './components/Navbar';
+import { sesionVigente } from './services/api';
 import './App.css';
 
 // Componente para proteger rutas
@@ -31,25 +33,22 @@ const ProtectedLayout = ({ children, setIsAuthenticated }) => {
 };
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Se lee al cargar: al recargar una página protegida no hay un salto al login y de vuelta.
+  const [isAuthenticated, setIsAuthenticated] = useState(() => sesionVigente());
 
-  // Verificar si el usuario ya está autenticado al cargar la app
+  // El cliente HTTP avisa con 'auth:logout' cuando la sesión ya no sirve (refresh inválido, rol perdido).
+  // Y si la sesión cambia en otra pestaña (se cerró, o se inició), esta la sigue.
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-
-    if (token && user) {
-      try {
-        const userData = JSON.parse(user);
-        if (userData.rol === 'admin') {
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error('Error al parsear usuario:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      }
-    }
+    const alCerrarSesion = () => setIsAuthenticated(false);
+    const alCambiarOtraPestana = (e) => {
+      if (e.key === null || e.key === 'token' || e.key === 'refreshToken' || e.key === 'user') setIsAuthenticated(sesionVigente());
+    };
+    window.addEventListener('auth:logout', alCerrarSesion);
+    window.addEventListener('storage', alCambiarOtraPestana);
+    return () => {
+      window.removeEventListener('auth:logout', alCerrarSesion);
+      window.removeEventListener('storage', alCambiarOtraPestana);
+    };
   }, []);
 
   return (
@@ -141,6 +140,17 @@ function App() {
               <ProtectedRoute isAuthenticated={isAuthenticated}>
                 <ProtectedLayout setIsAuthenticated={setIsAuthenticated}>
                   <QuestionEdit />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/generar-preguntas"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedLayout setIsAuthenticated={setIsAuthenticated}>
+                  <GenerarPreguntas />
                 </ProtectedLayout>
               </ProtectedRoute>
             }

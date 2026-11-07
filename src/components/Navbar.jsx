@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { logout } from '../services/api';
+import { logout, usuarioActual } from '../services/api';
 import './Navbar.css';
 
 const Navbar = ({ setIsAuthenticated }) => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = usuarioActual() || {};
+  const [saliendo, setSaliendo] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    setSaliendo(true);
+    await logout(); // revoca el refresh token en el servidor
     setIsAuthenticated(false);
     navigate('/');
   };
@@ -24,7 +27,7 @@ const Navbar = ({ setIsAuthenticated }) => {
             Dashboard
           </Link>
           <Link to="/informes" className="nav-link">
-            Informes
+            Informes y costos IA
           </Link>
           <Link to="/usuarios" className="nav-link">
             Usuarios
@@ -38,6 +41,9 @@ const Navbar = ({ setIsAuthenticated }) => {
           <Link to="/crear-pregunta" className="nav-link">
             Crear Pregunta
           </Link>
+          <Link to="/generar-preguntas" className="nav-link">
+            Generar con IA
+          </Link>
           <Link to="/codigos" className="nav-link">
             Códigos
           </Link>
@@ -45,8 +51,8 @@ const Navbar = ({ setIsAuthenticated }) => {
 
         <div className="navbar-user">
           <span className="user-email">{user.correo}</span>
-          <button onClick={handleLogout} className="btn-logout">
-            Cerrar Sesión
+          <button onClick={handleLogout} className="btn-logout" disabled={saliendo}>
+            {saliendo ? 'Cerrando…' : 'Cerrar Sesión'}
           </button>
         </div>
       </div>

@@ -33,10 +33,10 @@
   color: rgba(255, 255, 255, 0.7);
 }
 
-/* Métricas principales - 2 columnas grandes */
+/* Métricas principales - 4 tarjetas que se acomodan al ancho */
 .main-stats {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 2rem;
   margin-bottom: 3rem;
 }
@@ -91,6 +91,58 @@
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.95rem;
   font-weight: 400;
+}
+
+/* Con 4 tarjetas en una fila, el contenido se reparte mejor en vertical */
+.main-stats .stat-card-large {
+  padding: 2rem;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.main-stats .stat-icon-large {
+  font-size: 3rem;
+  min-width: 56px;
+}
+
+.main-stats .stat-content-large {
+  min-width: 0;
+}
+
+.main-stats .stat-content-large h2 {
+  font-size: 2.75rem;
+  overflow-wrap: anywhere;
+}
+
+.main-stats .stat-content-large h2.stat-value-money {
+  font-size: 1.9rem;
+  line-height: 1.15;
+}
+
+.stat-error {
+  color: #fca5a5;
+  background-color: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.stat-link {
+  display: inline-block;
+  margin-top: 0.85rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  transition: all 0.2s ease;
+}
+
+.stat-link:hover {
+  color: #ffffff;
+  border-bottom-color: #ffffff;
 }
 
 @media (max-width: 768px) {
