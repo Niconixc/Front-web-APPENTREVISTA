@@ -23,8 +23,8 @@ import './GenerarPreguntas.css';
 const RUTA_PENDIENTES_IA = '/preguntas?estado=pendiente&generadaPorIa=true';
 
 // Códigos 502 de V2 que llegan DESPUÉS de que el proveedor respondió (la llamada probablemente se pagó).
-// Solo provider_invalid_output guarda sus tokens (aparece en Costos IA con su costo estimado); los demás se registran
-// como fallidas pero sin tokens, así que su costo no se ve en Costos IA (SERVICIO_GENERACION_PREGUNTA de V2).
+// V2 guarda los tokens que el proveedor informó (siempre en provider_invalid_output; en los demás, si venían en la
+// respuesta): aparecen en Costos IA con su costo estimado y cuentan para el tope mensual de gasto (D23).
 const CODIGOS_CON_COSTO = new Set([
   'provider_invalid_output',
   'provider_invalid_response',
@@ -105,7 +105,14 @@ const clasificarError = (err) => {
         mensaje,
         nota: codigo === 'provider_invalid_output'
           ? 'Este intento SÍ tuvo costo: aparece en Costos IA como llamada fallida con su costo estimado. No se guardó ninguna pregunta.'
-          : 'El proveedor probablemente cobró este intento, pero el servidor no recibió sus tokens: en Costos IA aparece como fallida sin costo. No se guardó ninguna pregunta.',
+          : 'El proveedor probablemente cobró este intento: si informó sus tokens, aparece en Costos IA como llamada fallida con su costo estimado y cuenta para el tope mensual. No se guardó ninguna pregunta.',
+      };
+    }
+    if (codigo === 'provider_timeout') {
+      return {
+        tipo: 'incierto',
+        mensaje: mensajeDeError(err, 'El proveedor de IA tardó demasiado en responder.'),
+        nota: 'Es posible que el proveedor haya cobrado: el servidor no reintentó para no pagar dos veces. En Costos IA aparece como fallida sin costo. No se guardó ninguna pregunta.',
       };
     }
     if (codigo === 'provider_http_error') {
@@ -128,6 +135,14 @@ const clasificarError = (err) => {
       tipo: 'incierto',
       mensaje: mensajeDeError(err, 'El servidor tuvo un error inesperado.'),
       nota: 'No se sabe si alcanzó a llamar a la IA. Revisa las pendientes y Costos IA antes de volver a intentar.',
+    };
+  }
+
+  if (estado === 429 && codigo === 'tope_generacion_ia_alcanzado') {
+    return {
+      tipo: 'sin_costo',
+      mensaje: mensajeDeError(err, 'Se alcanzó el tope mensual de gasto en IA para generar preguntas.'),
+      nota: 'No se llamó a la IA: no hubo costo. El tope lo define LIMITE_GASTO_GENERACION_IA_MENSUAL_USD en el servidor y se repone el día 1 de cada mes (UTC).',
     };
   }
 
