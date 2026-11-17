@@ -17,6 +17,7 @@ import {
   formatearFecha,
   validarFormularioPregunta,
 } from '../services/etiquetas';
+import FondoModal from './FondoModal';
 import QuestionFields from './QuestionFields';
 import './QuestionForm.css';
 
@@ -258,7 +259,8 @@ const QuestionEdit = () => {
       </div>
 
       {modalRechazo && (
-        <div className="qf-modal-fondo" onClick={cerrarRechazo}>
+        // El fondo no cierra con el 2.º clic de un doble clic en «Rechazar» ni al arrastrar desde el motivo (FondoModal).
+        <FondoModal className="qf-modal-fondo" onCerrar={cerrarRechazo}>
           <div
             className="qf-modal"
             role="dialog"
@@ -302,7 +304,7 @@ const QuestionEdit = () => {
               </button>
             </div>
           </div>
-        </div>
+        </FondoModal>
       )}
     </div>
   );

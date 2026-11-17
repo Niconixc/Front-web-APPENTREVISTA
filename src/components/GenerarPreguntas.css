@@ -474,6 +474,28 @@
   font-size: 0.9rem;
 }
 
+/* Aviso del tope mensual (D23) en la confirmación: informa, no bloquea. El texto dice que es un aviso (no solo el color). */
+.generar-preguntas .gp-modal-detalle .gp-modal-aviso {
+  color: #fcd34d;
+}
+
+.generar-preguntas .modal .gp-modal-aviso strong {
+  color: #fde68a;
+}
+
+/* Texto solo para lectores de pantalla (región viva del tope en la confirmación) */
+.generar-preguntas .gp-solo-lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .generar-preguntas .checkbox-label {
   display: flex;
   align-items: center;

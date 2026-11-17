@@ -19,6 +19,16 @@ import {
   formatearUsd,
 } from '../services/etiquetas';
 import { textoContextoMercado } from '../services/cobertura';
+import {
+  anuncioTopeActualizado,
+  avisoAntesDeGenerar,
+  idsDescripcionConfirmacion,
+  leerTopeGeneracion,
+  lineaTopeEnConfirmacion,
+  notaTopeConLecturaNueva,
+} from '../services/topeGeneracion';
+import FondoModal from './FondoModal';
+import TopeGeneracionIa from './TopeGeneracionIa';
 import './GenerarPreguntas.css';
 
 const RUTA_PENDIENTES_IA = '/preguntas?estado=pendiente&generadaPorIa=true';
@@ -142,10 +152,14 @@ const clasificarError = (err) => {
   }
 
   if (estado === 429 && codigo === 'tope_generacion_ia_alcanzado') {
+    // Todavía sin nota: generar la arma UNA vez con el tope leído después de este 429 (notaTopeConLecturaNueva) y la
+    // guarda ya armada, así el texto del aviso (role="alert") no cambia después de mostrarse y, si el tope quedó
+    // desactivado (vale 0), no promete que se repone el día 1.
     return {
       tipo: 'sin_costo',
       mensaje: mensajeDeError(err, 'Se alcanzó el tope mensual de gasto en IA para generar preguntas.'),
-      nota: 'No se llamó a la IA: no hubo costo. El tope lo define LIMITE_GASTO_GENERACION_IA_MENSUAL_USD en el servidor y se repone el día 1 de cada mes (UTC).',
+      nota: null,
+      esTope: true,
     };
   }
 
@@ -186,12 +200,22 @@ const GenerarPreguntas = () => {
   const [errorSkills, setErrorSkills] = useState('');
 
   const [costoPromedio, setCostoPromedio] = useState(null); // USD por pregunta generada (últimos 30 días)
+  const [tope, setTope] = useState(null); // gasto del mes frente al tope (D23); null si no se sabe
+  const [leyendoTope, setLeyendoTope] = useState(false); // hay una lectura de Costos IA en curso: el tope puede cambiar
+  // La última lectura de Costos IA falló: `tope` es el de una lectura anterior y se muestra marcado como tal.
+  const [lecturaTopeFallida, setLecturaTopeFallida] = useState(false);
+  const pedidoReferencia = useRef(0);
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [entiendeCosto, setEntiendeCosto] = useState(false);
+  // Aviso del tope que el lector de pantalla oyó al abrir la confirmación (va en su descripción); null si no había.
+  const [avisoAlAbrir, setAvisoAlAbrir] = useState(null);
 
   const [generando, setGenerando] = useState(false);
   const generandoRef = useRef(false); // bloquea el doble clic antes de que React vuelva a pintar
+  // Tras el 429 del tope el servidor ya rechazó la generación sin llamar a la IA: solo falta leer el tope para armar el
+  // aviso. El formulario sigue bloqueado (generando), pero la pantalla no dice «Generando…» ni pide no cerrar la página.
+  const [leyendoNotaTope, setLeyendoNotaTope] = useState(false);
   const [segundos, setSegundos] = useState(0);
 
   const [resultado, setResultado] = useState(null);
@@ -221,17 +245,39 @@ const GenerarPreguntas = () => {
 
   useEffect(() => { cargarCargos(); }, [cargarCargos]);
 
-  // Referencia de costo: V2 no da un presupuesto previo; se muestra el promedio real por pregunta del último mes.
-  useEffect(() => {
-    let vigente = true;
-    getCostosIa()
-      .then((data) => {
+  // Referencia de costo y tope del mes. V2 no da un presupuesto previo: se muestra el promedio real por pregunta del
+  // último mes y lo que queda del tope (D23). Se vuelve a pedir al abrir la confirmación y después de cada generación: el
+  // GET no llama a la IA ni cuesta. Solo vale la respuesta del último pedido (una más vieja que llegue tarde se descarta).
+  // Devuelve el tope leído (null si falló), aunque otro pedido lo haya superado: sigue siendo una lectura posterior a
+  // quien la pidió (la nota del 429 la usa así).
+  const cargarReferencia = useCallback(async () => {
+    const pedido = ++pedidoReferencia.current;
+    const vigente = () => montadoRef.current && pedido === pedidoReferencia.current;
+    setLeyendoTope(true);
+    try {
+      const data = await getCostosIa();
+      const leido = leerTopeGeneracion(data);
+      if (vigente()) {
         const gasto = data?.generacionPreguntas;
-        if (vigente && gasto && gasto.usos > 0) setCostoPromedio(gasto.costoUsd / gasto.usos);
-      })
-      .catch(() => { /* es solo una referencia: sin ella la pantalla funciona igual */ });
-    return () => { vigente = false; };
+        setCostoPromedio(gasto && gasto.usos > 0 ? gasto.costoUsd / gasto.usos : null);
+        setTope(leido);
+        setLecturaTopeFallida(false);
+      }
+      return leido;
+    } catch {
+      // Es solo una referencia: sin ella la pantalla funciona igual (el servidor igual aplica el tope). El tope que ya se
+      // sabía NO se borra: si desapareciera (por ejemplo, el aviso de agotado justo después de decir «se está
+      // actualizando») parecería que la actualización lo quitó. Se sigue mostrando, marcado como la última lectura que no
+      // se pudo actualizar, en la página y en la confirmación, y la región viva del diálogo lo dice. El promedio del mes
+      // sigue sirviendo. Devuelve null: la nota del 429 no se arma con un dato viejo (notaTopeConLecturaNueva).
+      if (vigente()) setLecturaTopeFallida(true);
+      return null;
+    } finally {
+      if (vigente()) setLeyendoTope(false);
+    }
   }, []);
+
+  useEffect(() => { cargarReferencia(); }, [cargarReferencia]);
 
   useEffect(() => {
     if (!form.cargoId) {
@@ -270,6 +316,7 @@ const GenerarPreguntas = () => {
   const cargoElegido = cargos.find((c) => c.cargoId === form.cargoId) || null;
   const skillElegida = skills.find((s) => s.skillId === form.skillId) || null;
   const cantidad = leerCantidad(form.cantidad);
+  const costoEstimado = costoPromedio !== null && cantidad !== null ? costoPromedio * cantidad : null;
 
   // Un cargo o una skill que vino de Cobertura y no está en las listas (lista en caché, o falló la carga) se sigue
   // mostrando con su nombre: lo que se ve en el formulario y en la confirmación es lo que se envía.
@@ -282,7 +329,8 @@ const GenerarPreguntas = () => {
   // ---------- Aviso al salir mientras genera ----------
 
   useEffect(() => {
-    if (!generando) return undefined;
+    // Solo mientras de verdad se genera: tras el 429 del tope ya no hay nada que perder al cerrar ni tiempo que contar.
+    if (!generando || leyendoNotaTope) return undefined;
     const avisar = (e) => {
       e.preventDefault();
       e.returnValue = '';
@@ -296,7 +344,7 @@ const GenerarPreguntas = () => {
       window.removeEventListener('beforeunload', avisar);
       clearInterval(reloj);
     };
-  }, [generando]);
+  }, [generando, leyendoNotaTope]);
 
   // ---------- Formulario ----------
 
@@ -345,6 +393,12 @@ const GenerarPreguntas = () => {
       setErrorFormulario(problema);
       return;
     }
+    // El tope se vuelve a leer al abrir (el GET no llama a la IA ni cuesta): el de la página puede tener horas, ser del mes
+    // anterior o no incluir lo que gastó otro administrador. Mientras llega, la línea del tope dice «Según la última
+    // lectura»; si al llegar cambia el aviso que el lector de pantalla ya oyó, o si la lectura falla (la línea sigue, con
+    // «no se pudo actualizar»), se anuncia (anuncioTopeActualizado).
+    setAvisoAlAbrir(avisoAntesDeGenerar(tope, costoEstimado));
+    cargarReferencia();
     setEntiendeCosto(false);
     setModalAbierto(true);
   };
@@ -391,6 +445,7 @@ const GenerarPreguntas = () => {
       usar_mercado: form.usarMercado,
     };
 
+    let referenciaPedida = false;
     try {
       const data = await generateQuestionsAi(solicitud);
       if (!montadoRef.current) return;
@@ -404,10 +459,28 @@ const GenerarPreguntas = () => {
         mercado: textoContextoMercado(data?.contexto_mercado),
       });
     } catch (err) {
-      if (montadoRef.current) setErrorGeneracion(clasificarError(err));
+      if (montadoRef.current) {
+        const error = clasificarError(err);
+        if (error.esTope) {
+          // 429 del tope (sin costo): la nota se arma una sola vez con el tope leído ahora, y el aviso se muestra ya
+          // completo. Mientras llega la lectura (unos segundos como mucho) el formulario sigue bloqueado, pero el
+          // indicador pasa a decir que no se generó nada y que se está leyendo el tope (leyendoNotaTope).
+          referenciaPedida = true;
+          setLeyendoNotaTope(true);
+          const nota = await notaTopeConLecturaNueva(cargarReferencia);
+          if (montadoRef.current) setErrorGeneracion({ tipo: error.tipo, mensaje: error.mensaje, nota });
+        } else {
+          setErrorGeneracion(error);
+        }
+      }
     } finally {
       generandoRef.current = false;
-      if (montadoRef.current) setGenerando(false);
+      if (montadoRef.current) {
+        setGenerando(false);
+        setLeyendoNotaTope(false);
+        // El gasto del mes cambió: se vuelve a leer (tras el 429 del tope ya se leyó para su nota).
+        if (!referenciaPedida) cargarReferencia();
+      }
     }
   };
 
@@ -415,7 +488,19 @@ const GenerarPreguntas = () => {
 
   const contexto = [nombreCargo, nombreSkill].filter(Boolean).join(' / ') || '—';
   const etiquetaModelo = etiqueta(MODELOS_IA, form.modelo);
-  const costoEstimado = costoPromedio !== null && cantidad !== null ? costoPromedio * cantidad : null;
+  let textoBotonGenerar = 'Generar preguntas';
+  if (generando) textoBotonGenerar = leyendoNotaTope ? 'Leyendo el tope...' : 'Generando...';
+  // Solo informa: el botón no se deshabilita por el tope (el dato puede estar viejo y el que decide es el servidor, cuyo
+  // 429 no cobra). Mientras se vuelve a leer, o si esa lectura falla, la línea lo dice («Según la última lectura»).
+  const lineaTope = lineaTopeEnConfirmacion(tope, costoEstimado, {
+    actualizando: leyendoTope,
+    sinActualizar: lecturaTopeFallida,
+  });
+  const anuncioTope = modalAbierto
+    ? anuncioTopeActualizado({
+      avisoAlAbrir, tope, costoEstimado, actualizando: leyendoTope, lecturaFallida: lecturaTopeFallida,
+    })
+    : '';
 
   const preguntasResultado = resultado?.preguntas || [];
   const costoTotal = sumar(preguntasResultado, 'costo_usd');
@@ -446,6 +531,12 @@ const GenerarPreguntas = () => {
             </span>
           )}
         </div>
+
+        <TopeGeneracionIa
+          tope={tope}
+          desactualizado={lecturaTopeFallida}
+          encabezado="Tope mensual de gasto en generar preguntas con IA (todos los administradores)"
+        />
 
         <form onSubmit={abrirConfirmacion} className="gp-form" noValidate>
           <fieldset disabled={generando} className="gp-fieldset">
@@ -560,10 +651,18 @@ const GenerarPreguntas = () => {
           {generando && (
             <div className="gp-progress" role="status" aria-live="polite">
               <span className="spinner" aria-hidden="true" />
-              <div>
-                <strong>Generando {cantidad ?? ''} preguntas con {etiquetaModelo}... ({segundos} s)</strong>
-                <p>Puede tardar hasta 1 minuto; no cierres ni recargues la página ni cambies de sección.</p>
-              </div>
+              {leyendoNotaTope ? (
+                <div>
+                  {/* El 429 del tope ya llegó: no se genera nada y cerrar la página no pierde nada. Corto, porque el
+                      aviso completo (role="alert") llega enseguida. */}
+                  <strong>No se generaron preguntas (sin costo). Leyendo el tope del mes...</strong>
+                </div>
+              ) : (
+                <div>
+                  <strong>Generando {cantidad ?? ''} preguntas con {etiquetaModelo}... ({segundos} s)</strong>
+                  <p>Puede tardar hasta 1 minuto; no cierres ni recargues la página ni cambies de sección.</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -572,7 +671,7 @@ const GenerarPreguntas = () => {
               Volver al banco
             </button>
             <button type="submit" className="btn btn-primary" disabled={generando || cargandoCargos || cargandoSkills}>
-              {generando ? 'Generando...' : 'Generar preguntas'}
+              {textoBotonGenerar}
             </button>
           </div>
         </form>
@@ -688,16 +787,18 @@ const GenerarPreguntas = () => {
       </div>
 
       {modalAbierto && (
-        <div className="modal-backdrop" onClick={cerrarModal}>
+        // El fondo no cierra con el 2.º clic de un doble clic en «Generar preguntas» (FondoModal).
+        <FondoModal onCerrar={cerrarModal}>
           <div
             className="modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="gp-modal-titulo"
+            aria-describedby={idsDescripcionConfirmacion(lineaTope, 'gp-modal-desc', 'gp-modal-tope')}
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="gp-modal-titulo">Confirmar generación con IA</h2>
-            <p>
+            <p id="gp-modal-desc">
               Esta acción llama a <strong>{etiquetaModelo}</strong> y genera un costo real en USD. Se generarán{' '}
               <strong>{cantidad}</strong> preguntas para <strong>{contexto}</strong>, nivel{' '}
               <strong>{etiqueta(NIVELES, form.nivel)}</strong>. ¿Continuar?
@@ -711,7 +812,16 @@ const GenerarPreguntas = () => {
                   Referencia (promedio del último mes): unos {formatearUsd(costoEstimado)}. El costo real puede ser distinto.
                 </li>
               )}
+              {lineaTope && (
+                <li id="gp-modal-tope" className={lineaTope.esAviso ? 'gp-modal-aviso' : undefined}>
+                  {lineaTope.esAviso && <strong>Aviso del tope mensual: </strong>}
+                  {lineaTope.texto}
+                </li>
+              )}
             </ul>
+            {/* Región viva: está desde que se abre el diálogo y solo recibe texto si la lectura nueva del tope cambia el
+                aviso que ya se leyó al abrirlo (la línea de arriba cambia en pantalla, pero no se anuncia sola). */}
+            <p className="gp-solo-lector" role="status">{anuncioTope}</p>
             <label className="checkbox-label gp-check">
               <input type="checkbox" checked={entiendeCosto} onChange={(e) => setEntiendeCosto(e.target.checked)} autoFocus />
               Entiendo que tiene costo
@@ -723,7 +833,7 @@ const GenerarPreguntas = () => {
               </button>
             </div>
           </div>
-        </div>
+        </FondoModal>
       )}
     </div>
   );

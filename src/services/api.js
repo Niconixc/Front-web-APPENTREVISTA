@@ -318,7 +318,12 @@ export const getSkillsTrending = async ({ categoria, limit = 15 } = {}) =>
 // COSTOS DE IA (solo admin)
 // ============================================
 
-/** Gasto en IA por día (UTC) y por modelo. desde/hasta 'AAAA-MM-DD' opcionales (sin ellos: últimos 30 días). */
+/**
+ * Gasto en IA por día (UTC) y por modelo. desde/hasta 'AAAA-MM-DD' opcionales (sin ellos: últimos 30 días).
+ * Trae además topeGeneracionPreguntas: {mes 'AAAA-MM', gastadoUsd, topeUsd, restanteUsd, fechaReposicion 'AAAA-MM-DD' o
+ * null, estaDesactivado, estaAgotado}, siempre del mes UTC en curso (no depende de desde/hasta) y con el mismo cálculo
+ * que decide el 429 de generar-ia (D23). Un backend anterior no lo manda: se lee con leerTopeGeneracion (topeGeneracion.js).
+ */
 export const getCostosIa = async ({ desde, hasta } = {}) =>
   (await api.get('/api/v1/admin/costos-ia', { params: limpiarVacios({ desde, hasta }) })).data;
 

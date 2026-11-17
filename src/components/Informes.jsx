@@ -8,6 +8,8 @@ import {
 import {
   CATEGORIAS, ESTADOS_PREGUNTA, LIMITES, etiqueta, formatearDiaUtc, diaUtc, diasEntre, formatearUsd,
 } from '../services/etiquetas';
+import { leerTopeGeneracion } from '../services/topeGeneracion';
+import TopeGeneracionIa from './TopeGeneracionIa';
 import './Informes.css';
 
 // ============================================
@@ -275,6 +277,9 @@ const Informes = () => {
 
   const datosCostos = costos.datos;
   const totalCostos = datosCostos?.total;
+  // Tope de generación del mes en curso (D23): viene en la misma respuesta y no depende del rango. Sin él (backend
+  // anterior), el bloque no se muestra.
+  const topeGeneracion = useMemo(() => leerTopeGeneracion(datosCostos), [datosCostos]);
   const sinGasto = Boolean(totalCostos) && (totalCostos.usos || 0) + (totalCostos.fallidas || 0) === 0;
 
   /** porDia solo trae los días con gasto: se rellenan con 0 todos los días del rango efectivo. */
@@ -392,6 +397,20 @@ const Informes = () => {
       <section className="informe-seccion">
         <h2 className="section-title">Costos de IA</h2>
 
+        {topeGeneracion && (
+          <div className={costos.cargando ? 'is-refreshing' : undefined}>
+            <h3 className="subsection-title">Tope mensual de generación de preguntas (mes en curso, UTC)</h3>
+            <TopeGeneracionIa tope={topeGeneracion} />
+            <p className="info-note">
+              Este bloque no depende del rango de abajo: siempre muestra el mes en curso (UTC). Es el mismo cálculo que
+              hace el servidor antes de cada generación: suma lo que gastaron todos los administradores, incluidas las
+              llamadas fallidas con su costo estimado. Una llamada que se cortó por tiempo (provider_timeout) no suma,
+              porque el proveedor no informó tokens, así que lo cobrado de verdad puede ser algo mayor.
+            </p>
+          </div>
+        )}
+
+        <h3 className="subsection-title">Gasto por rango de fechas (UTC)</h3>
         <form className="date-range" onSubmit={handleAplicar}>
           <label>
             <span>Desde</span>

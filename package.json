@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test tests/etiquetas.test.mjs tests/cobertura.test.mjs",
+    "test": "node --test tests/etiquetas.test.mjs tests/cobertura.test.mjs tests/topeGeneracion.test.mjs tests/generarPreguntasConfirmacion.test.mjs tests/cierrePorFondo.test.mjs",
     "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {

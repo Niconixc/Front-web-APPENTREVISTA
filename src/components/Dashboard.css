@@ -119,6 +119,21 @@
   line-height: 1.15;
 }
 
+/* Tope de generación con IA del mes (D23): el texto dice el estado; el color solo lo acompaña. */
+.stat-detail-tope {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.stat-detail-tope-cerca {
+  color: #fcd34d;
+}
+
+.stat-detail-tope-agotado {
+  color: #fca5a5;
+}
+
 .stat-error {
   color: #fca5a5;
   background-color: rgba(239, 68, 68, 0.12);

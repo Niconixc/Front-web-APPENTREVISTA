@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getUsers, contarPreguntas, getCostosIa, mensajeDeError } from '../services/api';
 import { formatearUsd } from '../services/etiquetas';
+import { leerTopeGeneracion, resumenCortoTope } from '../services/topeGeneracion';
 import './Dashboard.css';
 
 /** Resultado de Promise.allSettled → {ok, valor, error} con el error ya convertido a texto. */
@@ -59,6 +60,9 @@ const Dashboard = () => {
   const regulares = lista.filter((u) => u.rol === 'user').length;
   const inactivos = lista.filter((u) => u.estado === 'inactivo').length;
   const gasto = costos.valor?.total;
+  // Tope de generación del mes (D23): viene en la misma respuesta de costos, sin otra petición. Sin él, no se muestra.
+  const topeGeneracion = leerTopeGeneracion(costos.valor);
+  const resumenTope = resumenCortoTope(topeGeneracion);
 
   return (
     <div className="dashboard">
@@ -127,6 +131,9 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="stat-error">{costos.error || 'Respuesta de costos sin totales'}</div>
+            )}
+            {resumenTope && (
+              <div className={`stat-detail stat-detail-tope stat-detail-tope-${topeGeneracion.nivel}`}>{resumenTope}</div>
             )}
             <Link to="/informes" className="stat-link">Ver informe de costos →</Link>
           </div>

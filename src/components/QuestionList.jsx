@@ -18,6 +18,7 @@ import {
   etiqueta,
   formatearFecha,
 } from '../services/etiquetas';
+import FondoModal from './FondoModal';
 import './QuestionList.css';
 
 // Filtros que viajan a V2 (y viven en la URL: /preguntas?estado=pendiente&generadaPorIa=true).
@@ -813,7 +814,8 @@ const QuestionList = () => {
       )}
 
       {rechazo && (
-        <div className="modal-backdrop" onClick={cerrarRechazo}>
+        // El fondo no cierra con el 2.º clic de un doble clic en «Rechazar» ni al arrastrar desde el motivo (FondoModal).
+        <FondoModal onCerrar={cerrarRechazo}>
           <form
             className="modal"
             role="dialog"
@@ -850,7 +852,7 @@ const QuestionList = () => {
               </button>
             </div>
           </form>
-        </div>
+        </FondoModal>
       )}
     </div>
   );
