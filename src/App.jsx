@@ -10,6 +10,7 @@ import QuestionForm from './components/QuestionForm';
 import QuestionEdit from './components/QuestionEdit';
 import BillingCodes from './components/BillingCodes';
 import GenerarPreguntas from './components/GenerarPreguntas';
+import CoberturaMercado from './components/CoberturaMercado';
 import Navbar from './components/Navbar';
 import { sesionVigente } from './services/api';
 import './App.css';
@@ -151,6 +152,17 @@ function App() {
               <ProtectedRoute isAuthenticated={isAuthenticated}>
                 <ProtectedLayout setIsAuthenticated={setIsAuthenticated}>
                   <GenerarPreguntas />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/cobertura"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedLayout setIsAuthenticated={setIsAuthenticated}>
+                  <CoberturaMercado />
                 </ProtectedLayout>
               </ProtectedRoute>
             }

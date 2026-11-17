@@ -522,3 +522,45 @@
     width: 100%;
   }
 }
+
+/* Origen (abierto desde Cobertura) y ofertas de empleo usadas (D26) */
+.generar-preguntas .gp-origen {
+  background: rgba(147, 197, 253, 0.08);
+  border: 1px solid rgba(147, 197, 253, 0.3);
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0 0 1.25rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.generar-preguntas .gp-mercado {
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.generar-preguntas .gp-mercado p { margin: 0.2rem 0; }
+.generar-preguntas .gp-mercado-usado { background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); }
+.generar-preguntas .gp-mercado-sin { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.15); }
+.generar-preguntas .gp-mercado-titulo { font-weight: 600; color: #ffffff; }
+.generar-preguntas .gp-mercado summary { cursor: pointer; margin-top: 0.4rem; color: #93c5fd; }
+.generar-preguntas .gp-mercado ul { margin: 0.5rem 0 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.generar-preguntas .gp-mercado-oferta { color: rgba(255, 255, 255, 0.45); font-size: 0.82rem; }
+
+/* Casilla de ofertas de empleo: neutra (no es un aviso de costo) y con foco visible al usar el teclado */
+.generar-preguntas .gp-check-neutro {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+}
+
+.generar-preguntas .gp-check-neutro input[type="checkbox"] { accent-color: #93c5fd; }
+
+.generar-preguntas .checkbox-label input[type="checkbox"]:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}

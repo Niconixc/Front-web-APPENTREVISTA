@@ -21,7 +21,10 @@ import {
 import './QuestionList.css';
 
 // Filtros que viajan a V2 (y viven en la URL: /preguntas?estado=pendiente&generadaPorIa=true).
-const CLAVES_FILTRO = ['estado', 'categoria', 'tipo', 'nivel', 'cargoId', 'generadaPorIa'];
+// skillId y paraCargoId no tienen selector: llegan desde Cobertura (las pendientes que cuenta una celda: de la skill y
+// del cargo o sin cargo) y se quitan juntos con su aviso.
+const CLAVES_FILTRO = ['estado', 'categoria', 'tipo', 'nivel', 'cargoId', 'skillId', 'paraCargoId', 'generadaPorIa'];
+const CLAVES_UUID = ['cargoId', 'skillId', 'paraCargoId'];
 const TAMANOS_PAGINA = [10, 20, 50, 100];
 const TAMANO_POR_DEFECTO = 20;
 const LETRAS = 'ABCDEFGHIJ';
@@ -43,7 +46,7 @@ const leerFiltros = (params) => {
   CLAVES_FILTRO.forEach((clave) => {
     const valor = (params.get(clave) || '').trim();
     const validos = VALORES_VALIDOS[clave];
-    const uuidInvalido = clave === 'cargoId' && valor && !FORMATO_UUID.test(valor);
+    const uuidInvalido = CLAVES_UUID.includes(clave) && valor && !FORMATO_UUID.test(valor);
     filtros[clave] = !valor || uuidInvalido || (validos && !validos.includes(valor)) ? '' : valor;
   });
   const pagina = Number.parseInt(params.get('pagina'), 10);
@@ -120,13 +123,13 @@ const QuestionList = () => {
 
   // ---------- Carga ----------
 
-  const { estado, categoria, tipo, nivel, cargoId, generadaPorIa, pagina, tamano } = filtros;
+  const { estado, categoria, tipo, nivel, cargoId, skillId, paraCargoId, generadaPorIa, pagina, tamano } = filtros;
 
   const fetchQuestions = useCallback(async () => {
     const peticion = ++ultimaPeticion.current;
     setLoading(true);
     try {
-      const data = await getQuestions({ estado, categoria, tipo, nivel, cargoId, generadaPorIa, pagina, tamano });
+      const data = await getQuestions({ estado, categoria, tipo, nivel, cargoId, skillId, paraCargoId, generadaPorIa, pagina, tamano });
       if (peticion !== ultimaPeticion.current) return;
       setQuestions(Array.isArray(data?.elementos) ? data.elementos : []);
       setTotalQuestions(Number(data?.total) || 0);
@@ -139,7 +142,7 @@ const QuestionList = () => {
     } finally {
       if (peticion === ultimaPeticion.current) setLoading(false);
     }
-  }, [estado, categoria, tipo, nivel, cargoId, generadaPorIa, pagina, tamano]);
+  }, [estado, categoria, tipo, nivel, cargoId, skillId, paraCargoId, generadaPorIa, pagina, tamano]);
 
   useEffect(() => {
     fetchQuestions();
@@ -149,7 +152,7 @@ const QuestionList = () => {
   useEffect(() => {
     setSeleccionadas(new Set());
     setExpandidas(new Set());
-  }, [estado, categoria, tipo, nivel, cargoId, generadaPorIa, pagina, tamano]);
+  }, [estado, categoria, tipo, nivel, cargoId, skillId, paraCargoId, generadaPorIa, pagina, tamano]);
 
   useEffect(() => {
     let vigente = true;
@@ -554,6 +557,24 @@ const QuestionList = () => {
             </button>
           )}
         </div>
+        {(filtros.skillId || filtros.paraCargoId) && (
+          <p className="search-hint">
+            {filtros.paraCargoId
+              ? `Mostrando las preguntas de una skill que sirven para ${nombreCargo.get(filtros.paraCargoId) || 'un cargo'} (las de ese cargo y las sin cargo), abierto desde Cobertura.`
+              : 'Mostrando solo las preguntas de una skill (abierto desde Cobertura).'}{' '}
+            <button
+              type="button"
+              className="btn-link-inline"
+              onClick={() => {
+                const nuevos = new URLSearchParams(searchParams);
+                ['skillId', 'paraCargoId', 'pagina'].forEach((clave) => nuevos.delete(clave));
+                setSearchParams(nuevos);
+              }}
+            >
+              Ver todas las skills
+            </button>
+          </p>
+        )}
         {errorCargos && <p className="search-hint">{errorCargos}</p>}
       </div>
 

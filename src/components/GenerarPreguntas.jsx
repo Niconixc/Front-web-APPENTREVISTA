@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   generateQuestionsAi,
   getCargos,
@@ -18,6 +18,7 @@ import {
   etiqueta,
   formatearUsd,
 } from '../services/etiquetas';
+import { textoContextoMercado } from '../services/cobertura';
 import './GenerarPreguntas.css';
 
 const RUTA_PENDIENTES_IA = '/preguntas?estado=pendiente&generadaPorIa=true';
@@ -42,6 +43,8 @@ const formularioInicial = () => ({
   tipo: 'abierta_texto',
   cantidad: '5',
   modelo: MODELOS_IA[0].value,
+  // D26: el prompt lleva lo que piden las ofertas de empleo del cargo (V2 lo usa por defecto).
+  usarMercado: true,
 });
 
 /** Cantidad válida (entero de 1 a LIMITES.preguntasPorGeneracion) o null. */
@@ -157,8 +160,21 @@ const sumar = (lista, campo) => {
 
 const GenerarPreguntas = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Desde Cobertura llega con el cargo, la skill, el nivel y la cantidad ya puestos. Se lee una sola vez y se borra del
+  // historial: así volver atrás o recargar no rellena de nuevo el formulario (y no invita a pagar dos veces lo mismo).
+  const [origen] = useState(() => ({
+    desdeCobertura: location.state?.desde === 'cobertura',
+    volverA: typeof location.state?.volverA === 'string' ? location.state.volverA : '/cobertura',
+    prellenado: location.state?.prellenado || null,
+  }));
+  const [mostrarOrigen, setMostrarOrigen] = useState(origen.desdeCobertura);
+  useEffect(() => {
+    if (location.state) navigate(location.pathname, { replace: true, state: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const [form, setForm] = useState(formularioInicial);
+  const [form, setForm] = useState(() => ({ ...formularioInicial(), ...(origen.prellenado || {}) }));
   const [errorFormulario, setErrorFormulario] = useState('');
 
   const [cargos, setCargos] = useState([]);
@@ -255,6 +271,14 @@ const GenerarPreguntas = () => {
   const skillElegida = skills.find((s) => s.skillId === form.skillId) || null;
   const cantidad = leerCantidad(form.cantidad);
 
+  // Un cargo o una skill que vino de Cobertura y no está en las listas (lista en caché, o falló la carga) se sigue
+  // mostrando con su nombre: lo que se ve en el formulario y en la confirmación es lo que se envía.
+  const delPrellenado = (campo, id) => (id && origen.prellenado?.[campo] === id ? origen.prellenado : null);
+  const nombreCargo = cargoElegido?.nombre || delPrellenado('cargoId', form.cargoId)?.cargoNombre || null;
+  const nombreSkill = skillElegida?.nombre || delPrellenado('skillId', form.skillId)?.skillNombre || null;
+  const cargoFueraDeLista = Boolean(form.cargoId) && !cargoElegido && !cargandoCargos;
+  const skillFueraDeLista = Boolean(form.skillId) && !skillElegida && !cargandoSkills;
+
   // ---------- Aviso al salir mientras genera ----------
 
   useEffect(() => {
@@ -277,7 +301,7 @@ const GenerarPreguntas = () => {
   // ---------- Formulario ----------
 
   const cambiar = (campo) => (e) => {
-    const valor = e.target.value;
+    const valor = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setErrorFormulario('');
     setForm((prev) => {
       const siguiente = { ...prev, [campo]: valor };
@@ -304,6 +328,7 @@ const GenerarPreguntas = () => {
 
   const validar = () => {
     if (!form.cargoId && !form.skillId) return 'Elige un cargo (y, si quieres, una skill concreta de ese cargo)';
+    if (cargandoCargos || cargandoSkills) return 'Espera a que terminen de cargar los cargos y las skills';
     if (cantidad === null) return `La cantidad debe ser un número entero entre 1 y ${LIMITES.preguntasPorGeneracion}`;
     if (!NIVELES.some((n) => n.value === form.nivel)) return 'Elige un nivel';
     if (!CATEGORIAS.some((c) => c.value === form.categoria)) return 'Elige una categoría';
@@ -363,17 +388,20 @@ const GenerarPreguntas = () => {
       tipo: form.tipo,
       categoria: form.categoria,
       modelo: form.modelo,
+      usar_mercado: form.usarMercado,
     };
 
     try {
       const data = await generateQuestionsAi(solicitud);
       if (!montadoRef.current) return;
+      setMostrarOrigen(false); // lo que faltaba ya cambió: el aviso dejaría de ser cierto
       setResultado({
         mensaje: typeof data?.mensaje === 'string' ? data.mensaje : '',
         generadas: data?.preguntas_generadas ?? (data?.preguntas?.length || 0),
         conError: data?.preguntas_con_error ?? 0,
         preguntas: Array.isArray(data?.preguntas) ? data.preguntas : [],
         modelo: form.modelo,
+        mercado: textoContextoMercado(data?.contexto_mercado),
       });
     } catch (err) {
       if (montadoRef.current) setErrorGeneracion(clasificarError(err));
@@ -385,7 +413,7 @@ const GenerarPreguntas = () => {
 
   // ---------- Textos derivados ----------
 
-  const contexto = [cargoElegido?.nombre, skillElegida?.nombre].filter(Boolean).join(' / ') || '—';
+  const contexto = [nombreCargo, nombreSkill].filter(Boolean).join(' / ') || '—';
   const etiquetaModelo = etiqueta(MODELOS_IA, form.modelo);
   const costoEstimado = costoPromedio !== null && cantidad !== null ? costoPromedio * cantidad : null;
 
@@ -401,6 +429,13 @@ const GenerarPreguntas = () => {
         <p className="gp-subtitle">
           Las preguntas generadas quedan <strong>pendientes</strong> hasta que un administrador las revise y apruebe.
         </p>
+
+        {mostrarOrigen && !generando && (
+          <p className="gp-origen">
+            Abierto desde <Link to="/cobertura" className="gp-link">Cobertura</Link>: el cargo, la skill, el nivel y la cantidad
+            ya están puestos con lo que le falta al banco. Revísalos antes de generar.
+          </p>
+        )}
 
         <div className="cost-warning" role="note">
           <strong>Cada generación tiene un costo real en USD.</strong> Se cobra aunque después rechaces las preguntas,
@@ -429,6 +464,7 @@ const GenerarPreguntas = () => {
                 </label>
                 <select id="gp-cargo" value={form.cargoId} onChange={cambiar('cargoId')} disabled={cargandoCargos || !!errorCargos}>
                   <option value="">{cargandoCargos ? 'Cargando cargos...' : 'Selecciona un cargo'}</option>
+                  {cargoFueraDeLista && <option value={form.cargoId}>{nombreCargo || 'Cargo elegido en Cobertura'}</option>}
                   {cargosDelArea.map((c) => (
                     <option key={c.cargoId} value={c.cargoId}>
                       {form.area ? c.nombre : `${c.nombre} (${c.area})`}
@@ -449,6 +485,7 @@ const GenerarPreguntas = () => {
                   <option value="">
                     {!form.cargoId ? 'Primero elige un cargo' : cargandoSkills ? 'Cargando skills...' : 'Todo el cargo (sin una skill concreta)'}
                   </option>
+                  {skillFueraDeLista && <option value={form.skillId}>{nombreSkill || 'Skill elegida en Cobertura'}</option>}
                   {skills.map((s) => (
                     <option key={s.skillId} value={s.skillId}>
                       {s.nombre} · {etiqueta(CATEGORIAS, s.categoria)}{s.obligatoria ? ' · obligatoria' : ''}
@@ -456,7 +493,7 @@ const GenerarPreguntas = () => {
                   ))}
                 </select>
                 {errorSkills && <div className="gp-inline-error">{errorSkills}</div>}
-                {form.cargoId && !cargandoSkills && !errorSkills && skills.length === 0 && (
+                {form.cargoId && !form.skillId && !cargandoSkills && !errorSkills && skills.length === 0 && (
                   <small className="form-help">Este cargo no tiene skills asociadas: se generará para el cargo completo.</small>
                 )}
               </div>
@@ -502,6 +539,19 @@ const GenerarPreguntas = () => {
                   {MODELOS_IA.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                 </select>
               </div>
+
+              <div className="form-group full-width">
+                <label className="checkbox-label gp-check-neutro" htmlFor="gp-mercado">
+                  <input id="gp-mercado" type="checkbox" checked={form.usarMercado} onChange={cambiar('usarMercado')} />
+                  Usar lo que piden las ofertas de empleo de este cargo (recomendado)
+                </label>
+                <small className="form-help">
+                  Se intenta darle a la IA las skills más pedidas y frases cortas de ofertas de empleo de este cargo, para que
+                  las preguntas se parezcan a las entrevistas de hoy. Si no hay ofertas que sirvan o las APIs de empleo no
+                  responden, se genera sin ellas (o con ofertas de referencia), y el resultado lo dice. Usar ofertas alarga el
+                  pedido a la IA y puede subir un poco el costo por pregunta.
+                </small>
+              </div>
             </div>
           </fieldset>
 
@@ -521,7 +571,7 @@ const GenerarPreguntas = () => {
             <button type="button" className="btn btn-secondary" onClick={() => navigate('/preguntas')} disabled={generando}>
               Volver al banco
             </button>
-            <button type="submit" className="btn btn-primary" disabled={generando || cargandoCargos}>
+            <button type="submit" className="btn btn-primary" disabled={generando || cargandoCargos || cargandoSkills}>
               {generando ? 'Generando...' : 'Generar preguntas'}
             </button>
           </div>
@@ -553,6 +603,26 @@ const GenerarPreguntas = () => {
               <div><span>Tokens (entrada / salida)</span><strong>{tokensEntrada ?? '—'} / {tokensSalida ?? '—'}</strong></div>
               <div className="total-cost"><span>Costo total</span><strong>{costoTotal === null ? '—' : formatearUsd(costoTotal)}</strong></div>
             </div>
+
+            {resultado.mercado && (
+              <div className={`gp-mercado ${resultado.mercado.usado ? 'gp-mercado-usado' : 'gp-mercado-sin'}`}>
+                <p className="gp-mercado-titulo">{resultado.mercado.titulo}</p>
+                {resultado.mercado.detalle && <p>{resultado.mercado.detalle}</p>}
+                {resultado.mercado.skills?.length > 0 && (
+                  <p>Skills más pedidas: {resultado.mercado.skills.join(', ')}</p>
+                )}
+                {resultado.mercado.fragmentos?.length > 0 && (
+                  <details>
+                    <summary>Ver las frases de ofertas que recibió la IA ({resultado.mercado.fragmentos.length})</summary>
+                    <ul>
+                      {resultado.mercado.fragmentos.map((f, i) => (
+                        <li key={i}>«{f.texto}» <span className="gp-mercado-oferta">{f.oferta}{f.fuente ? ` · ${f.fuente}` : ''}</span></li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </div>
+            )}
 
             {preguntasResultado.length > 0 && (
               <div className="gp-table-wrapper">
@@ -604,6 +674,11 @@ const GenerarPreguntas = () => {
               <button type="button" className="btn btn-primary" onClick={() => navigate(RUTA_PENDIENTES_IA)}>
                 Revisar pendientes
               </button>
+              {origen.desdeCobertura && (
+                <button type="button" className="btn btn-secondary" onClick={() => navigate(origen.volverA)}>
+                  Volver a cobertura
+                </button>
+              )}
               <button type="button" className="btn btn-secondary" onClick={() => setResultado(null)}>
                 Cerrar resultado
               </button>
@@ -630,6 +705,7 @@ const GenerarPreguntas = () => {
             <ul className="gp-modal-detalle">
               <li>Categoría: {etiqueta(CATEGORIAS, form.categoria)}</li>
               <li>Tipo: {etiqueta(TIPOS, form.tipo)}</li>
+              <li>Ofertas de empleo: {form.usarMercado ? 'se intentan usar las del cargo (alargan el pedido y pueden subir un poco el costo)' : 'no se usan'}</li>
               {costoEstimado !== null && (
                 <li>
                   Referencia (promedio del último mes): unos {formatearUsd(costoEstimado)}. El costo real puede ser distinto.

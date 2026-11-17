@@ -253,7 +253,8 @@ export const resetPassword = async (usuarioId, nuevaContrasena) =>
 const PREGUNTAS = '/api/v1/admin/preguntas';
 
 /**
- * Página de preguntas. Filtros de V2: estado, tipo, categoria, nivel, cargoId, skillId, generadaPorIa ('true'|'false'),
+ * Página de preguntas. Filtros de V2: estado, tipo, categoria, nivel, cargoId, skillId, paraCargoId (del cargo o sin cargo),
+ * generadaPorIa ('true'|'false'),
  * pagina (desde 1) y tamano (1..100). Responde {elementos, total, pagina, tamano}.
  */
 export const getQuestions = async (filtros = {}) => (await api.get(PREGUNTAS, { params: limpiarVacios(filtros) })).data;
@@ -272,8 +273,19 @@ export const rejectQuestion = async (id, motivo) => (await api.patch(`${PREGUNTA
 export const deleteQuestion = async (id) => (await api.delete(`${PREGUNTAS}/${id}`)).data;
 
 /**
+ * Skills que pide el mercado por cargo y cuántas preguntas tienen por nivel (D26). Sin costo: no llama a la IA.
+ * Responde {minimo, ultimaSincronizacionMercado, cargos: [{cargoId, nombre, area, skillsIncompletas, preguntasFaltantes,
+ * skills: [{skillId, nombre, categoria, nivelRequerido, peso, obligatoria, aprobadas, pendientes, faltan}]}]}, donde
+ * aprobadas/pendientes/faltan son {junior, semisenior, senior}.
+ */
+export const getCoberturaPreguntas = async ({ cargoId, minimo } = {}) =>
+  (await api.get(`${PREGUNTAS}/cobertura`, { params: limpiarVacios({ cargoId, minimo }) })).data;
+
+/**
  * Genera preguntas con IA (cuesta dinero). Body en snake_case: {cargo_id?, skill_id?, nivel, cantidad, tipo, categoria,
- * modelo}. Nunca se reintenta sola: si se corta, puede que el servidor igual haya terminado y cobrado.
+ * modelo, usar_mercado?}. Con usar_mercado (por defecto true en V2) el prompt lleva lo que piden las ofertas de empleo
+ * del cargo y la respuesta trae contexto_mercado. Nunca se reintenta sola: si se corta, puede que el servidor igual
+ * haya terminado y cobrado.
  */
 export const generateQuestionsAi = async (solicitud) => {
   await renovarSiVencePronto();

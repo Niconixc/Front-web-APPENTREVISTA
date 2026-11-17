@@ -41,6 +41,9 @@ const Navbar = ({ setIsAuthenticated }) => {
           <Link to="/crear-pregunta" className="nav-link">
             Crear Pregunta
           </Link>
+          <Link to="/cobertura" className="nav-link">
+            Cobertura
+          </Link>
           <Link to="/generar-preguntas" className="nav-link">
             Generar con IA
           </Link>
