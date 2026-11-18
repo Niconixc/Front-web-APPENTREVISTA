@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   approveQuestion,
   codigoDeError,
@@ -18,8 +18,16 @@ import {
   validarFormularioPregunta,
 } from '../services/etiquetas';
 import FondoModal from './FondoModal';
+import Icono from './Icono';
 import QuestionFields from './QuestionFields';
 import './QuestionForm.css';
+
+/** Variante de insignia según el estado de la pregunta (el texto lo da ESTADOS_PREGUNTA). */
+const CLASE_ESTADO = {
+  pendiente: 'insignia--aviso',
+  aprobada: 'insignia--exito',
+  rechazada: 'insignia--peligro',
+};
 
 const QuestionEdit = () => {
   const { id } = useParams();
@@ -163,34 +171,48 @@ const QuestionEdit = () => {
     return () => window.removeEventListener('keydown', alPresionar);
   });
 
+  const miga = (
+    <nav className="miga" aria-label="Ruta de navegación">
+      <Link to="/preguntas">Preguntas</Link> / <span aria-current="page">Editar pregunta</span>
+    </nav>
+  );
+
   // ---------- Estados de carga ----------
 
   if (cargando) {
     return (
-      <div className="create-question">
-        <div className="loading">Cargando pregunta...</div>
+      <div className="pagina pagina--angosta">
+        <div className="cargando cargando--bloque">Cargando pregunta...</div>
       </div>
     );
   }
 
   if (errorCarga || !pregunta || !form) {
     return (
-      <div className="create-question">
-        <div className="form-container qf-estado-vacio">
-          <h1>{errorCarga?.noExiste ? 'La pregunta no existe' : 'No se pudo cargar la pregunta'}</h1>
-          {!errorCarga?.noExiste && <div className="error-message">{errorCarga?.mensaje || 'Error al cargar la pregunta'}</div>}
-          {errorCarga?.noExiste && (
-            <p className="subtitle">Puede que se haya eliminado o que el enlace no sea correcto.</p>
-          )}
-          <div className="form-actions">
+      <div className="pagina pagina--angosta">
+        {miga}
+        <div className="tarjeta">
+          <div className="vacio">
+            <Icono nombre="alerta" tamano={24} />
+            <h1 className="vacio__titulo">
+              {errorCarga?.noExiste ? 'La pregunta no existe' : 'No se pudo cargar la pregunta'}
+            </h1>
             {!errorCarga?.noExiste && (
-              <button type="button" className="btn btn-secondary" onClick={cargarPregunta}>
-                Reintentar
-              </button>
+              <div className="aviso aviso--peligro">
+                <div className="aviso__contenido">{errorCarga?.mensaje || 'Error al cargar la pregunta'}</div>
+              </div>
             )}
-            <button type="button" className="btn btn-primary" onClick={() => navigate('/preguntas')}>
-              Volver al listado
-            </button>
+            {errorCarga?.noExiste && <p>Puede que se haya eliminado o que el enlace no sea correcto.</p>}
+            <div className="grupo-botones qform-vacio-acciones">
+              {!errorCarga?.noExiste && (
+                <button type="button" className="boton" onClick={cargarPregunta}>
+                  Reintentar
+                </button>
+              )}
+              <button type="button" className="boton boton--primario" onClick={() => navigate('/preguntas')}>
+                Volver al listado
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -201,102 +223,149 @@ const QuestionEdit = () => {
   const reemplazaOpciones = pregunta.vecesUsada > 0 && form.tipo === 'opcion_multiple';
 
   return (
-    <div className="create-question">
-      <div className="form-container">
-        <h1>Editar Pregunta</h1>
-        <p className="subtitle">Puedes cambiar todos los campos, incluidos tipo, categoría y nivel</p>
-
-        {/* Cabecera informativa (solo lectura) */}
-        <div className="qf-cabecera">
-          <span className={`qf-badge qf-estado-${pregunta.estado}`}>{etiqueta(ESTADOS_PREGUNTA, pregunta.estado)}</span>
-          {pregunta.generadaPorIa && <span className="qf-badge qf-badge-ia">Generada con IA</span>}
-          <span className="qf-dato">
-            {pregunta.vecesUsada === 1 ? 'Usada 1 vez' : `Usada ${pregunta.vecesUsada ?? 0} veces`}
-          </span>
-          <span className="qf-dato">Creada el {formatearFecha(pregunta.fechaCreacion)}</span>
+    <div className="pagina pagina--angosta">
+      <header className="encabezado-pagina">
+        <div className="encabezado-pagina__textos">
+          {miga}
+          <h1 className="encabezado-pagina__titulo">Editar pregunta</h1>
+          <p className="encabezado-pagina__descripcion">
+            Puedes cambiar todos los campos, incluidos tipo, categoría y nivel.
+          </p>
+          {/* Cabecera informativa (solo lectura) */}
+          <div className="qform-meta">
+            <span className={`insignia insignia--punto ${CLASE_ESTADO[pregunta.estado] || ''}`.trim()}>
+              {etiqueta(ESTADOS_PREGUNTA, pregunta.estado)}
+            </span>
+            {pregunta.generadaPorIa && <span className="insignia insignia--info">Generada con IA</span>}
+            <span className="num">
+              {pregunta.vecesUsada === 1 ? 'Usada 1 vez' : `Usada ${pregunta.vecesUsada ?? 0} veces`}
+            </span>
+            <span className="num">Creada el {formatearFecha(pregunta.fechaCreacion)}</span>
+          </div>
         </div>
-        {pregunta.estado === 'rechazada' && (
-          <div className="qf-aviso qf-aviso-rechazo">
-            <strong>Motivo del rechazo:</strong> {pregunta.motivoRechazo || 'Sin motivo registrado'}
+        {pregunta.estado !== 'rechazada' && (
+          <div className="encabezado-pagina__acciones">
+            <button type="button" onClick={abrirRechazo} className="boton boton--peligro-suave" disabled={ocupado}>
+              Rechazar
+            </button>
           </div>
         )}
+      </header>
 
-        <form onSubmit={handleSubmit} className="question-form" noValidate>
-          <fieldset className="qf-fieldset" disabled={ocupado}>
+      {pregunta.estado === 'rechazada' && (
+        <div className="aviso aviso--peligro">
+          <Icono nombre="x-circulo" className="aviso__icono" />
+          <div className="aviso__contenido">
+            <span className="aviso__titulo">Motivo del rechazo</span>
+            <span>{pregunta.motivoRechazo || 'Sin motivo registrado'}</span>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="tarjeta" noValidate>
+        <div className="tarjeta__cuerpo">
+          <fieldset className="qform-bloqueo" disabled={ocupado}>
             <QuestionFields form={form} setForm={setForm} />
           </fieldset>
 
-          <div className="qf-aviso qf-aviso-alerta">
-            Al guardar, la pregunta vuelve a <strong>Pendiente</strong> y deja de mostrarse a los usuarios hasta que se
-            apruebe.
+          <div className="aviso aviso--aviso">
+            <Icono nombre="info" className="aviso__icono" />
+            <div className="aviso__contenido">
+              <p>
+                Al guardar, la pregunta vuelve a <strong>Pendiente</strong> y deja de mostrarse a los usuarios hasta
+                que se apruebe.
+              </p>
+            </div>
           </div>
           {reemplazaOpciones && (
-            <div className="qf-aviso qf-aviso-alerta">
-              Esta pregunta ya se usó en entrevistas: editar reemplaza las opciones (cambian sus IDs).
+            <div className="aviso aviso--aviso">
+              <Icono nombre="alerta" className="aviso__icono" />
+              <div className="aviso__contenido">
+                Esta pregunta ya se usó en entrevistas: editar reemplaza las opciones (cambian sus IDs).
+              </div>
             </div>
           )}
 
-          {error && <div className="error-message" role="alert">{error}</div>}
-          {exito && <div className="qf-exito" role="status">{exito}</div>}
+          {error && (
+            <div className="aviso aviso--peligro" role="alert">
+              <Icono nombre="alerta" className="aviso__icono" />
+              <div className="aviso__contenido">{error}</div>
+            </div>
+          )}
+          {exito && (
+            <div className="aviso aviso--exito" role="status">
+              <Icono nombre="check-circulo" className="aviso__icono" />
+              <div className="aviso__contenido">{exito}</div>
+            </div>
+          )}
+        </div>
 
-          <div className="form-actions qf-acciones">
-            <button type="button" onClick={() => navigate('/preguntas')} className="btn btn-secondary" disabled={ocupado}>
-              Volver al listado
-            </button>
-            {pregunta.estado !== 'rechazada' && (
-              <button type="button" onClick={abrirRechazo} className="btn qf-btn-peligro" disabled={ocupado}>
-                Rechazar
-              </button>
-            )}
-            <button type="submit" className="btn btn-secondary" disabled={ocupado}>
-              {accion === 'guardar' ? 'Guardando...' : 'Guardar (queda pendiente)'}
-            </button>
-            <button type="button" onClick={() => guardar(true)} className="btn btn-primary" disabled={ocupado}>
-              {accion === 'aprobar' ? 'Guardando y aprobando...' : 'Guardar y aprobar'}
-            </button>
-          </div>
-        </form>
-      </div>
+        <div className="tarjeta__pie qform-pie">
+          <button
+            type="button"
+            onClick={() => navigate('/preguntas')}
+            className="boton boton--sutil qform-pie__volver"
+            disabled={ocupado}
+          >
+            Volver al listado
+          </button>
+          <button type="submit" className="boton" disabled={ocupado}>
+            {accion === 'guardar' ? 'Guardando...' : 'Guardar (queda pendiente)'}
+          </button>
+          <button type="button" onClick={() => guardar(true)} className="boton boton--primario" disabled={ocupado}>
+            {accion === 'aprobar' ? 'Guardando y aprobando...' : 'Guardar y aprobar'}
+          </button>
+        </div>
+      </form>
 
       {modalRechazo && (
         // El fondo no cierra con el 2.º clic de un doble clic en «Rechazar» ni al arrastrar desde el motivo (FondoModal).
-        <FondoModal className="qf-modal-fondo" onCerrar={cerrarRechazo}>
+        <FondoModal onCerrar={cerrarRechazo}>
           <div
-            className="qf-modal"
+            className="dialogo"
             role="dialog"
             aria-modal="true"
             aria-labelledby="qf-modal-titulo"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id="qf-modal-titulo">Rechazar pregunta</h2>
-            <p className="qf-modal-texto">
-              La pregunta dejará de mostrarse a los usuarios. Los cambios del formulario que no hayas guardado no se
-              envían al rechazar.
-            </p>
-            <div className="form-group">
-              <label htmlFor="motivoRechazo">
-                Motivo <span className="required">*</span>
-              </label>
-              <textarea
-                id="motivoRechazo"
-                value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
-                maxLength={LIMITES.motivoRechazo}
-                rows={4}
-                placeholder="Explica por qué se rechaza..."
-                autoFocus
-                disabled={accion === 'rechazar'}
-              />
-              <small className="form-help qf-contador">{motivo.length}/{LIMITES.motivoRechazo}</small>
+            <div className="dialogo__encabezado">
+              <h2 id="qf-modal-titulo" className="dialogo__titulo">Rechazar pregunta</h2>
             </div>
-            {errorRechazo && <div className="error-message" role="alert">{errorRechazo}</div>}
-            <div className="form-actions">
-              <button type="button" className="btn btn-secondary" onClick={cerrarRechazo} disabled={accion === 'rechazar'}>
+            <div className="dialogo__cuerpo">
+              <p className="nota">
+                La pregunta dejará de mostrarse a los usuarios. Los cambios del formulario que no hayas guardado no se
+                envían al rechazar.
+              </p>
+              <div className="campo">
+                <label htmlFor="motivoRechazo" className="campo__etiqueta">
+                  Motivo <span className="qform-obligatorio">*</span>
+                </label>
+                <textarea
+                  id="motivoRechazo"
+                  value={motivo}
+                  onChange={(e) => setMotivo(e.target.value)}
+                  maxLength={LIMITES.motivoRechazo}
+                  rows={4}
+                  placeholder="Explica por qué se rechaza..."
+                  autoFocus
+                  disabled={accion === 'rechazar'}
+                />
+                <small className="campo__contador">{motivo.length}/{LIMITES.motivoRechazo}</small>
+              </div>
+              {errorRechazo && (
+                <div className="aviso aviso--peligro" role="alert">
+                  <Icono nombre="alerta" className="aviso__icono" />
+                  <div className="aviso__contenido">{errorRechazo}</div>
+                </div>
+              )}
+            </div>
+            <div className="dialogo__pie">
+              <button type="button" className="boton" onClick={cerrarRechazo} disabled={accion === 'rechazar'}>
                 Cancelar
               </button>
               <button
                 type="button"
-                className="btn qf-btn-peligro"
+                className="boton boton--peligro"
                 onClick={confirmarRechazo}
                 disabled={accion === 'rechazar' || !motivo.trim()}
               >

@@ -16,7 +16,8 @@ import {
   NIVELES,
   TIPOS,
   etiqueta,
-  formatearUsd,
+  formatearPesos,
+  NOTA_TIPO_CAMBIO,
 } from '../services/etiquetas';
 import { textoContextoMercado } from '../services/cobertura';
 import {
@@ -28,10 +29,18 @@ import {
   notaTopeConLecturaNueva,
 } from '../services/topeGeneracion';
 import FondoModal from './FondoModal';
+import Icono from './Icono';
 import TopeGeneracionIa from './TopeGeneracionIa';
 import './GenerarPreguntas.css';
 
 const RUTA_PENDIENTES_IA = '/preguntas?estado=pendiente&generadaPorIa=true';
+
+// Variante de insignia de cada estado de pregunta (solo presentación: el texto de la insignia dice el estado).
+const INSIGNIA_ESTADO = {
+  pendiente: 'insignia--aviso',
+  aprobada: 'insignia--exito',
+  rechazada: 'insignia--peligro',
+};
 
 // Códigos 502 de V2 que llegan DESPUÉS de que el proveedor respondió (la llamada probablemente se pagó).
 // V2 guarda los tokens que el proveedor informó (siempre en provider_invalid_output; en los demás, si venían en la
@@ -508,51 +517,66 @@ const GenerarPreguntas = () => {
   const tokensSalida = sumar(preguntasResultado, 'tokens_output');
 
   return (
-    <div className="generar-preguntas">
-      <div className="gp-container">
-        <h1>Generar preguntas con IA</h1>
-        <p className="gp-subtitle">
-          Las preguntas generadas quedan <strong>pendientes</strong> hasta que un administrador las revise y apruebe.
-        </p>
-
-        {mostrarOrigen && !generando && (
-          <p className="gp-origen">
-            Abierto desde <Link to="/cobertura" className="gp-link">Cobertura</Link>: el cargo, la skill, el nivel y la cantidad
-            ya están puestos con lo que le falta al banco. Revísalos antes de generar.
+    <div className="pagina gp-pagina">
+      <header className="encabezado-pagina">
+        <div className="encabezado-pagina__textos">
+          <h1 className="encabezado-pagina__titulo">Generar preguntas con IA</h1>
+          <p className="encabezado-pagina__descripcion">
+            Las preguntas generadas quedan <strong>pendientes</strong> hasta que un administrador las revise y apruebe.
           </p>
-        )}
-
-        <div className="cost-warning" role="note">
-          <strong>Cada generación tiene un costo real en USD.</strong> Se cobra aunque después rechaces las preguntas,
-          y también si la IA responde algo que no pasa la validación.
-          {costoPromedio !== null && (
-            <span className="cost-warning-ref">
-              {' '}Referencia del último mes: {formatearUsd(costoPromedio)} por pregunta generada.
-            </span>
-          )}
         </div>
+      </header>
 
-        <TopeGeneracionIa
-          tope={tope}
-          desactualizado={lecturaTopeFallida}
-          encabezado="Tope mensual de gasto en generar preguntas con IA (todos los administradores)"
-        />
+      {mostrarOrigen && !generando && (
+        <div className="aviso aviso--info">
+          <Icono nombre="cobertura" className="aviso__icono" />
+          <p className="aviso__contenido">
+            <span>
+              Abierto desde <Link to="/cobertura">Cobertura</Link>: el cargo, la skill, el nivel y la cantidad
+              ya están puestos con lo que le falta al banco. Revísalos antes de generar.
+            </span>
+          </p>
+        </div>
+      )}
 
-        <form onSubmit={abrirConfirmacion} className="gp-form" noValidate>
+      <div className="aviso aviso--aviso" role="note">
+        <Icono nombre="dinero" className="aviso__icono" />
+        <div className="aviso__contenido">
+          <p className="aviso__titulo">Cada generación tiene un costo real.</p>
+          <p>
+            Se cobra aunque después rechaces las preguntas, y también si la IA responde algo que no pasa la validación.
+            {costoPromedio !== null && (
+              <>
+                {' '}Referencia del último mes: <span className="num">{formatearPesos(costoPromedio)}</span> por pregunta generada.
+              </>
+            )}
+          </p>
+          <p className="nota--chica">{NOTA_TIPO_CAMBIO}</p>
+        </div>
+      </div>
+
+      <TopeGeneracionIa
+        tope={tope}
+        desactualizado={lecturaTopeFallida}
+        encabezado="Tope mensual de gasto en generar preguntas con IA (todos los administradores)"
+      />
+
+      <form onSubmit={abrirConfirmacion} className="tarjeta" noValidate>
+        <div className="tarjeta__cuerpo">
           <fieldset disabled={generando} className="gp-fieldset">
-            <div className="gp-grid">
-              <div className="form-group">
-                <label htmlFor="gp-area">Área</label>
+            <div className="rejilla-campos">
+              <div className="campo">
+                <label htmlFor="gp-area" className="campo__etiqueta">
+                  Área <span className="campo__opcional">(opcional)</span>
+                </label>
                 <select id="gp-area" value={form.area} onChange={cambiar('area')} disabled={cargandoCargos || !!errorCargos}>
                   <option value="">Todas las áreas</option>
                   {areas.map((area) => <option key={area} value={area}>{area}</option>)}
                 </select>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="gp-cargo">
-                  Cargo <span className="required">*</span>
-                </label>
+              <div className="campo">
+                <label htmlFor="gp-cargo" className="campo__etiqueta">Cargo</label>
                 <select id="gp-cargo" value={form.cargoId} onChange={cambiar('cargoId')} disabled={cargandoCargos || !!errorCargos}>
                   <option value="">{cargandoCargos ? 'Cargando cargos...' : 'Selecciona un cargo'}</option>
                   {cargoFueraDeLista && <option value={form.cargoId}>{nombreCargo || 'Cargo elegido en Cobertura'}</option>}
@@ -563,15 +587,17 @@ const GenerarPreguntas = () => {
                   ))}
                 </select>
                 {errorCargos && (
-                  <div className="gp-inline-error">
+                  <div className="campo__error">
                     {errorCargos}{' '}
-                    <button type="button" className="gp-link-button" onClick={cargarCargos}>Reintentar</button>
+                    <button type="button" className="gp-boton-enlace" onClick={cargarCargos}>Reintentar</button>
                   </div>
                 )}
               </div>
 
-              <div className="form-group full-width">
-                <label htmlFor="gp-skill">Skill (opcional)</label>
+              <div className="campo campo--ancho">
+                <label htmlFor="gp-skill" className="campo__etiqueta">
+                  Skill <span className="campo__opcional">(opcional)</span>
+                </label>
                 <select id="gp-skill" value={form.skillId} onChange={cambiar('skillId')} disabled={!form.cargoId || cargandoSkills}>
                   <option value="">
                     {!form.cargoId ? 'Primero elige un cargo' : cargandoSkills ? 'Cargando skills...' : 'Todo el cargo (sin una skill concreta)'}
@@ -583,35 +609,35 @@ const GenerarPreguntas = () => {
                     </option>
                   ))}
                 </select>
-                {errorSkills && <div className="gp-inline-error">{errorSkills}</div>}
+                {errorSkills && <div className="campo__error">{errorSkills}</div>}
                 {form.cargoId && !form.skillId && !cargandoSkills && !errorSkills && skills.length === 0 && (
-                  <small className="form-help">Este cargo no tiene skills asociadas: se generará para el cargo completo.</small>
+                  <small className="campo__ayuda">Este cargo no tiene skills asociadas: se generará para el cargo completo.</small>
                 )}
               </div>
 
-              <div className="form-group">
-                <label htmlFor="gp-nivel">Nivel <span className="required">*</span></label>
+              <div className="campo">
+                <label htmlFor="gp-nivel" className="campo__etiqueta">Nivel</label>
                 <select id="gp-nivel" value={form.nivel} onChange={cambiar('nivel')}>
                   {NIVELES.map((n) => <option key={n.value} value={n.value}>{n.label}</option>)}
                 </select>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="gp-categoria">Categoría <span className="required">*</span></label>
+              <div className="campo">
+                <label htmlFor="gp-categoria" className="campo__etiqueta">Categoría</label>
                 <select id="gp-categoria" value={form.categoria} onChange={cambiar('categoria')}>
                   {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="gp-tipo">Tipo de pregunta <span className="required">*</span></label>
+              <div className="campo">
+                <label htmlFor="gp-tipo" className="campo__etiqueta">Tipo de pregunta</label>
                 <select id="gp-tipo" value={form.tipo} onChange={cambiar('tipo')}>
                   {TIPOS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="gp-cantidad">Cantidad <span className="required">*</span></label>
+              <div className="campo">
+                <label htmlFor="gp-cantidad" className="campo__etiqueta">Cantidad</label>
                 <input
                   id="gp-cantidad"
                   type="number"
@@ -621,22 +647,22 @@ const GenerarPreguntas = () => {
                   value={form.cantidad}
                   onChange={cambiar('cantidad')}
                 />
-                <small className="form-help">Entre 1 y {LIMITES.preguntasPorGeneracion} preguntas por generación.</small>
+                <small className="campo__ayuda">Entre 1 y {LIMITES.preguntasPorGeneracion} preguntas por generación.</small>
               </div>
 
-              <div className="form-group full-width">
-                <label htmlFor="gp-modelo">Modelo de IA <span className="required">*</span></label>
+              <div className="campo campo--ancho">
+                <label htmlFor="gp-modelo" className="campo__etiqueta">Modelo de IA</label>
                 <select id="gp-modelo" value={form.modelo} onChange={cambiar('modelo')}>
                   {MODELOS_IA.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                 </select>
               </div>
 
-              <div className="form-group full-width">
-                <label className="checkbox-label gp-check-neutro" htmlFor="gp-mercado">
+              <div className="campo campo--ancho gp-campo-mercado">
+                <label className="casilla" htmlFor="gp-mercado">
                   <input id="gp-mercado" type="checkbox" checked={form.usarMercado} onChange={cambiar('usarMercado')} />
                   Usar lo que piden las ofertas de empleo de este cargo (recomendado)
                 </label>
-                <small className="form-help">
+                <small className="campo__ayuda gp-ayuda-casilla">
                   Se intenta darle a la IA las skills más pedidas y frases cortas de ofertas de empleo de este cargo, para que
                   las preguntas se parezcan a las entrevistas de hoy. Si no hay ofertas que sirvan o las APIs de empleo no
                   responden, se genera sin ellas (o con ofertas de referencia), y el resultado lo dice. Usar ofertas alarga el
@@ -646,189 +672,239 @@ const GenerarPreguntas = () => {
             </div>
           </fieldset>
 
-          {errorFormulario && <div className="error-message">{errorFormulario}</div>}
+          {errorFormulario && (
+            <div className="aviso aviso--peligro">
+              <Icono nombre="alerta" className="aviso__icono" />
+              <p className="aviso__contenido">{errorFormulario}</p>
+            </div>
+          )}
 
           {generando && (
             <div className="gp-progress" role="status" aria-live="polite">
-              <span className="spinner" aria-hidden="true" />
+              <span className="cargando" aria-hidden="true" />
               {leyendoNotaTope ? (
-                <div>
+                <div className="gp-progress__texto">
                   {/* El 429 del tope ya llegó: no se genera nada y cerrar la página no pierde nada. Corto, porque el
                       aviso completo (role="alert") llega enseguida. */}
                   <strong>No se generaron preguntas (sin costo). Leyendo el tope del mes...</strong>
                 </div>
               ) : (
-                <div>
-                  <strong>Generando {cantidad ?? ''} preguntas con {etiquetaModelo}... ({segundos} s)</strong>
-                  <p>Puede tardar hasta 1 minuto; no cierres ni recargues la página ni cambies de sección.</p>
+                <div className="gp-progress__texto">
+                  <strong>Generando {cantidad ?? ''} preguntas con {etiquetaModelo}... (<span className="num">{segundos}</span> s)</strong>
+                  <p className="nota">Puede tardar hasta 1 minuto; no cierres ni recargues la página ni cambies de sección.</p>
                 </div>
               )}
             </div>
           )}
+        </div>
 
-          <div className="form-actions">
-            <button type="button" className="btn btn-secondary" onClick={() => navigate('/preguntas')} disabled={generando}>
-              Volver al banco
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={generando || cargandoCargos || cargandoSkills}>
-              {textoBotonGenerar}
-            </button>
-          </div>
-        </form>
+        <div className="form-actions">
+          <button type="button" className="boton" onClick={() => navigate('/preguntas')} disabled={generando}>
+            Volver al banco
+          </button>
+          <button type="submit" className="boton boton--primario" disabled={generando || cargandoCargos || cargandoSkills}>
+            <Icono nombre="generar" />
+            {textoBotonGenerar}
+          </button>
+        </div>
+      </form>
 
-        {errorGeneracion && (
-          <div className={`gp-result-error gp-result-error-${errorGeneracion.tipo}`} role="alert">
-            <p className="gp-result-error-title">{errorGeneracion.mensaje}</p>
+      {errorGeneracion && (
+        <div className={`aviso ${errorGeneracion.tipo === 'sin_costo' ? 'aviso--peligro' : 'aviso--aviso'}`} role="alert">
+          <Icono nombre="alerta" className="aviso__icono" />
+          <div className="aviso__contenido">
+            <p className="aviso__titulo">{errorGeneracion.mensaje}</p>
             {errorGeneracion.nota && <p>{errorGeneracion.nota}</p>}
             {errorGeneracion.tipo !== 'sin_costo' && (
-              <div className="gp-result-actions">
-                <Link to={RUTA_PENDIENTES_IA} className="btn btn-primary">Revisar pendientes</Link>
-                <Link to="/informes" className="btn btn-secondary">Ver Costos IA</Link>
+              <div className="grupo-botones gp-result-actions">
+                <Link to={RUTA_PENDIENTES_IA} className="boton boton--chico">Revisar pendientes</Link>
+                <Link to="/informes" className="boton boton--chico boton--sutil">Ver Costos IA</Link>
               </div>
             )}
           </div>
-        )}
+        </div>
+      )}
 
-        {resultado && (
-          <section className="gp-result" aria-label="Resultado de la generación">
-            <div className="success-message">
+      {resultado && (
+        <section className="seccion" aria-label="Resultado de la generación">
+          <div className="aviso aviso--exito">
+            <Icono nombre="check-circulo" className="aviso__icono" />
+            <p className="aviso__contenido">
               {resultado.mensaje || `Preguntas generadas: ${resultado.generadas}. Quedan pendientes de aprobación`}
-            </div>
+            </p>
+          </div>
 
-            <div className="gp-summary">
-              <div><span>Generadas</span><strong>{resultado.generadas}</strong></div>
-              {resultado.conError > 0 && <div><span>Con error</span><strong>{resultado.conError}</strong></div>}
-              <div><span>Modelo</span><strong>{etiqueta(MODELOS_IA, resultado.modelo)}</strong></div>
-              <div><span>Tokens (entrada / salida)</span><strong>{tokensEntrada ?? '—'} / {tokensSalida ?? '—'}</strong></div>
-              <div className="total-cost"><span>Costo total</span><strong>{costoTotal === null ? '—' : formatearUsd(costoTotal)}</strong></div>
+          <dl className="metricas gp-metricas">
+            <div className="metrica">
+              <dt className="metrica__etiqueta">Generadas</dt>
+              <dd className="metrica__valor">{resultado.generadas}</dd>
             </div>
+            {resultado.conError > 0 && (
+              <div className="metrica">
+                <dt className="metrica__etiqueta">Con error</dt>
+                <dd className="metrica__valor">{resultado.conError}</dd>
+              </div>
+            )}
+            <div className="metrica">
+              <dt className="metrica__etiqueta">Modelo</dt>
+              <dd className="metrica__valor gp-metrica-texto">{etiqueta(MODELOS_IA, resultado.modelo)}</dd>
+            </div>
+            <div className="metrica">
+              <dt className="metrica__etiqueta">Tokens (entrada / salida)</dt>
+              <dd className="metrica__valor">{tokensEntrada ?? '—'} / {tokensSalida ?? '—'}</dd>
+            </div>
+            <div className="metrica">
+              <dt className="metrica__etiqueta">Costo total</dt>
+              <dd className="metrica__valor">{costoTotal === null ? '—' : formatearPesos(costoTotal)}</dd>
+            </div>
+          </dl>
 
-            {resultado.mercado && (
-              <div className={`gp-mercado ${resultado.mercado.usado ? 'gp-mercado-usado' : 'gp-mercado-sin'}`}>
-                <p className="gp-mercado-titulo">{resultado.mercado.titulo}</p>
-                {resultado.mercado.detalle && <p>{resultado.mercado.detalle}</p>}
+          {resultado.mercado && (
+            <div className="tarjeta">
+              <div className="tarjeta__encabezado">
+                <h2 className="tarjeta__titulo">Ofertas de empleo</h2>
+              </div>
+              <div className="tarjeta__cuerpo gp-mercado__cuerpo">
+                <p className="texto-fuerte">{resultado.mercado.titulo}</p>
+                {resultado.mercado.detalle && <p className="nota">{resultado.mercado.detalle}</p>}
                 {resultado.mercado.skills?.length > 0 && (
-                  <p>Skills más pedidas: {resultado.mercado.skills.join(', ')}</p>
+                  <dl className="datos">
+                    <dt>Skills más pedidas</dt>
+                    <dd>
+                      <ul className="gp-mercado__skills">
+                        {resultado.mercado.skills.map((s, i) => <li key={i} className="insignia">{s}</li>)}
+                      </ul>
+                    </dd>
+                  </dl>
                 )}
                 {resultado.mercado.fragmentos?.length > 0 && (
-                  <details>
+                  <details className="desplegable">
                     <summary>Ver las frases de ofertas que recibió la IA ({resultado.mercado.fragmentos.length})</summary>
-                    <ul>
+                    <ul className="desplegable__cuerpo gp-mercado__fragmentos">
                       {resultado.mercado.fragmentos.map((f, i) => (
-                        <li key={i}>«{f.texto}» <span className="gp-mercado-oferta">{f.oferta}{f.fuente ? ` · ${f.fuente}` : ''}</span></li>
+                        <li key={i}>
+                          <span className="gp-mercado__frase">«{f.texto}»</span>{' '}
+                          <span className="texto-3 texto-mini">{f.oferta}{f.fuente ? ` · ${f.fuente}` : ''}</span>
+                        </li>
                       ))}
                     </ul>
                   </details>
                 )}
               </div>
-            )}
-
-            {preguntasResultado.length > 0 && (
-              <div className="gp-table-wrapper">
-                <table className="result-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Enunciado</th>
-                      <th>Estado</th>
-                      <th className="num">Tokens entrada</th>
-                      <th className="num">Tokens salida</th>
-                      <th className="num">Costo</th>
-                      <th>Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {preguntasResultado.map((p, i) => (
-                      <tr key={p.pregunta_id || i}>
-                        <td>{i + 1}</td>
-                        <td className="gp-enunciado">{p.enunciado}</td>
-                        <td>
-                          <span className={`gp-estado gp-estado-${p.estado}`}>{etiqueta(ESTADOS_PREGUNTA, p.estado)}</span>
-                        </td>
-                        <td className="num">{p.tokens_input ?? '—'}</td>
-                        <td className="num">{p.tokens_output ?? '—'}</td>
-                        <td className="num">{typeof p.costo_usd === 'number' ? formatearUsd(p.costo_usd) : '—'}</td>
-                        <td>
-                          {p.pregunta_id
-                            ? <Link to={`/editar-pregunta/${p.pregunta_id}`} className="gp-link">Revisar / editar</Link>
-                            : '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colSpan={3}>Total</td>
-                      <td className="num">{tokensEntrada ?? '—'}</td>
-                      <td className="num">{tokensSalida ?? '—'}</td>
-                      <td className="num total-cost">{costoTotal === null ? '—' : formatearUsd(costoTotal)}</td>
-                      <td />
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )}
-
-            <div className="gp-result-actions">
-              <button type="button" className="btn btn-primary" onClick={() => navigate(RUTA_PENDIENTES_IA)}>
-                Revisar pendientes
-              </button>
-              {origen.desdeCobertura && (
-                <button type="button" className="btn btn-secondary" onClick={() => navigate(origen.volverA)}>
-                  Volver a cobertura
-                </button>
-              )}
-              <button type="button" className="btn btn-secondary" onClick={() => setResultado(null)}>
-                Cerrar resultado
-              </button>
             </div>
-          </section>
-        )}
-      </div>
+          )}
+
+          {preguntasResultado.length > 0 && (
+            <div className="tabla-contenedor">
+              <table className="tabla tabla--compacta gp-tabla">
+                <thead>
+                  <tr>
+                    <th className="num">#</th>
+                    <th>Enunciado</th>
+                    <th>Estado</th>
+                    <th className="num">Tokens entrada</th>
+                    <th className="num">Tokens salida</th>
+                    <th className="num">Costo</th>
+                    <th><span className="sr-only">Acción</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {preguntasResultado.map((p, i) => (
+                    <tr key={p.pregunta_id || i}>
+                      <td className="num texto-3">{i + 1}</td>
+                      <td className="gp-enunciado">{p.enunciado}</td>
+                      <td>
+                        <span className={`insignia ${INSIGNIA_ESTADO[p.estado] || ''}`.trim()}>{etiqueta(ESTADOS_PREGUNTA, p.estado)}</span>
+                      </td>
+                      <td className="num">{p.tokens_input ?? '—'}</td>
+                      <td className="num">{p.tokens_output ?? '—'}</td>
+                      <td className="num">{typeof p.costo_usd === 'number' ? formatearPesos(p.costo_usd) : '—'}</td>
+                      <td className="celda-acciones">
+                        {p.pregunta_id
+                          ? <Link to={`/editar-pregunta/${p.pregunta_id}`}>Revisar / editar</Link>
+                          : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan={3}>Total</td>
+                    <td className="num">{tokensEntrada ?? '—'}</td>
+                    <td className="num">{tokensSalida ?? '—'}</td>
+                    <td className="num">{costoTotal === null ? '—' : formatearPesos(costoTotal)}</td>
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+
+          <div className="grupo-botones gp-result-actions">
+            <button type="button" className="boton" onClick={() => navigate(RUTA_PENDIENTES_IA)}>
+              Revisar pendientes
+              <Icono nombre="flecha-derecha" />
+            </button>
+            {origen.desdeCobertura && (
+              <button type="button" className="boton" onClick={() => navigate(origen.volverA)}>
+                Volver a cobertura
+              </button>
+            )}
+            <button type="button" className="boton boton--sutil" onClick={() => setResultado(null)}>
+              Cerrar resultado
+            </button>
+          </div>
+        </section>
+      )}
 
       {modalAbierto && (
         // El fondo no cierra con el 2.º clic de un doble clic en «Generar preguntas» (FondoModal).
+        // Sin className: el fondo usa la clase por defecto de FondoModal (.dialogo-fondo).
         <FondoModal onCerrar={cerrarModal}>
           <div
-            className="modal"
+            className="dialogo"
             role="dialog"
             aria-modal="true"
             aria-labelledby="gp-modal-titulo"
             aria-describedby={idsDescripcionConfirmacion(lineaTope, 'gp-modal-desc', 'gp-modal-tope')}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id="gp-modal-titulo">Confirmar generación con IA</h2>
-            <p id="gp-modal-desc">
-              Esta acción llama a <strong>{etiquetaModelo}</strong> y genera un costo real en USD. Se generarán{' '}
-              <strong>{cantidad}</strong> preguntas para <strong>{contexto}</strong>, nivel{' '}
-              <strong>{etiqueta(NIVELES, form.nivel)}</strong>. ¿Continuar?
-            </p>
-            <ul className="gp-modal-detalle">
-              <li>Categoría: {etiqueta(CATEGORIAS, form.categoria)}</li>
-              <li>Tipo: {etiqueta(TIPOS, form.tipo)}</li>
-              <li>Ofertas de empleo: {form.usarMercado ? 'se intentan usar las del cargo (alargan el pedido y pueden subir un poco el costo)' : 'no se usan'}</li>
-              {costoEstimado !== null && (
-                <li>
-                  Referencia (promedio del último mes): unos {formatearUsd(costoEstimado)}. El costo real puede ser distinto.
-                </li>
-              )}
-              {lineaTope && (
-                <li id="gp-modal-tope" className={lineaTope.esAviso ? 'gp-modal-aviso' : undefined}>
-                  {lineaTope.esAviso && <strong>Aviso del tope mensual: </strong>}
-                  {lineaTope.texto}
-                </li>
-              )}
-            </ul>
-            {/* Región viva: está desde que se abre el diálogo y solo recibe texto si la lectura nueva del tope cambia el
-                aviso que ya se leyó al abrirlo (la línea de arriba cambia en pantalla, pero no se anuncia sola). */}
-            <p className="gp-solo-lector" role="status">{anuncioTope}</p>
-            <label className="checkbox-label gp-check">
-              <input type="checkbox" checked={entiendeCosto} onChange={(e) => setEntiendeCosto(e.target.checked)} autoFocus />
-              Entiendo que tiene costo
-            </label>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={cerrarModal}>Cancelar</button>
-              <button type="button" className="btn btn-primary" onClick={generar} disabled={!entiendeCosto || generando}>
+            <div className="dialogo__encabezado">
+              <h2 id="gp-modal-titulo" className="dialogo__titulo">Confirmar generación con IA</h2>
+            </div>
+            <div className="dialogo__cuerpo">
+              <p id="gp-modal-desc">
+                Esta acción llama a <strong>{etiquetaModelo}</strong> y genera un costo real. Se generarán{' '}
+                <strong>{cantidad}</strong> preguntas para <strong>{contexto}</strong>, nivel{' '}
+                <strong>{etiqueta(NIVELES, form.nivel)}</strong>. ¿Continuar?
+              </p>
+              <ul className="gp-modal-detalle">
+                <li>Categoría: {etiqueta(CATEGORIAS, form.categoria)}</li>
+                <li>Tipo: {etiqueta(TIPOS, form.tipo)}</li>
+                <li>Ofertas de empleo: {form.usarMercado ? 'se intentan usar las del cargo (alargan el pedido y pueden subir un poco el costo)' : 'no se usan'}</li>
+                {costoEstimado !== null && (
+                  <li>
+                    Referencia (promedio del último mes): unos {formatearPesos(costoEstimado)}. El costo real puede ser distinto.
+                  </li>
+                )}
+                {lineaTope && (
+                  <li id="gp-modal-tope" className={lineaTope.esAviso ? 'gp-modal-aviso' : undefined}>
+                    {lineaTope.esAviso && <strong>Aviso del tope mensual: </strong>}
+                    {lineaTope.texto}
+                  </li>
+                )}
+              </ul>
+              {/* Región viva: está desde que se abre el diálogo y solo recibe texto si la lectura nueva del tope cambia el
+                  aviso que ya se leyó al abrirlo (la línea de arriba cambia en pantalla, pero no se anuncia sola). */}
+              <p className="sr-only" role="status">{anuncioTope}</p>
+              <label className="casilla gp-confirmar">
+                <input type="checkbox" checked={entiendeCosto} onChange={(e) => setEntiendeCosto(e.target.checked)} autoFocus />
+                Entiendo que tiene costo
+              </label>
+            </div>
+            <div className="dialogo__pie">
+              <button type="button" className="boton" onClick={cerrarModal}>Cancelar</button>
+              <button type="button" className="boton boton--primario" onClick={generar} disabled={!entiendeCosto || generando}>
                 Generar
               </button>
             </div>

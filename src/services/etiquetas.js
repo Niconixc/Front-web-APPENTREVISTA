@@ -83,11 +83,48 @@ export const diasEntre = (desde, hasta) => {
   return dias;
 };
 
-/** USD con 4 decimales, o 6 si es un monto muy chico (los costos de IA suelen ser fracciones de centavo). */
+/** USD con 4 decimales, o 6 si es un monto muy chico (los costos de IA suelen ser fracciones de centavo). Solo CSV. */
 export const formatearUsd = (monto) => {
   const n = Number(monto) || 0;
   return `US$ ${n.toFixed(n !== 0 && Math.abs(n) < 0.01 ? 6 : 4)}`;
 };
+
+// ---------- Pesos chilenos ----------
+// El backend guarda los costos en USD (así cobra el proveedor de IA). El panel los muestra en pesos chilenos con un
+// tipo de cambio referencial: VITE_DOLAR_CLP en Vercel (o en .env) y, si no está, 950. No consulta servicios externos.
+
+const leerTipoCambio = () => {
+  let valor;
+  try {
+    valor = Number(import.meta.env?.VITE_DOLAR_CLP);
+  } catch {
+    valor = NaN;
+  }
+  return Number.isFinite(valor) && valor > 0 ? valor : 950;
+};
+
+/** Pesos chilenos por 1 dólar que usa el panel para convertir. */
+export const TIPO_CAMBIO_CLP = leerTipoCambio();
+
+/** Separador de miles con punto, como se escribe en Chile (sin depender del Intl del navegador). */
+const conPuntos = (entero) => String(entero).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+/**
+ * Monto en USD mostrado en pesos chilenos, simple: «$3.990», «$4,2» (bajo $10 se muestra un decimal) o «menos de $0,1».
+ * Es una referencia: el cobro real es en dólares.
+ */
+export const formatearPesos = (montoUsd, tipoCambio = TIPO_CAMBIO_CLP) => {
+  const pesos = (Number(montoUsd) || 0) * tipoCambio;
+  const signo = pesos < 0 ? '-' : '';
+  const abs = Math.abs(pesos);
+  if (abs === 0) return '$0';
+  if (abs < 0.05) return 'menos de $0,1';
+  if (abs < 10) return `${signo}$${abs.toFixed(1).replace('.', ',').replace(/,0$/, '')}`;
+  return `${signo}$${conPuntos(Math.round(abs))}`;
+};
+
+/** Texto corto para explicar la conversión (notas de Informes y Generar con IA). */
+export const NOTA_TIPO_CAMBIO = `Montos en pesos chilenos aproximados: el proveedor de IA cobra en dólares y se convierte con 1 US$ = $${conPuntos(TIPO_CAMBIO_CLP)}.`;
 
 // ---------- Preguntas: formulario ↔ API ----------
 

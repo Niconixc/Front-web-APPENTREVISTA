@@ -1,337 +1,40 @@
-.billing-codes {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
+/* Códigos de suscripción: solo el layout propio. Tarjeta, campos, avisos, tabla e insignias vienen de componentes.css. */
+
+/* Rejilla del formulario: tipo, duración y usos en una fila; etiqueta (doble) y fecha en la siguiente. */
+.codigos-campos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--e-4) var(--e-5);
 }
 
-.billing-header {
-  margin-bottom: 2rem;
-}
+.codigos-campo-etiqueta { grid-column: span 2; }
 
-.billing-header h1 {
-  color: #fff;
-  margin-bottom: 0.5rem;
-}
-
-.billing-header .subtitle {
-  color: #888;
-  font-size: 1rem;
-}
-
-/* Create Code Section */
-.create-code-section {
-  background: #1e1e2e;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  border: 1px solid #333;
-}
-
-.create-code-section h2 {
-  color: #fff;
-  margin-bottom: 1.5rem;
-  font-size: 1.25rem;
-}
-
-.create-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.form-row {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.form-group {
+/* Aviso de éxito: el código y el botón copiar en la misma línea. */
+.codigos-exito {
   flex: 1;
-  min-width: 150px;
-}
-
-.form-group-wide {
-  flex: 2;
-  min-width: 300px;
-}
-
-.form-group label {
-  display: block;
-  color: #aaa;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 0.75rem;
-  background: #2a2a3e;
-  border: 1px solid #444;
-  border-radius: 8px;
-  color: #fff;
-  font-size: 1rem;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #8b5cf6;
-}
-
-.btn-create {
-  background: linear-gradient(135deg, #8b5cf6, #6366f1);
-  color: #fff;
-  border: none;
-  padding: 0.875rem 2rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  align-self: flex-start;
-}
-
-.btn-create:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
-}
-
-.btn-create:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Alerts */
-.alert {
-  padding: 1rem;
-  border-radius: 8px;
-  margin-top: 1rem;
-}
-
-.alert-error {
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid #ef4444;
-  color: #fca5a5;
-}
-
-.alert-success {
-  background: rgba(34, 197, 94, 0.2);
-  border: 1px solid #22c55e;
-  color: #86efac;
-}
-
-/* Codes List */
-.codes-list-section {
-  background: #1e1e2e;
-  border-radius: 12px;
-  padding: 1.5rem;
-  border: 1px solid #333;
-}
-
-.codes-list-section h2 {
-  color: #fff;
-  margin-bottom: 1.5rem;
-  font-size: 1.25rem;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  color: #666;
-}
-
-.codes-table-container {
-  overflow-x: auto;
-}
-
-.codes-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.codes-table th,
-.codes-table td {
-  padding: 0.875rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid #333;
-}
-
-.codes-table th {
-  background: #2a2a3e;
-  color: #aaa;
-  font-weight: 600;
-  font-size: 0.875rem;
-  text-transform: uppercase;
-}
-
-.codes-table td {
-  color: #ddd;
-}
-
-.codes-table tbody tr:hover {
-  background: rgba(139, 92, 246, 0.1);
-}
-
-.inactive-row {
-  opacity: 0.6;
-}
-
-.code-cell code {
-  background: #2a2a3e;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-family: "Consolas", monospace;
-  color: #a78bfa;
-}
-
-/* Badges */
-.badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.badge-promo {
-  background: rgba(139, 92, 246, 0.2);
-  color: #a78bfa;
-}
-
-.badge-inst {
-  background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
-}
-
-.badge-google {
-  background: rgba(234, 179, 8, 0.2);
-  color: #fde047;
-}
-
-.badge-neutral {
-  background: rgba(107, 114, 128, 0.2);
-  color: #9ca3af;
-}
-
-/* Status */
-.status {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.status.active {
-  background: rgba(34, 197, 94, 0.2);
-  color: #86efac;
-}
-
-.status.expired {
-  background: rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
-}
-
-.expired {
-  color: #f87171;
-}
-
-/* Copy button */
-.btn-copy {
-  background: transparent;
-  border: 1px solid #444;
-  padding: 0.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-copy:hover {
-  background: #333;
-}
-
-/* Ayuda bajo un campo */
-.form-help {
-  display: block;
-  margin-top: 0.4rem;
-  color: #888;
-  font-size: 0.8rem;
-  line-height: 1.4;
-}
-
-/* Selector de fecha y hora con el esquema oscuro (icono del calendario visible) */
-.form-group input.input-datetime {
-  color-scheme: dark;
-  font-family: inherit;
-}
-
-.form-group input.input-datetime::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 0.8;
-}
-
-/* Aviso de éxito con el código y el botón copiar */
-.success-code {
-  display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--e-3);
   flex-wrap: wrap;
 }
 
-.success-code code {
-  background: #2a2a3e;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-family: "Consolas", monospace;
-  color: #a78bfa;
+/* ---------- Lista de la sesión ---------- */
+.codigos-tabla td { white-space: nowrap; }
+.codigos-tabla .codigos-etiqueta { white-space: normal; min-width: 10rem; }
+
+.codigos-codigo { font-weight: var(--peso-medio); }
+
+/* El contador real de usos no está disponible en V2. */
+.codigos-usos { color: var(--texto-3); cursor: help; }
+
+.codigos-fila-expirada td { color: var(--texto-3); }
+
+@media (max-width: 960px) {
+  .codigos-campos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .codigos-campo-etiqueta { grid-column: auto; }
 }
 
-/* Encabezado de la lista local */
-.codes-list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
-}
-
-.codes-list-header h2 {
-  margin-bottom: 0;
-}
-
-.btn-clear {
-  background: transparent;
-  border: 1px solid #444;
-  color: #aaa;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: background 0.2s, color 0.2s;
-}
-
-.btn-clear:hover {
-  background: #333;
-  color: #fff;
-}
-
-/* Aviso: V2 no permite listar códigos */
-.info-note {
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.4);
-  color: #93c5fd;
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-
-/* Usos: el contador real no está disponible en V2 */
-.uses-na {
-  color: #888;
-  cursor: help;
+@media (max-width: 600px) {
+  .codigos-campos { grid-template-columns: minmax(0, 1fr); }
 }

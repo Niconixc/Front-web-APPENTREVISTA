@@ -7,9 +7,9 @@ import { debeCerrarPorFondo } from '../services/cierrePorFondo';
  * del diálogo: lo decide debeCerrarPorFondo. Se monta junto con el diálogo, así que desde ahí cuenta la espera.
  * Cerrar sigue siendo posible con el botón Cancelar del diálogo y con Escape.
  *
- * className: la clase del fondo de cada pantalla (por defecto 'modal-backdrop').
+ * className: la clase del fondo de cada pantalla (por defecto 'dialogo-fondo', de styles/componentes.css).
  */
-const FondoModal = ({ className = 'modal-backdrop', onCerrar, children }) => {
+const FondoModal = ({ className = 'dialogo-fondo', onCerrar, children }) => {
   const [abiertoEn] = useState(() => performance.now());
   const empezoEnFondo = useRef(false);
 

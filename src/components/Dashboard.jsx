@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getUsers, contarPreguntas, getCostosIa, mensajeDeError } from '../services/api';
-import { formatearUsd } from '../services/etiquetas';
+import { formatearPesos } from '../services/etiquetas';
 import { leerTopeGeneracion, resumenCortoTope } from '../services/topeGeneracion';
+import Icono from './Icono';
 import './Dashboard.css';
 
 /** Resultado de Promise.allSettled → {ok, valor, error} con el error ya convertido a texto. */
@@ -12,6 +13,29 @@ const resultado = (r, porDefecto) =>
     : { ok: false, valor: null, error: mensajeDeError(r.reason, porDefecto) };
 
 const numero = (n) => (typeof n === 'number' ? n.toLocaleString('es-CL') : '—');
+
+/** «1 inactivo», «3 inactivos»: el número con la palabra en singular o plural. */
+const contar = (n, singular, plural) => `${numero(n)} ${n === 1 ? singular : plural}`;
+
+/** Accesos a las tareas de creación: la navegación general ya está en el menú lateral. */
+const ACCESOS = [
+  { a: '/crear-usuario', icono: 'usuario-mas', titulo: 'Crear usuario', detalle: 'Agregar un usuario nuevo al sistema' },
+  { a: '/crear-pregunta', icono: 'pregunta-mas', titulo: 'Crear pregunta', detalle: 'Agregar una pregunta al banco' },
+  {
+    a: '/generar-preguntas',
+    icono: 'generar',
+    titulo: 'Generar preguntas con IA',
+    detalle: 'Quedan pendientes de revisión hasta que se aprueben',
+  },
+];
+
+/** Error de una métrica: el texto lo dice; el ícono y el color solo lo acompañan. */
+const ErrorMetrica = ({ children }) => (
+  <p className="resumen-error">
+    <Icono nombre="alerta" tamano={14} />
+    <span>{children}</span>
+  </p>
+);
 
 const Dashboard = () => {
   const [datos, setDatos] = useState(null);
@@ -48,8 +72,8 @@ const Dashboard = () => {
 
   if (loading || !datos) {
     return (
-      <div className="dashboard">
-        <div className="loading">Cargando...</div>
+      <div className="pagina">
+        <p className="cargando cargando--bloque">Cargando…</p>
       </div>
     );
   }
@@ -65,121 +89,150 @@ const Dashboard = () => {
   const resumenTope = resumenCortoTope(topeGeneracion);
 
   return (
-    <div className="dashboard">
-      <div className="dashboard-header">
-        <h1>Dashboard</h1>
-        <p className="welcome">Bienvenido al panel de administración</p>
-      </div>
+    <div className="pagina">
+      <header className="encabezado-pagina">
+        <div className="encabezado-pagina__textos">
+          <h1 className="encabezado-pagina__titulo">Resumen</h1>
+          <p className="encabezado-pagina__descripcion">
+            Usuarios, estado del banco de preguntas y gasto de IA de los últimos 30 días.
+          </p>
+        </div>
+      </header>
 
-      {/* Métricas principales */}
-      <div className="main-stats">
-        <div className="stat-card-large">
-          <div className="stat-icon-large">👥</div>
-          <div className="stat-content-large">
-            <h2>{usuarios.ok ? numero(lista.length) : '—'}</h2>
-            <p>Usuarios</p>
+      {/* Números clave */}
+      <section aria-labelledby="resumen-metricas-titulo">
+        <h2 id="resumen-metricas-titulo" className="sr-only">Números clave</h2>
+        <div className="metricas">
+          <div className="metrica">
+            <p className="metrica__etiqueta">Usuarios</p>
+            <p className="metrica__valor">{usuarios.ok ? numero(lista.length) : '—'}</p>
             {usuarios.ok ? (
-              <div className="stat-detail">
-                {numero(admins)} Admin · {numero(regulares)} Regulares · {numero(inactivos)} inactivos
-              </div>
+              <p className="metrica__detalle">
+                {contar(admins, 'admin', 'admins')} · {contar(regulares, 'regular', 'regulares')} · {contar(inactivos, 'inactivo', 'inactivos')}
+              </p>
             ) : (
-              <div className="stat-error">{usuarios.error}</div>
+              <ErrorMetrica>{usuarios.error}</ErrorMetrica>
             )}
+            <Link to="/usuarios" className="metrica__enlace resumen-enlace">
+              Ver usuarios
+              <Icono nombre="flecha-derecha" tamano={14} />
+            </Link>
           </div>
-        </div>
 
-        <div className="stat-card-large">
-          <div className="stat-icon-large">✅</div>
-          <div className="stat-content-large">
-            <h2>{aprobadas.ok ? numero(aprobadas.valor) : '—'}</h2>
-            <p>Preguntas aprobadas</p>
+          <div className="metrica">
+            <p className="metrica__etiqueta">Preguntas aprobadas</p>
+            <p className="metrica__valor">{aprobadas.ok ? numero(aprobadas.valor) : '—'}</p>
             {aprobadas.ok ? (
-              <div className="stat-detail">
+              <p className="metrica__detalle">
                 {total.ok ? `de ${numero(total.valor)} en total` : 'Total del banco no disponible'}
-                {rechazadas.ok && rechazadas.valor > 0 ? ` · ${numero(rechazadas.valor)} rechazadas` : ''}
-              </div>
+                {rechazadas.ok && rechazadas.valor > 0 ? ` · ${contar(rechazadas.valor, 'rechazada', 'rechazadas')}` : ''}
+              </p>
             ) : (
-              <div className="stat-error">{aprobadas.error}</div>
+              <ErrorMetrica>{aprobadas.error}</ErrorMetrica>
             )}
+            <Link to="/preguntas" className="metrica__enlace resumen-enlace">
+              Ver preguntas
+              <Icono nombre="flecha-derecha" tamano={14} />
+            </Link>
           </div>
-        </div>
 
-        <div className="stat-card-large">
-          <div className="stat-icon-large">🕒</div>
-          <div className="stat-content-large">
-            <h2>{pendientes.ok ? numero(pendientes.valor) : '—'}</h2>
-            <p>Pendientes de revisión</p>
+          <div className="metrica">
+            <p className="metrica__etiqueta">Pendientes de revisión</p>
+            <p className="metrica__valor">{pendientes.ok ? numero(pendientes.valor) : '—'}</p>
             {pendientes.ok ? (
-              <div className="stat-detail">
-                {pendientesIa.ok ? `${numero(pendientesIa.valor)} generadas con IA` : 'Origen IA no disponible'}
-              </div>
+              <p className="metrica__detalle">
+                {pendientesIa.ok ? `${contar(pendientesIa.valor, 'generada', 'generadas')} con IA` : 'Origen IA no disponible'}
+              </p>
             ) : (
-              <div className="stat-error">{pendientes.error}</div>
+              <ErrorMetrica>{pendientes.error}</ErrorMetrica>
             )}
-            <Link to="/preguntas?estado=pendiente" className="stat-link">Revisar pendientes →</Link>
+            <Link to="/preguntas?estado=pendiente" className="metrica__enlace resumen-enlace">
+              Revisar pendientes
+              <Icono nombre="flecha-derecha" tamano={14} />
+            </Link>
           </div>
-        </div>
 
-        <div className="stat-card-large">
-          <div className="stat-icon-large">💵</div>
-          <div className="stat-content-large">
-            <h2 className="stat-value-money">{costos.ok && gasto ? formatearUsd(gasto.costoUsd) : '—'}</h2>
-            <p>Gasto IA (30 días)</p>
+          <div className="metrica">
+            <p className="metrica__etiqueta">Gasto IA (30 días)</p>
+            <p className="metrica__valor">{costos.ok && gasto ? formatearPesos(gasto.costoUsd) : '—'}</p>
             {costos.ok && gasto ? (
-              <div className="stat-detail">
-                {numero(gasto.usos)} usos (reportes + preguntas) · {numero(gasto.fallidas)} fallidas
-              </div>
+              <p className="metrica__detalle">
+                {contar(gasto.usos, 'uso', 'usos')} (reportes + preguntas) · {contar(gasto.fallidas, 'fallida', 'fallidas')}
+              </p>
             ) : (
-              <div className="stat-error">{costos.error || 'Respuesta de costos sin totales'}</div>
+              <ErrorMetrica>{costos.error || 'Respuesta de costos sin totales'}</ErrorMetrica>
             )}
             {resumenTope && (
-              <div className={`stat-detail stat-detail-tope stat-detail-tope-${topeGeneracion.nivel}`}>{resumenTope}</div>
+              <p className={`metrica__detalle resumen-tope resumen-tope--${topeGeneracion.nivel}`}>{resumenTope}</p>
             )}
-            <Link to="/informes" className="stat-link">Ver informe de costos →</Link>
+            <Link to="/informes" className="metrica__enlace resumen-enlace">
+              Ver informe de costos
+              <Icono nombre="flecha-derecha" tamano={14} />
+            </Link>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Acciones Rápidas */}
-      <div className="quick-actions">
-        <h2>Acciones Rápidas</h2>
-        <div className="actions-grid">
-          <Link to="/usuarios" className="action-card">
-            <div className="action-icon">📋</div>
-            <h3>Ver Usuarios</h3>
-            <p>Gestionar lista de usuarios</p>
-          </Link>
+      <div className="resumen-columnas">
+        {/* Lo que espera una decisión del administrador */}
+        <section className="tarjeta" aria-labelledby="resumen-pendientes-titulo">
+          <div className="tarjeta__encabezado">
+            <h2 id="resumen-pendientes-titulo" className="tarjeta__titulo">Pendiente de revisión</h2>
+            {pendientes.ok && (
+              <span className={`insignia insignia--punto ${pendientes.valor > 0 ? 'insignia--aviso' : 'insignia--exito'}`}>
+                {pendientes.valor > 0 ? `${numero(pendientes.valor)} por revisar` : 'Al día'}
+              </span>
+            )}
+          </div>
+          <div className="tarjeta__cuerpo">
+            {pendientes.ok ? (
+              <>
+                <p className="nota">
+                  {pendientes.valor > 0
+                    ? 'Preguntas que esperan que un administrador las apruebe o las rechace.'
+                    : 'No hay preguntas pendientes de revisión.'}
+                </p>
+                <dl className="datos">
+                  <dt>Pendientes</dt>
+                  <dd>{numero(pendientes.valor)}</dd>
+                  <dt>Generadas con IA</dt>
+                  <dd>{pendientesIa.ok ? numero(pendientesIa.valor) : 'No disponible'}</dd>
+                </dl>
+              </>
+            ) : (
+              // El error ya se muestra (y se anuncia) en la métrica «Pendientes de revisión»: aquí no se repite.
+              <p className="nota">No disponible.</p>
+            )}
+          </div>
+          <div className="tarjeta__pie resumen-pie">
+            <Link to="/preguntas?estado=pendiente&generadaPorIa=true" className="boton boton--chico">
+              Solo las generadas con IA
+            </Link>
+            <Link to="/preguntas?estado=pendiente" className="boton boton--primario boton--chico">
+              Revisar pendientes
+            </Link>
+          </div>
+        </section>
 
-          <Link to="/crear-usuario" className="action-card">
-            <div className="action-icon">➕</div>
-            <h3>Crear Usuario</h3>
-            <p>Agregar nuevo usuario al sistema</p>
-          </Link>
-
-          <Link to="/preguntas" className="action-card">
-            <div className="action-icon">📝</div>
-            <h3>Ver Preguntas</h3>
-            <p>Gestionar banco de preguntas</p>
-          </Link>
-
-          <Link to="/crear-pregunta" className="action-card">
-            <div className="action-icon">✏️</div>
-            <h3>Crear Pregunta</h3>
-            <p>Agregar nueva pregunta al banco</p>
-          </Link>
-
-          <Link to="/generar-preguntas" className="action-card">
-            <div className="action-icon">🤖</div>
-            <h3>Generar con IA</h3>
-            <p>Crear preguntas con IA (quedan pendientes de revisión)</p>
-          </Link>
-
-          <Link to="/preguntas?estado=pendiente&generadaPorIa=true" className="action-card">
-            <div className="action-icon">🔍</div>
-            <h3>Revisar pendientes</h3>
-            <p>Aprobar o rechazar las preguntas generadas con IA</p>
-          </Link>
-        </div>
+        <section className="tarjeta" aria-labelledby="resumen-accesos-titulo">
+          <div className="tarjeta__encabezado">
+            <h2 id="resumen-accesos-titulo" className="tarjeta__titulo">Accesos directos</h2>
+          </div>
+          <ul className="resumen-accesos">
+            {ACCESOS.map((acceso) => (
+              <li key={acceso.a}>
+                <Link to={acceso.a} className="resumen-acceso">
+                  <Icono nombre={acceso.icono} tamano={18} className="resumen-acceso__icono" />
+                  <span className="resumen-acceso__textos">
+                    <span className="resumen-acceso__titulo">{acceso.titulo}</span>
+                    <span className="resumen-acceso__detalle">{acceso.detalle}</span>
+                  </span>
+                  <Icono nombre="chevron-derecha" className="resumen-acceso__flecha" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
     </div>
   );

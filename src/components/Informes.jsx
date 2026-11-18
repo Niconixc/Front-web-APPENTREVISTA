@@ -6,25 +6,47 @@ import {
   getUsers, contarPreguntas, getCostosIa, getCargos, getSkillsTrending, mensajeDeError,
 } from '../services/api';
 import {
-  CATEGORIAS, ESTADOS_PREGUNTA, LIMITES, etiqueta, formatearDiaUtc, diaUtc, diasEntre, formatearUsd,
+  CATEGORIAS, ESTADOS_PREGUNTA, LIMITES, etiqueta, formatearDiaUtc, diaUtc, diasEntre, formatearPesos, NOTA_TIPO_CAMBIO,
 } from '../services/etiquetas';
 import { leerTopeGeneracion } from '../services/topeGeneracion';
 import TopeGeneracionIa from './TopeGeneracionIa';
+import Icono from './Icono';
 import './Informes.css';
 
 // ============================================
 // Utilidades locales
 // ============================================
 
-const COLORES = ['#8b5cf6', '#22d3ee', '#f59e0b', '#4ade80', '#f87171', '#94a3b8', '#ec4899', '#a3e635'];
-const COLOR_REPORTES = '#8b5cf6';
-const COLOR_GENERACION = '#22d3ee';
-const COLORES_ESTADO = { pendiente: '#f59e0b', aprobada: '#4ade80', rechazada: '#f87171' };
+/**
+ * Colores de los gráficos tomados de los tokens (tokens.css). Cambian con el tema del sistema, así que se vuelven a
+ * leer cuando cambia prefers-color-scheme.
+ */
+const leerPaleta = () => {
+  const estilos = getComputedStyle(document.documentElement);
+  const token = (nombre) => estilos.getPropertyValue(nombre).trim() || 'currentColor';
+  return {
+    series: ['--grafico-1', '--grafico-2', '--grafico-3', '--grafico-4'].map(token),
+    rejilla: token('--grafico-rejilla'),
+    ejes: token('--texto-3'),
+    texto: token('--texto'),
+    texto2: token('--texto-2'),
+    superficie: token('--superficie'),
+    borde: token('--borde'),
+    cursor: token('--superficie-hover'),
+    peligro: token('--peligro'),
+  };
+};
 
-const ESTILO_TOOLTIP = {
-  contentStyle: { backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: 8 },
-  labelStyle: { color: '#fff' },
-  itemStyle: { color: '#e5e5e5' },
+const usePaletaGrafico = () => {
+  const [paleta, setPaleta] = useState(leerPaleta);
+  useEffect(() => {
+    const consulta = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (!consulta) return undefined;
+    const alCambiar = () => setPaleta(leerPaleta());
+    consulta.addEventListener('change', alCambiar);
+    return () => consulta.removeEventListener('change', alCambiar);
+  }, []);
+  return paleta;
 };
 
 const PRESETS = [7, 30, 90];
@@ -33,12 +55,8 @@ const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'o
 
 const numero = (n) => (typeof n === 'number' ? n.toLocaleString('es-CL') : '—');
 
-/** Monto corto para el eje Y (los costos de IA son fracciones de dólar). */
-const usdEje = (v) => {
-  const n = Number(v) || 0;
-  if (n === 0) return '$0';
-  return `$${n >= 1 ? n.toFixed(2) : n.toFixed(4)}`;
-};
+/** Monto del eje Y en pesos (el gráfico recibe USD, como los guarda el backend). */
+const pesosEje = (v) => formatearPesos(v);
 
 /** fechaCreacion de usuarios es LocalDateTime sin zona: se toma el día tal cual, sin pasar por new Date. */
 const formatearFechaLocal = (valor) => (valor ? formatearDiaUtc(String(valor).slice(0, 10)) : '—');
@@ -100,28 +118,43 @@ const descargarCsv = (nombreArchivo, encabezados, filas) => {
 // Componentes pequeños
 // ============================================
 
-const TarjetaResumen = ({ icono, valor, texto, chico = false }) => (
-  <div className="summary-card">
-    <div className="summary-icon">{icono}</div>
-    <div className="summary-content">
-      <h3 className={chico ? 'summary-value-small' : undefined}>{valor}</h3>
-      <p>{texto}</p>
-    </div>
+/** Celda de la fila de números clave (.metricas). */
+const TarjetaResumen = ({ valor, texto, detalle }) => (
+  <div className="metrica">
+    <span className="metrica__etiqueta">{texto}</span>
+    <span className="metrica__valor">{valor}</span>
+    {detalle && <span className="metrica__detalle">{detalle}</span>}
   </div>
 );
 
 const ErrorSeccion = ({ mensaje, onReintentar }) => (
-  <div className="section-error">
-    <span>{mensaje}</span>
+  <div className="aviso aviso--peligro informes-error">
+    <Icono nombre="alerta" className="aviso__icono" />
+    <div className="aviso__contenido informes-error__texto">{mensaje}</div>
     {onReintentar && (
-      <button type="button" className="btn-link" onClick={onReintentar}>Reintentar</button>
+      <button type="button" className="boton boton--chico" onClick={onReintentar}>Reintentar</button>
     )}
   </div>
 );
 
-const Cargando = ({ texto = 'Cargando...' }) => <div className="section-loading">{texto}</div>;
+const Cargando = ({ texto = 'Cargando...' }) => <div className="cargando informes-cargando">{texto}</div>;
 
-const SinDatos = ({ texto }) => <div className="empty-chart">{texto}</div>;
+const SinDatos = ({ texto }) => (
+  <div className="vacio informes-vacio">
+    <p>{texto}</p>
+  </div>
+);
+
+/** Tarjeta de un gráfico o tabla: título, control opcional a la derecha y contenido. */
+const TarjetaGrafico = ({ titulo, control, children, sinRelleno = false }) => (
+  <div className="tarjeta informes-tarjeta">
+    <div className="tarjeta__encabezado">
+      <h3 className="tarjeta__titulo">{titulo}</h3>
+      {control}
+    </div>
+    <div className={sinRelleno ? 'informes-tarjeta__tabla' : 'tarjeta__cuerpo'}>{children}</div>
+  </div>
+);
 
 /** Etiqueta "Nombre: valor (x%)" para los PieChart de conteos. */
 const etiquetaTorta = ({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`;
@@ -148,6 +181,41 @@ const Informes = () => {
   const [categoriaSkills, setCategoriaSkills] = useState('');
   const [mercado, setMercado] = useState({ cargando: true, cargosPorArea: null, errorCargos: '', skills: null, errorSkills: '' });
   const pedidoMercado = useRef(0);
+
+  // ---------- Estilo de los gráficos (desde los tokens) ----------
+  const paleta = usePaletaGrafico();
+  const grafico = useMemo(() => {
+    const [serie1, serie2, serie3] = paleta.series;
+    return {
+      series: paleta.series,
+      reportes: serie1,
+      generacion: serie2,
+      barra: serie1,
+      tonos: { activo: serie3, inactivo: paleta.ejes },
+      estados: { pendiente: serie2, aprobada: serie3, rechazada: paleta.peligro },
+      neutro: paleta.ejes,
+      separador: paleta.superficie,
+      rejilla: { stroke: paleta.rejilla },
+      eje: { stroke: paleta.rejilla, tick: { fill: paleta.ejes, fontSize: 12 }, tickLine: false },
+      tooltip: {
+        contentStyle: {
+          backgroundColor: paleta.superficie,
+          border: `1px solid ${paleta.borde}`,
+          borderRadius: 6,
+          fontSize: 13,
+        },
+        labelStyle: { color: paleta.texto, fontWeight: 600 },
+        itemStyle: { color: paleta.texto2 },
+        cursor: { fill: paleta.cursor },
+      },
+      leyenda: {
+        iconType: 'square',
+        iconSize: 10,
+        wrapperStyle: { fontSize: 13 },
+        formatter: (valor) => <span style={{ color: paleta.texto2 }}>{valor}</span>,
+      },
+    };
+  }, [paleta]);
 
   const cargarCostos = useCallback(async (desde, hasta) => {
     const pedido = ++pedidoCostos.current;
@@ -319,8 +387,9 @@ const Informes = () => {
       inactivos,
       admins,
       porEstado: [
-        { name: 'Activos', value: activos, color: '#4ade80' },
-        { name: 'Inactivos', value: inactivos, color: '#f87171' },
+        // tono: clave de la paleta del gráfico (se resuelve al dibujar, según el tema).
+        { name: 'Activos', value: activos, tono: 'activo' },
+        { name: 'Inactivos', value: inactivos, tono: 'inactivo' },
       ].filter((item) => item.value > 0),
       altasPorMes: meses.map((mes) => ({ mes: etiquetaMes(mes), altas: conteo[mes] })),
       ordenados,
@@ -368,86 +437,102 @@ const Informes = () => {
     : resumenUsuarios.ordenados.slice(0, USUARIOS_VISIBLES);
 
   return (
-    <div className="informes">
-      <div className="informes-header">
-        <h1>Informes y costos IA</h1>
-        <p className="subtitle">Gasto en IA, usuarios, banco de preguntas y catálogo del mercado (datos reales del backend)</p>
-        <div className="download-buttons">
+    <div className="pagina">
+      <header className="encabezado-pagina">
+        <div className="encabezado-pagina__textos">
+          <h1 className="encabezado-pagina__titulo">Informes y costos IA</h1>
+          <p className="encabezado-pagina__descripcion">
+            Gasto en IA, usuarios, banco de preguntas y catálogo del mercado (datos reales del backend)
+          </p>
+        </div>
+        <div className="encabezado-pagina__acciones">
           <button
             type="button"
-            className="btn-informe"
+            className="boton"
             onClick={handleCsvUsuarios}
             disabled={usuarios.cargando || Boolean(usuarios.error) || usuarios.lista.length === 0}
           >
-            📄 CSV de usuarios
+            <Icono nombre="descargar" />
+            CSV de usuarios
           </button>
           <button
             type="button"
-            className="btn-informe"
+            className="boton"
             onClick={handleCsvCostos}
             disabled={costos.cargando || !datosCostos}
             title="Costo por día del rango consultado en la sección Costos de IA"
           >
-            📄 CSV de costos por día
+            <Icono nombre="descargar" />
+            CSV de costos por día
           </button>
         </div>
-      </div>
+      </header>
 
       {/* ============ Sección 1: Costos de IA ============ */}
-      <section className="informe-seccion">
-        <h2 className="section-title">Costos de IA</h2>
+      <section className="seccion informes-seccion" aria-labelledby="informes-costos">
+        <div className="seccion__encabezado">
+          <h2 className="seccion__titulo" id="informes-costos">Costos de IA</h2>
+        </div>
 
         {topeGeneracion && (
-          <div className={costos.cargando ? 'is-refreshing' : undefined}>
-            <h3 className="subsection-title">Tope mensual de generación de preguntas (mes en curso, UTC)</h3>
+          <div className={`informes-bloque${costos.cargando ? ' informes-actualizando' : ''}`}>
+            <h3 className="informes-subtitulo">Tope mensual de generación de preguntas (mes en curso, UTC)</h3>
             <TopeGeneracionIa tope={topeGeneracion} />
-            <p className="info-note">
-              Este bloque no depende del rango de abajo: siempre muestra el mes en curso (UTC). Es el mismo cálculo que
-              hace el servidor antes de cada generación: suma lo que gastaron todos los administradores, incluidas las
-              llamadas fallidas con su costo estimado. Una llamada que se cortó por tiempo (provider_timeout) no suma,
-              porque el proveedor no informó tokens, así que lo cobrado de verdad puede ser algo mayor.
-            </p>
+            <details className="desplegable">
+              <summary>Cómo se calcula el tope</summary>
+              <div className="desplegable__cuerpo">
+                <p>
+                  Este bloque no depende del rango de abajo: siempre muestra el mes en curso (UTC). Es el mismo cálculo
+                  que hace el servidor antes de cada generación: suma lo que gastaron todos los administradores,
+                  incluidas las llamadas fallidas con su costo estimado. Una llamada que se cortó por tiempo
+                  (provider_timeout) no suma, porque el proveedor no informó tokens, así que lo cobrado de verdad
+                  puede ser algo mayor.
+                </p>
+              </div>
+            </details>
           </div>
         )}
 
-        <h3 className="subsection-title">Gasto por rango de fechas (UTC)</h3>
-        <form className="date-range" onSubmit={handleAplicar}>
-          <label>
-            <span>Desde</span>
-            <input
-              type="date"
-              value={rango.desde}
-              max={rango.hasta || undefined}
-              onChange={(e) => setRango((r) => ({ ...r, desde: e.target.value }))}
-            />
-          </label>
-          <label>
-            <span>Hasta</span>
-            <input
-              type="date"
-              value={rango.hasta}
-              min={rango.desde || undefined}
-              onChange={(e) => setRango((r) => ({ ...r, hasta: e.target.value }))}
-            />
-          </label>
-          <button type="submit" className="btn-informe btn-informe-primary" disabled={costos.cargando}>
-            {costos.cargando ? 'Cargando...' : 'Aplicar'}
-          </button>
-          <div className="date-presets">
-            {PRESETS.map((dias) => (
-              <button
-                key={dias}
-                type="button"
-                className="btn-preset"
-                onClick={() => handlePreset(dias)}
-                disabled={costos.cargando}
-              >
-                Últimos {dias} días
-              </button>
-            ))}
-          </div>
-        </form>
-        {errorRango && <ErrorSeccion mensaje={errorRango} />}
+        <div className="informes-bloque">
+          <h3 className="informes-subtitulo">Gasto por rango de fechas (UTC)</h3>
+          <form className="filtros informes-rango" onSubmit={handleAplicar}>
+            <label className="campo">
+              <span className="campo__etiqueta">Desde</span>
+              <input
+                type="date"
+                value={rango.desde}
+                max={rango.hasta || undefined}
+                onChange={(e) => setRango((r) => ({ ...r, desde: e.target.value }))}
+              />
+            </label>
+            <label className="campo">
+              <span className="campo__etiqueta">Hasta</span>
+              <input
+                type="date"
+                value={rango.hasta}
+                min={rango.desde || undefined}
+                onChange={(e) => setRango((r) => ({ ...r, hasta: e.target.value }))}
+              />
+            </label>
+            <button type="submit" className="boton boton--primario" disabled={costos.cargando}>
+              {costos.cargando ? 'Cargando...' : 'Aplicar'}
+            </button>
+            <div className="informes-segmentado" role="group" aria-label="Rangos rápidos">
+              {PRESETS.map((dias) => (
+                <button
+                  key={dias}
+                  type="button"
+                  className="informes-segmentado__opcion"
+                  onClick={() => handlePreset(dias)}
+                  disabled={costos.cargando}
+                >
+                  Últimos {dias} días
+                </button>
+              ))}
+            </div>
+          </form>
+          {errorRango && <ErrorSeccion mensaje={errorRango} />}
+        </div>
 
         {costos.error && (
           <ErrorSeccion mensaje={costos.error} onReintentar={() => aplicarRango(rango.desde, rango.hasta)} />
@@ -455,106 +540,124 @@ const Informes = () => {
         {costos.cargando && !datosCostos && <Cargando texto="Cargando costos de IA..." />}
 
         {datosCostos && totalCostos && (
-          <div className={costos.cargando ? 'is-refreshing' : undefined}>
-            <p className="info-note">
+          <div className={`informes-bloque${costos.cargando ? ' informes-actualizando' : ''}`}>
+            <p className="nota">
               Rango consultado: <strong>{formatearDiaUtc(datosCostos.desde)}</strong> a{' '}
               <strong>{formatearDiaUtc(datosCostos.hasta)}</strong> ({costosPorDia.length} días). Los días se
-              cuentan en UTC, por lo que el gasto de la noche en Chile puede aparecer en el día siguiente.
+              cuentan en UTC, por lo que el gasto de la noche en Chile puede aparecer en el día siguiente.{' '}
+              {NOTA_TIPO_CAMBIO} El CSV trae los montos exactos en dólares.
             </p>
 
-            <div className="summary-cards">
-              <TarjetaResumen icono="💵" valor={formatearUsd(totalCostos.costoUsd)} texto="Gasto total" chico />
-              <TarjetaResumen icono="📊" valor={formatearUsd(datosCostos.reportes?.costoUsd)} texto="Reportes de entrevista" chico />
-              <TarjetaResumen icono="🤖" valor={formatearUsd(datosCostos.generacionPreguntas?.costoUsd)} texto="Generación de preguntas" chico />
-              <TarjetaResumen icono="✅" valor={numero(totalCostos.usos)} texto="Usos con IA (reportes + preguntas generadas)" />
-              <TarjetaResumen icono="⚠️" valor={numero(totalCostos.fallidas)} texto="Fallidas" />
+            <div className="metricas informes-metricas informes-metricas--costos">
               <TarjetaResumen
-                icono="🔤"
+                valor={formatearPesos(totalCostos.costoUsd)}
+                texto="Gasto total"
+                detalle={`Incluye ${formatearPesos(totalCostos.costoEstimadoUsd)} estimado`}
+              />
+              <TarjetaResumen valor={formatearPesos(datosCostos.reportes?.costoUsd)} texto="Reportes de entrevista" />
+              <TarjetaResumen valor={formatearPesos(datosCostos.generacionPreguntas?.costoUsd)} texto="Generación de preguntas" />
+              <TarjetaResumen valor={numero(totalCostos.usos)} texto="Usos con IA" detalle="Reportes + preguntas generadas" />
+              <TarjetaResumen valor={numero(totalCostos.fallidas)} texto="Fallidas" />
+              <TarjetaResumen
                 valor={numero((Number(totalCostos.tokensEntrada) || 0) + (Number(totalCostos.tokensSalida) || 0))}
-                texto="Tokens (entrada + salida)"
+                texto="Tokens"
+                detalle="Entrada + salida"
               />
             </div>
 
-            <p className="info-note">
-              En la generación de preguntas, cada pregunta generada cuenta como un uso (una llamada genera varias).
-              El gasto total incluye {formatearUsd(totalCostos.costoEstimadoUsd)} estimado de llamadas fallidas que no
-              guardaron su costo (se calcula con la tabla de precios); ese monto ya está sumado (no se suma dos veces).
-            </p>
+            <details className="desplegable">
+              <summary>Cómo se calcula el gasto</summary>
+              <div className="desplegable__cuerpo">
+                <p>
+                  En la generación de preguntas, cada pregunta generada cuenta como un uso (una llamada genera
+                  varias). El gasto total incluye {formatearPesos(totalCostos.costoEstimadoUsd)} estimado de llamadas
+                  fallidas que no guardaron su costo (se calcula con la tabla de precios); ese monto ya está sumado (no
+                  se suma dos veces).
+                </p>
+              </div>
+            </details>
 
             {sinGasto ? (
-              <SinDatos texto="Sin gasto de IA en este rango" />
+              <div className="tarjeta">
+                <SinDatos texto="Sin gasto de IA en este rango" />
+              </div>
             ) : (
               <>
-                <div className="chart-card-full">
-                  <h3>Gasto por día (USD)</h3>
+                <TarjetaGrafico titulo="Gasto por día">
                   <ResponsiveContainer width="100%" height={320}>
                     <BarChart data={costosPorDia}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                      <XAxis dataKey="fecha" stroke="#fff" tickFormatter={formatearDiaUtc} minTickGap={16} />
-                      <YAxis stroke="#fff" tickFormatter={usdEje} width={80} />
+                      <CartesianGrid {...grafico.rejilla} vertical={false} />
+                      <XAxis dataKey="fecha" {...grafico.eje} tickFormatter={formatearDiaUtc} minTickGap={16} />
+                      <YAxis {...grafico.eje} tickFormatter={pesosEje} width={80} />
                       <Tooltip
-                        {...ESTILO_TOOLTIP}
+                        {...grafico.tooltip}
                         labelFormatter={(fecha) => `${formatearDiaUtc(fecha)} (UTC)`}
-                        formatter={(valor, nombre) => [formatearUsd(valor), nombre]}
+                        formatter={(valor, nombre) => [formatearPesos(valor), nombre]}
                       />
-                      <Legend />
-                      <Bar dataKey="reportes" stackId="a" fill={COLOR_REPORTES} name="Reportes de entrevista" />
-                      <Bar dataKey="generacion" stackId="a" fill={COLOR_GENERACION} name="Generación de preguntas" />
+                      <Legend {...grafico.leyenda} />
+                      <Bar dataKey="reportes" stackId="a" fill={grafico.reportes} name="Reportes de entrevista" />
+                      <Bar dataKey="generacion" stackId="a" fill={grafico.generacion} name="Generación de preguntas" />
                     </BarChart>
                   </ResponsiveContainer>
-                </div>
+                </TarjetaGrafico>
 
-                <div className="charts-grid">
-                  <div className="chart-card">
-                    <h3>Gasto por modelo</h3>
+                <div className="informes-rejilla informes-rejilla--modelos">
+                  <TarjetaGrafico titulo="Gasto por modelo">
                     {costosPorModelo.length === 0 ? (
                       <SinDatos texto="Ningún modelo registra costo en este rango" />
                     ) : (
                       <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
-                          <Pie data={costosPorModelo} cx="50%" cy="45%" outerRadius={90} dataKey="value" nameKey="name">
+                          <Pie
+                            data={costosPorModelo}
+                            cx="50%"
+                            cy="45%"
+                            outerRadius={90}
+                            dataKey="value"
+                            nameKey="name"
+                            stroke={grafico.separador}
+                          >
                             {costosPorModelo.map((m, i) => (
-                              <Cell key={m.name} fill={COLORES[i % COLORES.length]} />
+                              <Cell key={m.name} fill={grafico.series[i % grafico.series.length]} />
                             ))}
                           </Pie>
-                          <Tooltip {...ESTILO_TOOLTIP} formatter={(valor, nombre) => [formatearUsd(valor), nombre]} />
-                          <Legend />
+                          <Tooltip {...grafico.tooltip} formatter={(valor, nombre) => [formatearPesos(valor), nombre]} />
+                          <Legend {...grafico.leyenda} />
                         </PieChart>
                       </ResponsiveContainer>
                     )}
-                  </div>
+                  </TarjetaGrafico>
 
-                  <div className="chart-card">
-                    <h3>Detalle por modelo</h3>
-                    <div className="table-container table-container-inner">
-                      <table className="users-table costs-table">
+                  <TarjetaGrafico titulo="Detalle por modelo" sinRelleno>
+                    <div className="tabla-contenedor informes-tabla-contenedor">
+                      <table className="tabla tabla--compacta informes-tabla">
                         <thead>
                           <tr>
                             <th>Modelo</th>
-                            <th>Usos</th>
-                            <th>Fallidas</th>
-                            <th>Tokens entrada</th>
-                            <th>Tokens salida</th>
-                            <th>Costo USD</th>
-                            <th>Estimado USD</th>
+                            <th className="num">Usos</th>
+                            <th className="num">Fallidas</th>
+                            <th className="num">Tokens entrada</th>
+                            <th className="num">Tokens salida</th>
+                            <th className="num">Costo</th>
+                            <th className="num">Estimado</th>
                           </tr>
                         </thead>
                         <tbody>
                           {(datosCostos.porModelo || []).map((m) => (
                             <tr key={m.modelo}>
-                              <td>{m.modelo}</td>
-                              <td>{numero(m.gasto?.usos)}</td>
-                              <td>{numero(m.gasto?.fallidas)}</td>
-                              <td>{numero(m.gasto?.tokensEntrada)}</td>
-                              <td>{numero(m.gasto?.tokensSalida)}</td>
-                              <td>{formatearUsd(m.gasto?.costoUsd)}</td>
-                              <td>{formatearUsd(m.gasto?.costoEstimadoUsd)}</td>
+                              <td className="mono informes-modelo">{m.modelo}</td>
+                              <td className="num">{numero(m.gasto?.usos)}</td>
+                              <td className="num">{numero(m.gasto?.fallidas)}</td>
+                              <td className="num">{numero(m.gasto?.tokensEntrada)}</td>
+                              <td className="num">{numero(m.gasto?.tokensSalida)}</td>
+                              <td className="num">{formatearPesos(m.gasto?.costoUsd)}</td>
+                              <td className="num">{formatearPesos(m.gasto?.costoEstimadoUsd)}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
-                  </div>
+                  </TarjetaGrafico>
                 </div>
               </>
             )}
@@ -563,23 +666,24 @@ const Informes = () => {
       </section>
 
       {/* ============ Sección 2: Usuarios ============ */}
-      <section className="informe-seccion">
-        <h2 className="section-title">Usuarios</h2>
+      <section className="seccion informes-seccion" aria-labelledby="informes-usuarios">
+        <div className="seccion__encabezado">
+          <h2 className="seccion__titulo" id="informes-usuarios">Usuarios</h2>
+        </div>
         {usuarios.error && <ErrorSeccion mensaje={usuarios.error} onReintentar={cargarUsuarios} />}
         {usuarios.cargando && <Cargando texto="Cargando usuarios..." />}
 
         {!usuarios.cargando && !usuarios.error && (
           <>
-            <div className="summary-cards">
-              <TarjetaResumen icono="👥" valor={numero(resumenUsuarios.total)} texto="Total usuarios" />
-              <TarjetaResumen icono="✅" valor={numero(resumenUsuarios.activos)} texto="Activos" />
-              <TarjetaResumen icono="❌" valor={numero(resumenUsuarios.inactivos)} texto="Inactivos" />
-              <TarjetaResumen icono="🛡️" valor={numero(resumenUsuarios.admins)} texto="Administradores" />
+            <div className="metricas informes-metricas informes-metricas--usuarios">
+              <TarjetaResumen valor={numero(resumenUsuarios.total)} texto="Total usuarios" />
+              <TarjetaResumen valor={numero(resumenUsuarios.activos)} texto="Activos" />
+              <TarjetaResumen valor={numero(resumenUsuarios.inactivos)} texto="Inactivos" />
+              <TarjetaResumen valor={numero(resumenUsuarios.admins)} texto="Administradores" />
             </div>
 
-            <div className="charts-grid">
-              <div className="chart-card">
-                <h3>Estado de usuarios</h3>
+            <div className="informes-rejilla">
+              <TarjetaGrafico titulo="Estado de usuarios">
                 {resumenUsuarios.porEstado.length === 0 ? (
                   <SinDatos texto="No hay usuarios registrados" />
                 ) : (
@@ -593,35 +697,35 @@ const Informes = () => {
                         label={etiquetaTorta}
                         outerRadius={80}
                         dataKey="value"
+                        stroke={grafico.separador}
                       >
                         {resumenUsuarios.porEstado.map((item) => (
-                          <Cell key={item.name} fill={item.color} />
+                          <Cell key={item.name} fill={grafico.tonos[item.tono]} />
                         ))}
                       </Pie>
-                      <Tooltip {...ESTILO_TOOLTIP} />
+                      <Tooltip {...grafico.tooltip} />
                     </PieChart>
                   </ResponsiveContainer>
                 )}
-              </div>
+              </TarjetaGrafico>
 
-              <div className="chart-card">
-                <h3>Altas por mes (últimos 12 meses)</h3>
+              <TarjetaGrafico titulo="Altas por mes (últimos 12 meses)">
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={resumenUsuarios.altasPorMes}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                    <XAxis dataKey="mes" stroke="#fff" minTickGap={8} />
-                    <YAxis stroke="#fff" allowDecimals={false} />
-                    <Tooltip {...ESTILO_TOOLTIP} />
-                    <Bar dataKey="altas" fill="#8b5cf6" name="Usuarios nuevos" />
+                    <CartesianGrid {...grafico.rejilla} vertical={false} />
+                    <XAxis dataKey="mes" {...grafico.eje} minTickGap={8} />
+                    <YAxis {...grafico.eje} allowDecimals={false} />
+                    <Tooltip {...grafico.tooltip} />
+                    <Bar dataKey="altas" fill={grafico.barra} name="Usuarios nuevos" />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
+              </TarjetaGrafico>
             </div>
 
-            <div className="users-table-section">
-              <h3 className="subsection-title">Lista de usuarios</h3>
-              <div className="table-container">
-                <table className="users-table">
+            <div className="informes-bloque">
+              <h3 className="informes-subtitulo">Lista de usuarios</h3>
+              <div className="tabla-contenedor">
+                <table className="tabla tabla--compacta informes-tabla">
                   <thead>
                     <tr>
                       <th>Nombre</th>
@@ -629,7 +733,7 @@ const Informes = () => {
                       <th>Rol</th>
                       <th>Estado</th>
                       <th>Idioma</th>
-                      <th>Fecha registro</th>
+                      <th className="num">Fecha registro</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -637,25 +741,35 @@ const Informes = () => {
                       <tr key={usuario.usuarioId}>
                         <td>{usuario.nombre ?? '-'}</td>
                         <td>{usuario.correo}</td>
-                        <td>{ROLES[usuario.rol] ?? usuario.rol}</td>
                         <td>
-                          <span className={`status-badge ${usuario.estado}`}>
-                            {usuario.estado === 'activo' ? '✅ Activo' : '❌ Inactivo'}
+                          <span className={`insignia${usuario.rol === 'admin' ? ' insignia--info' : ''}`}>
+                            {ROLES[usuario.rol] ?? usuario.rol}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`insignia insignia--punto${usuario.estado === 'activo' ? ' insignia--exito' : ''}`}>
+                            {usuario.estado === 'activo' ? 'Activo' : 'Inactivo'}
                           </span>
                         </td>
                         <td>{usuario.idioma || '-'}</td>
-                        <td>{formatearFechaLocal(usuario.fechaCreacion)}</td>
+                        <td className="num">{formatearFechaLocal(usuario.fechaCreacion)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               {resumenUsuarios.ordenados.length > USUARIOS_VISIBLES && (
-                <button type="button" className="btn-link table-more" onClick={() => setVerTodosUsuarios((v) => !v)}>
-                  {verTodosUsuarios
-                    ? `Mostrar solo los ${USUARIOS_VISIBLES} más recientes`
-                    : `Ver los ${resumenUsuarios.ordenados.length} usuarios`}
-                </button>
+                <div>
+                  <button
+                    type="button"
+                    className="boton boton--sutil boton--chico"
+                    onClick={() => setVerTodosUsuarios((v) => !v)}
+                  >
+                    {verTodosUsuarios
+                      ? `Mostrar solo los ${USUARIOS_VISIBLES} más recientes`
+                      : `Ver los ${resumenUsuarios.ordenados.length} usuarios`}
+                  </button>
+                </div>
               )}
             </div>
           </>
@@ -663,72 +777,72 @@ const Informes = () => {
       </section>
 
       {/* ============ Sección 3: Banco de preguntas ============ */}
-      <section className="informe-seccion">
-        <h2 className="section-title">Banco de preguntas</h2>
+      <section className="seccion informes-seccion" aria-labelledby="informes-banco">
+        <div className="seccion__encabezado">
+          <h2 className="seccion__titulo" id="informes-banco">Banco de preguntas</h2>
+          {!banco.cargando && totalBanco !== null && (
+            <p className="seccion__descripcion">Total en el banco: <strong>{numero(totalBanco)}</strong> preguntas.</p>
+          )}
+        </div>
         {banco.cargando && <Cargando texto="Contando preguntas..." />}
 
         {!banco.cargando && (
-          <>
-            {totalBanco !== null && (
-              <p className="info-note">Total en el banco: <strong>{numero(totalBanco)}</strong> preguntas.</p>
-            )}
-            <div className="charts-grid">
-              <div className="chart-card">
-                <h3>Por estado</h3>
-                {banco.errorEstado ? (
-                  <ErrorSeccion mensaje={banco.errorEstado} onReintentar={cargarBanco} />
-                ) : totalBanco === 0 ? (
-                  <SinDatos texto="El banco de preguntas está vacío" />
-                ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={banco.porEstado.filter((e) => e.value > 0)}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={etiquetaTorta}
-                        outerRadius={80}
-                        dataKey="value"
-                      >
-                        {banco.porEstado.filter((e) => e.value > 0).map((e) => (
-                          <Cell key={e.estado} fill={COLORES_ESTADO[e.estado] || '#94a3b8'} />
-                        ))}
-                      </Pie>
-                      <Tooltip {...ESTILO_TOOLTIP} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
+          <div className="informes-rejilla">
+            <TarjetaGrafico titulo="Por estado">
+              {banco.errorEstado ? (
+                <ErrorSeccion mensaje={banco.errorEstado} onReintentar={cargarBanco} />
+              ) : totalBanco === 0 ? (
+                <SinDatos texto="El banco de preguntas está vacío" />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={banco.porEstado.filter((e) => e.value > 0)}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={etiquetaTorta}
+                      outerRadius={80}
+                      dataKey="value"
+                      stroke={grafico.separador}
+                    >
+                      {banco.porEstado.filter((e) => e.value > 0).map((e) => (
+                        <Cell key={e.estado} fill={grafico.estados[e.estado] || grafico.neutro} />
+                      ))}
+                    </Pie>
+                    <Tooltip {...grafico.tooltip} />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </TarjetaGrafico>
 
-              <div className="chart-card">
-                <h3>Por categoría</h3>
-                {banco.errorCategoria ? (
-                  <ErrorSeccion mensaje={banco.errorCategoria} onReintentar={cargarBanco} />
-                ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={banco.porCategoria}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                      <XAxis dataKey="categoria" stroke="#fff" />
-                      <YAxis stroke="#fff" allowDecimals={false} />
-                      <Tooltip {...ESTILO_TOOLTIP} />
-                      <Bar dataKey="cantidad" name="Preguntas" fill="#22d3ee" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </div>
-          </>
+            <TarjetaGrafico titulo="Por categoría">
+              {banco.errorCategoria ? (
+                <ErrorSeccion mensaje={banco.errorCategoria} onReintentar={cargarBanco} />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={banco.porCategoria}>
+                    <CartesianGrid {...grafico.rejilla} vertical={false} />
+                    <XAxis dataKey="categoria" {...grafico.eje} />
+                    <YAxis {...grafico.eje} allowDecimals={false} />
+                    <Tooltip {...grafico.tooltip} />
+                    <Bar dataKey="cantidad" name="Preguntas" fill={grafico.barra} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </TarjetaGrafico>
+          </div>
         )}
       </section>
 
       {/* ============ Sección 4: Mercado ============ */}
-      <section className="informe-seccion">
-        <h2 className="section-title">Mercado</h2>
+      <section className="seccion informes-seccion" aria-labelledby="informes-mercado">
+        <div className="seccion__encabezado">
+          <h2 className="seccion__titulo" id="informes-mercado">Mercado</h2>
+        </div>
 
-        <div className="charts-grid">
-          <div className="chart-card">
-            <h3>Cargos por área</h3>
+        <div className="informes-rejilla">
+          <TarjetaGrafico titulo="Cargos por área">
             {mercado.errorCargos ? (
               <ErrorSeccion mensaje={mercado.errorCargos} onReintentar={() => cargarMercado(categoriaSkills)} />
             ) : !mercado.cargosPorArea ? (
@@ -738,21 +852,21 @@ const Informes = () => {
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={mercado.cargosPorArea}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                  <XAxis dataKey="area" stroke="#fff" interval={0} angle={-20} textAnchor="end" height={70} />
-                  <YAxis stroke="#fff" allowDecimals={false} />
-                  <Tooltip {...ESTILO_TOOLTIP} />
-                  <Bar dataKey="cantidadCargos" fill="#8b5cf6" name="Cargos" />
+                  <CartesianGrid {...grafico.rejilla} vertical={false} />
+                  <XAxis dataKey="area" {...grafico.eje} interval={0} angle={-20} textAnchor="end" height={70} />
+                  <YAxis {...grafico.eje} allowDecimals={false} />
+                  <Tooltip {...grafico.tooltip} />
+                  <Bar dataKey="cantidadCargos" fill={grafico.barra} name="Cargos" />
                 </BarChart>
               </ResponsiveContainer>
             )}
-          </div>
+          </TarjetaGrafico>
 
-          <div className="chart-card">
-            <div className="chart-card-header">
-              <h3>Skills en tendencia</h3>
+          <TarjetaGrafico
+            titulo="Skills en tendencia"
+            control={(
               <select
-                className="chart-select"
+                className="informes-selector"
                 value={categoriaSkills}
                 onChange={(e) => setCategoriaSkills(e.target.value)}
                 aria-label="Categoría de skills"
@@ -762,7 +876,8 @@ const Informes = () => {
                   <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
               </select>
-            </div>
+            )}
+          >
             {mercado.errorSkills ? (
               <ErrorSeccion mensaje={mercado.errorSkills} onReintentar={() => cargarMercado(categoriaSkills)} />
             ) : !mercado.skills ? (
@@ -770,23 +885,23 @@ const Informes = () => {
             ) : mercado.skills.length === 0 ? (
               <SinDatos texto="No hay skills con demanda registrada" />
             ) : (
-              <div className={mercado.cargando ? 'is-refreshing' : undefined}>
+              <div className={mercado.cargando ? 'informes-actualizando' : undefined}>
                 <ResponsiveContainer width="100%" height={alturaSkills}>
                   <BarChart data={mercado.skills} layout="vertical" margin={{ left: 8, right: 16 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                    <XAxis type="number" stroke="#fff" allowDecimals={false} />
-                    <YAxis type="category" dataKey="nombre" stroke="#fff" width={140} interval={0} />
-                    <Tooltip {...ESTILO_TOOLTIP} />
-                    <Bar dataKey="demandaScore" fill="#f59e0b" name="Demanda" />
+                    <CartesianGrid {...grafico.rejilla} horizontal={false} />
+                    <XAxis type="number" {...grafico.eje} allowDecimals={false} />
+                    <YAxis type="category" dataKey="nombre" {...grafico.eje} width={140} interval={0} />
+                    <Tooltip {...grafico.tooltip} />
+                    <Bar dataKey="demandaScore" fill={grafico.barra} name="Demanda" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             )}
-          </div>
+          </TarjetaGrafico>
         </div>
       </section>
 
-      <p className="info-note info-note-footer">
+      <p className="nota nota--chica informes-pie">
         El backend V2 no expone a nivel admin datos de suscripciones (plan, estado) ni del perfil de los usuarios (área,
         cargo meta, nivel, último acceso), por eso este informe no los incluye. Los conteos de preguntas se calculan con
         consultas al banco y los datos de usuarios se agrupan en el navegador.

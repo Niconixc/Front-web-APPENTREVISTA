@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createUser, mensajeDeError } from '../services/api';
 import { LIMITES } from '../services/etiquetas';
+import Icono from './Icono';
 import './CreateUser.css';
 
 const LARGO_MAXIMO_NOMBRE = 120;
@@ -14,9 +15,6 @@ const IDIOMAS = [
   { value: 'fr', label: 'Francés' },
   { value: 'de', label: 'Alemán' },
 ];
-
-// CreateUser.css no tiene clase de ayuda; se usa un estilo mínimo en línea para no tocar la hoja compartida.
-const estiloAyuda = { display: 'block', marginTop: '0.35rem', fontSize: '0.8rem', opacity: 0.7 };
 
 const CreateUser = () => {
   const [formData, setFormData] = useState({
@@ -78,16 +76,23 @@ const CreateUser = () => {
   };
 
   return (
-    <div className="create-user">
-      <div className="form-container">
-        <h1>Crear Nuevo Usuario</h1>
-        <p className="subtitle">Complete el formulario para agregar un usuario</p>
+    <div className="pagina pagina--angosta">
+      <header className="encabezado-pagina">
+        <div className="encabezado-pagina__textos">
+          <p className="miga">
+            <Link to="/usuarios">Usuarios</Link> / Crear
+          </p>
+          <h1 className="encabezado-pagina__titulo">Crear usuario</h1>
+          <p className="encabezado-pagina__descripcion">Completa el formulario para agregar un usuario.</p>
+        </div>
+      </header>
 
-        <form onSubmit={handleSubmit} className="user-form">
-          <div className="form-grid">
-            <div className="form-group">
-              <label htmlFor="correo">
-                Correo Electrónico <span className="required">*</span>
+      <form onSubmit={handleSubmit} className="tarjeta">
+        <div className="tarjeta__cuerpo formulario">
+          <div className="rejilla-campos">
+            <div className="campo">
+              <label htmlFor="correo" className="campo__etiqueta">
+                Correo electrónico
               </label>
               <input
                 type="email"
@@ -101,9 +106,9 @@ const CreateUser = () => {
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="contrasena">
-                Contraseña <span className="required">*</span>
+            <div className="campo">
+              <label htmlFor="contrasena" className="campo__etiqueta">
+                Contraseña
               </label>
               <input
                 type="password"
@@ -113,17 +118,19 @@ const CreateUser = () => {
                 onChange={handleChange}
                 required
                 autoComplete="new-password"
-                placeholder="Mínimo 8 caracteres"
                 minLength={LIMITES.contrasenaMinima}
                 maxLength={LIMITES.contrasenaMaxima}
+                aria-describedby="contrasena-ayuda"
               />
-              <small style={estiloAyuda}>
+              <p id="contrasena-ayuda" className="campo__ayuda">
                 Entre {LIMITES.contrasenaMinima} y {LIMITES.contrasenaMaxima} caracteres.
-              </small>
+              </p>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="nombre">Nombre Completo</label>
+            <div className="campo campo--ancho">
+              <label htmlFor="nombre" className="campo__etiqueta">
+                Nombre completo <span className="campo__opcional">(opcional)</span>
+              </label>
               <input
                 type="text"
                 id="nombre"
@@ -135,19 +142,19 @@ const CreateUser = () => {
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="rol">
-                Rol <span className="required">*</span>
+            <div className="campo">
+              <label htmlFor="rol" className="campo__etiqueta">
+                Rol
               </label>
               <select id="rol" name="rol" value={formData.rol} onChange={handleChange} required>
-                <option value="user">Usuario Regular</option>
+                <option value="user">Usuario</option>
                 <option value="admin">Administrador</option>
               </select>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="idioma">
-                Idioma <span className="required">*</span>
+            <div className="campo">
+              <label htmlFor="idioma" className="campo__etiqueta">
+                Idioma
               </label>
               <select id="idioma" name="idioma" value={formData.idioma} onChange={handleChange} required>
                 {IDIOMAS.map((idioma) => (
@@ -159,23 +166,23 @@ const CreateUser = () => {
             </div>
           </div>
 
-          {error && <div className="error-message">{error}</div>}
+          {error && (
+            <div className="aviso aviso--peligro" role="alert">
+              <Icono nombre="alerta" className="aviso__icono" />
+              <div className="aviso__contenido">{error}</div>
+            </div>
+          )}
+        </div>
 
-          <div className="form-actions">
-            <button
-              type="button"
-              onClick={() => navigate('/usuarios')}
-              className="btn btn-secondary"
-              disabled={loading}
-            >
-              Cancelar
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Creando...' : 'Crear Usuario'}
-            </button>
-          </div>
-        </form>
-      </div>
+        <div className="tarjeta__pie crear-usuario-pie">
+          <button type="button" onClick={() => navigate('/usuarios')} className="boton" disabled={loading}>
+            Cancelar
+          </button>
+          <button type="submit" className="boton boton--primario" disabled={loading}>
+            {loading ? 'Creando…' : 'Crear usuario'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

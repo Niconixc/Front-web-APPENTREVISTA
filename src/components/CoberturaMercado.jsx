@@ -9,6 +9,7 @@ import {
   resumenCobertura,
   rutaPendientesSkill,
 } from '../services/cobertura';
+import Icono from './Icono';
 import './CoberturaMercado.css';
 
 const MINIMO_POR_DEFECTO = '5';
@@ -112,145 +113,175 @@ const CoberturaMercado = () => {
   };
 
   return (
-    <div className="cobertura">
-      <header className="cob-cabecera">
-        <h1>Cobertura del banco</h1>
-        <p className="cob-bajada">
-          Las skills que piden las ofertas de empleo para cada cargo y cuántas preguntas <strong>aprobadas</strong> tiene el
-          banco por nivel. Al generar desde aquí se intenta usar lo que piden esas ofertas.
-        </p>
+    <div className="pagina">
+      <header className="encabezado-pagina">
+        <div className="encabezado-pagina__textos">
+          <h1 className="encabezado-pagina__titulo">Cobertura del banco</h1>
+          <p className="encabezado-pagina__descripcion">
+            Las skills que piden las ofertas de empleo para cada cargo y cuántas preguntas <strong>aprobadas</strong> tiene el
+            banco por nivel. Al generar desde aquí se intenta usar lo que piden esas ofertas.
+          </p>
+        </div>
       </header>
 
-      <div className="cob-filtros">
-        <div className="cob-campo">
-          <label htmlFor="cob-cargo">Cargo</label>
-          <select id="cob-cargo" value={cargoId} onChange={(e) => cambiarFiltro('cargoId', e.target.value)}>
-            <option value="">Todos los cargos</option>
-            {cargoId && !cargos.some((c) => c.cargoId === cargoId) && <option value={cargoId}>Cargo seleccionado</option>}
-            {cargosOrdenados.map((c) => <option key={c.cargoId} value={c.cargoId}>{c.nombre} ({c.area})</option>)}
-          </select>
-        </div>
-        <div className="cob-campo cob-campo-chico">
-          <label htmlFor="cob-minimo">Mínimo por nivel</label>
-          <input
-            id="cob-minimo"
-            type="number"
-            min="1"
-            max="50"
-            step="1"
-            value={minimoTexto}
-            onChange={(e) => cambiarFiltro('minimo', e.target.value, MINIMO_POR_DEFECTO)}
-            aria-invalid={minimo === null}
-            aria-describedby={minimo === null ? 'cob-minimo-error' : undefined}
-          />
-        </div>
-        {!cargoId && (
-          <label className="cob-check" htmlFor="cob-incompletos">
+      <div className="cobertura-filtros-bloque">
+        <div className="filtros">
+          <div className="campo cobertura-filtro-cargo">
+            <label className="campo__etiqueta" htmlFor="cob-cargo">Cargo</label>
+            <select id="cob-cargo" value={cargoId} onChange={(e) => cambiarFiltro('cargoId', e.target.value)}>
+              <option value="">Todos los cargos</option>
+              {cargoId && !cargos.some((c) => c.cargoId === cargoId) && <option value={cargoId}>Cargo seleccionado</option>}
+              {cargosOrdenados.map((c) => <option key={c.cargoId} value={c.cargoId}>{c.nombre} ({c.area})</option>)}
+            </select>
+          </div>
+          <div className="campo cobertura-filtro-minimo">
+            <label className="campo__etiqueta" htmlFor="cob-minimo">Mínimo por nivel</label>
             <input
-              id="cob-incompletos"
-              type="checkbox"
-              checked={soloIncompletos}
-              onChange={(e) => cambiarFiltro('todos', e.target.checked ? '' : '1')}
+              id="cob-minimo"
+              type="number"
+              min="1"
+              max="50"
+              step="1"
+              value={minimoTexto}
+              onChange={(e) => cambiarFiltro('minimo', e.target.value, MINIMO_POR_DEFECTO)}
+              aria-invalid={minimo === null}
+              aria-describedby={minimo === null ? 'cob-minimo-error' : undefined}
             />
-            Solo cargos a los que les faltan preguntas
-          </label>
-        )}
-        <button type="button" className="cob-boton cob-boton-secundario" onClick={cargar} disabled={cargando || minimo === null}>
-          {cargando ? 'Cargando…' : 'Actualizar'}
-        </button>
+          </div>
+          {!cargoId && (
+            <label className="casilla cobertura-filtro-casilla" htmlFor="cob-incompletos">
+              <input
+                id="cob-incompletos"
+                type="checkbox"
+                checked={soloIncompletos}
+                onChange={(e) => cambiarFiltro('todos', e.target.checked ? '' : '1')}
+              />
+              Solo cargos a los que les faltan preguntas
+            </label>
+          )}
+          <button type="button" className="boton cobertura-actualizar" onClick={cargar} disabled={cargando || minimo === null}>
+            <Icono nombre="refrescar" />
+            {cargando ? 'Cargando…' : 'Actualizar'}
+          </button>
+        </div>
+        {minimo === null && <p id="cob-minimo-error" className="campo__error">El mínimo debe ser un número entero entre 1 y 50.</p>}
       </div>
-      {minimo === null && <p id="cob-minimo-error" className="cob-error-campo">El mínimo debe ser un número entero entre 1 y 50.</p>}
 
-      <p className="cob-estado-carga" role="status" aria-live="polite">
+      <p className={`cobertura-estado${cargando ? ' cargando' : ''}`} role="status" aria-live="polite">
         {cargando ? 'Cargando la cobertura del banco…' : ''}
       </p>
 
       {error && (
-        <div className="cob-alerta" role="alert">
-          {error}{' '}
-          <button type="button" className="cob-enlace" onClick={cargar}>Reintentar</button>
+        <div className="aviso aviso--peligro" role="alert">
+          <Icono nombre="alerta" className="aviso__icono" />
+          <div className="aviso__contenido">
+            <p>{error}</p>
+            <button type="button" className="boton boton--chico cobertura-reintentar" onClick={cargar}>Reintentar</button>
+          </div>
         </div>
       )}
 
       {datos && (
-        <div className="cob-resumen" aria-busy={cargando}>
-          <div><span>Faltan</span><strong>{resumen.preguntasFaltantes}</strong><small>preguntas aprobadas</small></div>
-          <div>
-            <span>Cargos incompletos</span><strong>{resumen.cargosIncompletos}</strong>
-            <small>de {resumen.cargos}{resumen.cargosSinSkills > 0 ? ` · ${resumen.cargosSinSkills} sin skills del mercado` : ''}</small>
+        <div className="metricas" aria-busy={cargando}>
+          <div className="metrica">
+            <span className="metrica__etiqueta">Faltan</span>
+            <strong className="metrica__valor">{resumen.preguntasFaltantes}</strong>
+            <small className="metrica__detalle">preguntas aprobadas</small>
           </div>
-          <div>
-            <span>Ofertas leídas</span>
-            <strong className="cob-fecha">{formatearSincronizacion(datos.ultimaSincronizacionMercado)}</strong>
-            <small>hora del servidor · se leen solas cada 7 días</small>
+          <div className="metrica">
+            <span className="metrica__etiqueta">Cargos incompletos</span>
+            <strong className="metrica__valor">{resumen.cargosIncompletos}</strong>
+            <small className="metrica__detalle">
+              de {resumen.cargos}{resumen.cargosSinSkills > 0 ? ` · ${resumen.cargosSinSkills} sin skills del mercado` : ''}
+            </small>
+          </div>
+          <div className="metrica">
+            <span className="metrica__etiqueta">Ofertas leídas</span>
+            <strong className="metrica__valor cobertura-metrica-fecha">{formatearSincronizacion(datos.ultimaSincronizacionMercado)}</strong>
+            <small className="metrica__detalle">hora del servidor · se leen solas cada 7 días</small>
           </div>
         </div>
       )}
 
-      {datos && !cargando && cargosVisibles.length === 0 && <p className="cob-vacio">{textoVacio()}</p>}
+      {datos && !cargando && cargosVisibles.length === 0 && (
+        <div className="tarjeta vacio">
+          <p>{textoVacio()}</p>
+        </div>
+      )}
 
       {cargosVisibles.map((cargo) => {
         const vacio = sinSkills(cargo);
         const falta = Number(cargo.preguntasFaltantes) > 0;
         return (
-          <section key={cargo.cargoId} className="cob-cargo" aria-labelledby={`cob-${cargo.cargoId}`}>
-            <div className="cob-cargo-cabeza">
-              <h2 id={`cob-${cargo.cargoId}`}>{cargo.nombre}</h2>
-              <span className="cob-area">{cargo.area}</span>
-              <span className={`cob-pill ${vacio ? 'cob-pill-sin' : falta ? 'cob-pill-falta' : 'cob-pill-ok'}`}>
+          <section key={cargo.cargoId} className="seccion" aria-labelledby={`cob-${cargo.cargoId}`}>
+            <div className="seccion__encabezado">
+              <div className="cobertura-cargo-titulo">
+                <h2 id={`cob-${cargo.cargoId}`} className="seccion__titulo">{cargo.nombre}</h2>
+                <span className="texto-3 texto-chico">{cargo.area}</span>
+              </div>
+              <span className={`insignia insignia--punto${vacio ? '' : falta ? ' insignia--aviso' : ' insignia--exito'}`}>
                 {vacio ? 'Sin skills del mercado' : falta ? `Faltan ${cargo.preguntasFaltantes} en ${cargo.skillsIncompletas} skills` : 'Completo'}
               </span>
             </div>
 
             {vacio ? (
-              <p className="cob-vacio">
+              <p className="tarjeta nota cobertura-sin-skills">
                 El mercado todavía no tiene skills para este cargo: se completan en la próxima lectura semanal de ofertas.
                 Mientras tanto no se puede saber qué preguntas le faltan.
               </p>
             ) : (
-              <div className="cob-tabla-envoltura">
-                <table className="cob-tabla">
-                  <caption className="cob-solo-lector">Preguntas aprobadas por skill y nivel para {cargo.nombre}</caption>
+              <div className="tabla-contenedor">
+                <table className="tabla tabla--compacta cobertura-tabla">
+                  <caption className="sr-only">Preguntas aprobadas por skill y nivel para {cargo.nombre}</caption>
                   <thead>
                     <tr>
                       <th scope="col">Skill</th>
-                      <th scope="col" className="cob-num">Peso</th>
-                      {NIVELES.map((n) => <th key={n.value} scope="col">{n.label}</th>)}
+                      <th scope="col" className="num">Peso</th>
+                      {NIVELES.map((n) => <th key={n.value} scope="col" className="num">{n.label}</th>)}
                     </tr>
                   </thead>
                   <tbody>
                     {cargo.skills.map((skill) => (
                       <tr key={skill.skillId}>
-                        <th scope="row" className="cob-skill">
-                          <span className="cob-skill-nombre">{skill.nombre}</span>
-                          <span className="cob-skill-meta">
+                        <th scope="row" className="cobertura-skill">
+                          <span className="cobertura-skill-nombre">{skill.nombre}</span>
+                          <span className="cobertura-skill-meta">
                             {etiqueta(CATEGORIAS, skill.categoria)}
-                            {skill.obligatoria && <span className="cob-obligatoria">obligatoria</span>}
+                            {skill.obligatoria && <span className="insignia">Obligatoria</span>}
                           </span>
                         </th>
-                        <td className="cob-num">{skill.peso}</td>
+                        <td className="num">{skill.peso}</td>
                         {NIVELES.map((n) => {
                           const celda = celdaCobertura(skill, n.value);
                           return (
-                            <td key={n.value} className={`cob-celda cob-celda-${celda.estado}`}>
-                              <span className="cob-conteo">
-                                {celda.aprobadas}<small>/{datos.minimo}</small>
-                                <span className="cob-solo-lector"> aprobadas, {TEXTO_ESTADO[celda.estado]}</span>
+                            <td key={n.value} className={`num cobertura-celda cobertura-celda--${celda.estado}`}>
+                              <span className="cobertura-conteo">
+                                {celda.aprobadas}<span className="cobertura-conteo-minimo">/{datos.minimo}</span>
+                                <span className="sr-only"> aprobadas, {TEXTO_ESTADO[celda.estado]}</span>
                               </span>
-                              {celda.pendientes > 0 && (
-                                <Link className="cob-enlace cob-pendientes" to={rutaPendientesSkill(skill.skillId, n.value, cargo.cargoId)}>
-                                  {celda.pendientes} pendiente{celda.pendientes === 1 ? '' : 's'}
-                                </Link>
-                              )}
-                              {celda.estado === 'falta' && (
-                                <button
-                                  type="button"
-                                  className="cob-boton cob-boton-generar"
-                                  onClick={() => generar(cargo, skill, n.value, celda.generar)}
-                                  aria-label={`Generar ${celda.generar} preguntas de ${skill.nombre}, nivel ${n.label}`}
-                                >
-                                  Generar {celda.generar}
-                                </button>
+                              {(celda.pendientes > 0 || celda.estado === 'falta') && (
+                                <span className="cobertura-celda-acciones">
+                                  {celda.estado === 'falta' && (
+                                    <span className="insignia insignia--aviso">Faltan {celda.faltan}</span>
+                                  )}
+                                  {celda.estado === 'revisar' && <span className="insignia insignia--info">Revisar</span>}
+                                  {celda.pendientes > 0 && (
+                                    <Link className="cobertura-pendientes" to={rutaPendientesSkill(skill.skillId, n.value, cargo.cargoId)}>
+                                      {celda.pendientes} pendiente{celda.pendientes === 1 ? '' : 's'}
+                                    </Link>
+                                  )}
+                                  {celda.estado === 'falta' && (
+                                    <button
+                                      type="button"
+                                      className="boton boton--chico"
+                                      onClick={() => generar(cargo, skill, n.value, celda.generar)}
+                                      aria-label={`Generar ${celda.generar} preguntas de ${skill.nombre}, nivel ${n.label}`}
+                                    >
+                                      <Icono nombre="generar" tamano={14} />
+                                      Generar {celda.generar}
+                                    </button>
+                                  )}
+                                </span>
                               )}
                             </td>
                           );
@@ -265,7 +296,7 @@ const CoberturaMercado = () => {
         );
       })}
 
-      <p className="cob-nota">
+      <p className="nota cobertura-nota">
         Cuentan las preguntas de la skill para este cargo y las de la skill sin cargo (las que la entrevista puede elegir).
         Las pendientes no se sirven hasta aprobarlas: si alcanzan, revisarlas no cuesta nada. Generar con IA tiene costo y
         las preguntas nuevas quedan pendientes.

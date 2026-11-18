@@ -1,128 +1,64 @@
-/* Tope mensual de generación con IA (D23): mismo lenguaje oscuro del panel. El color acompaña al estado escrito, nunca
-   lo reemplaza. Rellenos con contraste de al menos 3:1 sobre la pista (#262626): #8b5cf6 3,6:1; #f59e0b 7:1;
-   #ef4444 4:1. El borde de la pista (#767676) marca el 100 % con más de 3:1 sobre el fondo del panel. */
+/*
+ * Tope mensual de generación con IA (D23). Usa .aviso, .insignia y .medidor de componentes.css; aquí solo el layout
+ * propio. El color acompaña al estado escrito, nunca lo reemplaza. La pista de la barra es --superficie con borde
+ * --texto-3 (más de 3:1 en ambos temas), así el 100 % se distingue aunque el aviso tenga fondo de color; los rellenos
+ * (--acento, --aviso, --peligro) superan 3:1 sobre esa pista.
+ */
 
-.tope-ia {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-left: 3px solid #8b5cf6;
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
-  margin: 0 0 1.5rem;
-  color: rgba(255, 255, 255, 0.85);
-  line-height: 1.5;
+.tope-ia-contenido {
+  flex: 1 1 auto;
+  gap: var(--e-2);
 }
 
-.tope-ia p {
-  margin: 0;
+.tope-ia-encabezado {
+  color: var(--texto-2);
+  font-weight: var(--peso-medio);
 }
 
-.tope-ia .tope-ia-encabezado {
-  margin-bottom: 0.4rem;
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-/* La última lectura falló: el texto lo dice; el color solo lo acompaña (#fcd34d sobre el fondo oscuro, más de 10:1). */
-.tope-ia .tope-ia-nota {
-  margin-bottom: 0.4rem;
-  color: #fcd34d;
-  font-size: 0.85rem;
-  font-weight: 600;
+/* La última lectura falló: el texto lo dice; el color solo lo acompaña. */
+.tope-ia-nota {
+  color: var(--aviso);
+  font-weight: var(--peso-fuerte);
 }
 
 .tope-ia-titulo {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 0.75rem;
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 1rem;
+  gap: var(--e-1) var(--e-2);
+  color: var(--texto);
+  font-size: var(--texto-base);
+  font-weight: var(--peso-fuerte);
+  font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
 
-.tope-ia-estado {
-  display: inline-block;
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  border: 1px solid rgba(139, 92, 246, 0.55);
-  background: rgba(139, 92, 246, 0.18);
-  color: #c4b5fd;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  white-space: nowrap;
-}
-
 .tope-ia-barra {
-  position: relative;
-  height: 12px;
-  margin: 0.75rem 0;
-  border: 1px solid #767676;
-  border-radius: 999px;
-  background: #262626;
-  overflow: hidden;
+  background: var(--superficie);
+  border-color: var(--texto-3);
 }
 
 .tope-ia-relleno {
-  height: 100%;
   max-width: 100%;
-  border-radius: 999px;
-  background: #8b5cf6;
-  transition: width 0.3s ease;
+  transition: width var(--transicion);
 }
 
 .tope-ia-detalle {
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.9rem;
-}
-
-/* Estados */
-.tope-ia-cerca { border-left-color: #f59e0b; }
-.tope-ia-cerca .tope-ia-relleno { background: #f59e0b; }
-.tope-ia-cerca .tope-ia-estado {
-  border-color: rgba(245, 158, 11, 0.55);
-  background: rgba(245, 158, 11, 0.15);
-  color: #fcd34d;
-}
-
-.tope-ia-agotado {
-  border-left-color: #ef4444;
-  background: rgba(239, 68, 68, 0.06);
-}
-.tope-ia-agotado .tope-ia-relleno { background: #ef4444; }
-.tope-ia-agotado .tope-ia-estado {
-  border-color: rgba(239, 68, 68, 0.55);
-  background: rgba(239, 68, 68, 0.15);
-  color: #fca5a5;
-}
-
-.tope-ia-desactivado { border-left-color: #94a3b8; }
-.tope-ia-desactivado .tope-ia-estado {
-  border-color: rgba(148, 163, 184, 0.55);
-  background: rgba(148, 163, 184, 0.15);
-  color: #cbd5e1;
+  color: var(--texto-2);
+  font-variant-numeric: tabular-nums;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tope-ia-relleno {
-    transition: none;
-  }
+  .tope-ia-relleno { transition: none; }
 }
 
 /* Alto contraste del sistema: los fondos se pierden, así que el relleno usa Highlight y los bordes CanvasText. */
 @media (forced-colors: active) {
   .tope-ia,
-  .tope-ia-estado,
-  .tope-ia-barra {
-    border: 1px solid CanvasText;
-  }
+  .tope-ia .insignia,
+  .tope-ia-barra { border: 1px solid CanvasText; }
 
-  .tope-ia-barra {
-    background: Canvas;
-  }
+  .tope-ia-barra { background: Canvas; }
 
   .tope-ia-relleno {
     forced-color-adjust: none;

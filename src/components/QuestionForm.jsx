@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createQuestion, mensajeDeError } from '../services/api';
 import { aSolicitudPregunta, formularioVacio, validarFormularioPregunta } from '../services/etiquetas';
+import Icono from './Icono';
 import QuestionFields from './QuestionFields';
 import './QuestionForm.css';
 
@@ -47,38 +48,53 @@ const QuestionForm = () => {
   const bloqueado = loading || Boolean(exito);
 
   return (
-    <div className="create-question">
-      <div className="form-container">
-        <h1>Crear Nueva Pregunta</h1>
-        <p className="subtitle">Complete el formulario para agregar una pregunta al banco</p>
+    <div className="pagina pagina--angosta">
+      <header className="encabezado-pagina">
+        <div className="encabezado-pagina__textos">
+          <nav className="miga" aria-label="Ruta de navegación">
+            <Link to="/preguntas">Preguntas</Link> / <span aria-current="page">Crear pregunta</span>
+          </nav>
+          <h1 className="encabezado-pagina__titulo">Crear pregunta</h1>
+          <p className="encabezado-pagina__descripcion">Completa el formulario para agregar una pregunta al banco.</p>
+        </div>
+      </header>
 
-        <div className="qf-aviso qf-aviso-info">
+      <div className="aviso aviso--info">
+        <Icono nombre="info" className="aviso__icono" />
+        <div className="aviso__contenido">
           Las preguntas creadas por un administrador quedan aprobadas y disponibles de inmediato.
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="question-form" noValidate>
-          <fieldset className="qf-fieldset" disabled={bloqueado}>
+      <form onSubmit={handleSubmit} className="tarjeta" noValidate>
+        <div className="tarjeta__cuerpo">
+          <fieldset className="qform-bloqueo" disabled={bloqueado}>
             <QuestionFields form={form} setForm={setForm} />
           </fieldset>
 
-          {error && <div className="error-message" role="alert">{error}</div>}
-          {exito && <div className="qf-exito" role="status">{exito}. Volviendo al listado...</div>}
+          {error && (
+            <div className="aviso aviso--peligro" role="alert">
+              <Icono nombre="alerta" className="aviso__icono" />
+              <div className="aviso__contenido">{error}</div>
+            </div>
+          )}
+          {exito && (
+            <div className="aviso aviso--exito" role="status">
+              <Icono nombre="check-circulo" className="aviso__icono" />
+              <div className="aviso__contenido">{exito}. Volviendo al listado...</div>
+            </div>
+          )}
+        </div>
 
-          <div className="form-actions">
-            <button
-              type="button"
-              onClick={() => navigate('/preguntas')}
-              className="btn btn-secondary"
-              disabled={loading}
-            >
-              Cancelar
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={bloqueado}>
-              {loading ? 'Creando...' : 'Crear Pregunta'}
-            </button>
-          </div>
-        </form>
-      </div>
+        <div className="tarjeta__pie qform-pie">
+          <button type="button" onClick={() => navigate('/preguntas')} className="boton" disabled={loading}>
+            Cancelar
+          </button>
+          <button type="submit" className="boton boton--primario" disabled={bloqueado}>
+            {loading ? 'Creando...' : 'Crear pregunta'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

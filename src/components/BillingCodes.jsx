@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createBillingCode, mensajeDeError } from '../services/api';
+import Icono from './Icono';
 import './BillingCodes.css';
 
 // V2 no tiene GET /billing/admin/codes: la tabla muestra solo los códigos creados en esta sesión del navegador.
@@ -47,12 +48,12 @@ const formatDate = (iso) => {
 };
 
 const TIPOS_LICENCIA = {
-  PROM: { label: 'Promocional', class: 'badge-promo' },
-  INST: { label: 'Institucional', class: 'badge-inst' },
-  GOOG: { label: 'Google', class: 'badge-google' },
+  PROM: { label: 'Promocional' },
+  INST: { label: 'Institucional' },
+  GOOG: { label: 'Google' },
 };
 
-const getLicenseTypeBadge = (type) => TIPOS_LICENCIA[type] || { label: type || '—', class: 'badge-neutral' };
+const getLicenseTypeBadge = (type) => TIPOS_LICENCIA[type] || { label: type || '—' };
 
 const BillingCodes = () => {
   const [codes, setCodes] = useState(leerCodigosGuardados);
@@ -165,153 +166,177 @@ const BillingCodes = () => {
   const diasTexto = Number.isInteger(Number(formData.days)) && Number(formData.days) > 0 ? Number(formData.days) : 'N';
 
   return (
-    <div className="billing-codes">
-      <div className="billing-header">
-        <h1>Gestión de Códigos de Suscripción</h1>
-        <p className="subtitle">Crea códigos promocionales para suscripciones premium</p>
-      </div>
+    <div className="pagina">
+      <header className="encabezado-pagina">
+        <div className="encabezado-pagina__textos">
+          <h1 className="encabezado-pagina__titulo">Códigos de suscripción</h1>
+          <p className="encabezado-pagina__descripcion">Crea códigos promocionales para suscripciones premium</p>
+        </div>
+      </header>
 
       {/* Formulario de creación */}
-      <div className="create-code-section">
-        <h2>Crear Nuevo Código</h2>
-        <form onSubmit={handleSubmit} className="create-form">
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="license_type">Tipo de Licencia</label>
-              <select
-                id="license_type"
-                name="license_type"
-                value={formData.license_type}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="PROM">Promocional (PROM)</option>
-                <option value="INST">Institucional (INST)</option>
-                <option value="GOOG">Google Play (GOOG)</option>
-              </select>
+      <section className="tarjeta" aria-labelledby="codigos-crear-titulo">
+        <div className="tarjeta__encabezado">
+          <h2 id="codigos-crear-titulo" className="tarjeta__titulo">Crear nuevo código</h2>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="tarjeta__cuerpo">
+            <div className="codigos-campos">
+              <div className="campo">
+                <label className="campo__etiqueta" htmlFor="license_type">Tipo de licencia</label>
+                <select
+                  id="license_type"
+                  name="license_type"
+                  value={formData.license_type}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="PROM">Promocional (PROM)</option>
+                  <option value="INST">Institucional (INST)</option>
+                  <option value="GOOG">Google Play (GOOG)</option>
+                </select>
+              </div>
+
+              <div className="campo">
+                <label className="campo__etiqueta" htmlFor="days">Duración del premium (días)</label>
+                <input
+                  type="number"
+                  id="days"
+                  name="days"
+                  value={formData.days}
+                  onChange={handleInputChange}
+                  min="1"
+                  max="365"
+                  step="1"
+                  required
+                />
+              </div>
+
+              <div className="campo">
+                <label className="campo__etiqueta" htmlFor="max_uses">Usos máximos</label>
+                <input
+                  type="number"
+                  id="max_uses"
+                  name="max_uses"
+                  value={formData.max_uses}
+                  onChange={handleInputChange}
+                  min="1"
+                  max="1000"
+                  step="1"
+                  required
+                />
+              </div>
+
+              <div className="campo codigos-campo-etiqueta">
+                <label className="campo__etiqueta" htmlFor="label">
+                  Etiqueta <span className="campo__opcional">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  id="label"
+                  name="label"
+                  value={formData.label}
+                  onChange={handleInputChange}
+                  placeholder="Ej: Campaña Navidad 2026"
+                  maxLength={LARGO_MAXIMO_ETIQUETA}
+                />
+              </div>
+
+              <div className="campo">
+                <label className="campo__etiqueta" htmlFor="expires_at">
+                  Canjeable hasta <span className="campo__opcional">(opcional)</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  id="expires_at"
+                  name="expires_at"
+                  value={formData.expires_at}
+                  onChange={handleInputChange}
+                  min={ahoraLocal()}
+                  aria-describedby="expires_at-ayuda"
+                />
+                <small id="expires_at-ayuda" className="campo__ayuda">
+                  Si lo dejas vacío, el código deja de poder canjearse a los {diasTexto} días de creado (la misma
+                  duración del premium).
+                </small>
+              </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="days">Duración del premium (días)</label>
-              <input
-                type="number"
-                id="days"
-                name="days"
-                value={formData.days}
-                onChange={handleInputChange}
-                min="1"
-                max="365"
-                step="1"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="max_uses">Usos Máximos</label>
-              <input
-                type="number"
-                id="max_uses"
-                name="max_uses"
-                value={formData.max_uses}
-                onChange={handleInputChange}
-                min="1"
-                max="1000"
-                step="1"
-                required
-              />
-            </div>
+            {error && (
+              <div className="aviso aviso--peligro" role="alert">
+                <Icono nombre="alerta" className="aviso__icono" />
+                <div className="aviso__contenido">{error}</div>
+              </div>
+            )}
+            {success && (
+              <div className="aviso aviso--exito" role="status">
+                <Icono nombre="check-circulo" className="aviso__icono" />
+                <div className="aviso__contenido codigos-exito">
+                  <span>
+                    {success.texto}: <code className="mono">{success.code}</code>
+                  </span>
+                  <button
+                    type="button"
+                    className="boton boton--chico boton--icono"
+                    onClick={() => copyToClipboard(success.code)}
+                    title="Copiar código"
+                    aria-label="Copiar código"
+                  >
+                    <Icono nombre={copiedCode === success.code ? 'check' : 'copiar'} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="form-row">
-            <div className="form-group form-group-wide">
-              <label htmlFor="label">Etiqueta (opcional)</label>
-              <input
-                type="text"
-                id="label"
-                name="label"
-                value={formData.label}
-                onChange={handleInputChange}
-                placeholder="Ej: Campaña Navidad 2026"
-                maxLength={LARGO_MAXIMO_ETIQUETA}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="expires_at">Canjeable hasta (opcional)</label>
-              <input
-                type="datetime-local"
-                id="expires_at"
-                name="expires_at"
-                className="input-datetime"
-                value={formData.expires_at}
-                onChange={handleInputChange}
-                min={ahoraLocal()}
-              />
-              <small className="form-help">
-                Si lo dejas vacío, el código deja de poder canjearse a los {diasTexto} días de creado (la misma
-                duración del premium).
-              </small>
-            </div>
-          </div>
-
-          <button type="submit" className="btn btn-create" disabled={creating}>
-            {creating ? '⏳ Creando...' : '➕ Crear Código'}
-          </button>
-        </form>
-
-        {error && <div className="alert alert-error">{error}</div>}
-        {success && (
-          <div className="alert alert-success success-code">
-            <span>
-              {success.texto}: <code>{success.code}</code>
-            </span>
-            <button
-              type="button"
-              className="btn-copy"
-              onClick={() => copyToClipboard(success.code)}
-              title="Copiar código"
-              aria-label="Copiar código"
-            >
-              {copiedCode === success.code ? '✅' : '📋'}
+          <div className="tarjeta__pie">
+            <button type="submit" className="boton boton--primario" disabled={creating}>
+              {!creating && <Icono nombre="mas" />}
+              {creating ? 'Creando…' : 'Crear código'}
             </button>
           </div>
-        )}
-      </div>
+        </form>
+      </section>
 
       {/* Lista local de códigos */}
-      <div className="codes-list-section">
-        <div className="codes-list-header">
-          <h2>Códigos creados en esta sesión ({codes.length})</h2>
+      <section className="seccion" aria-labelledby="codigos-lista-titulo">
+        <div className="seccion__encabezado">
+          <h2 id="codigos-lista-titulo" className="seccion__titulo">
+            Códigos creados en esta sesión <span className="texto-3 num">({codes.length})</span>
+          </h2>
           {codes.length > 0 && (
-            <button type="button" className="btn-clear" onClick={limpiarLista}>
+            <button type="button" className="boton boton--chico" onClick={limpiarLista}>
               Quitar lista
             </button>
           )}
         </div>
 
-        <p className="info-note">
-          El servidor V2 todavía no permite listar códigos: aquí ves solo los creados en esta sesión del navegador.
-          Los usos no se actualizan en tiempo real.
-        </p>
+        <div className="aviso aviso--info">
+          <Icono nombre="info" className="aviso__icono" />
+          <p className="aviso__contenido">
+            El servidor V2 todavía no permite listar códigos: aquí ves solo los creados en esta sesión del navegador.
+            Los usos no se actualizan en tiempo real.
+          </p>
+        </div>
 
         {codes.length === 0 ? (
-          <div className="empty-state">
+          <div className="tarjeta vacio">
             <p>No hay códigos creados en esta sesión.</p>
           </div>
         ) : (
-          <div className="codes-table-container">
-            <table className="codes-table">
+          <div className="tabla-contenedor">
+            <table className="tabla tabla--compacta codigos-tabla">
               <thead>
                 <tr>
-                  <th>Código</th>
-                  <th>Tipo</th>
-                  <th>Etiqueta</th>
-                  <th>Duración</th>
-                  <th>Usos</th>
-                  <th>Creado</th>
-                  <th>Canjeable hasta</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
+                  <th scope="col">Código</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Etiqueta</th>
+                  <th scope="col" className="num">Duración</th>
+                  <th scope="col" className="num">Usos</th>
+                  <th scope="col">Creado</th>
+                  <th scope="col">Canjeable hasta</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col" className="celda-acciones">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -321,38 +346,38 @@ const BillingCodes = () => {
                   const isExpired = !Number.isNaN(vence) && vence < Date.now();
 
                   return (
-                    <tr key={code.codigo_id} className={isExpired ? 'inactive-row' : ''}>
-                      <td className="code-cell">
-                        <code>{code.code}</code>
+                    <tr key={code.codigo_id} className={isExpired ? 'codigos-fila-expirada' : ''}>
+                      <td>
+                        <span className="mono codigos-codigo">{code.code}</span>
                       </td>
                       <td>
-                        <span className={`badge ${badge.class}`}>{badge.label}</span>
+                        <span className="insignia">{badge.label}</span>
                       </td>
-                      <td>{code.label || '-'}</td>
-                      <td>{code.duracion_dias != null ? `${code.duracion_dias} días` : '—'}</td>
-                      <td>
-                        <span className="uses-na" title="No disponible en V2">
+                      <td className="codigos-etiqueta">{code.label || '-'}</td>
+                      <td className="num">{code.duracion_dias != null ? `${code.duracion_dias} días` : '—'}</td>
+                      <td className="num">
+                        <span className="codigos-usos" title="No disponible en V2">
                           —/{code.max_uses ?? '—'}
                         </span>
                       </td>
                       <td>{formatDate(code.created_at)}</td>
-                      <td className={isExpired ? 'expired' : ''}>{formatDate(code.expires_at)}</td>
+                      <td>{formatDate(code.expires_at)}</td>
                       <td>
                         {isExpired ? (
-                          <span className="status expired">Expirado</span>
+                          <span className="insignia insignia--punto">Expirado</span>
                         ) : (
-                          <span className="status active">Vigente</span>
+                          <span className="insignia insignia--punto insignia--exito">Vigente</span>
                         )}
                       </td>
-                      <td>
+                      <td className="celda-acciones">
                         <button
                           type="button"
-                          className="btn-copy"
+                          className="boton boton--sutil boton--chico boton--icono"
                           onClick={() => copyToClipboard(code.code)}
                           title="Copiar código"
                           aria-label="Copiar código"
                         >
-                          {copiedCode === code.code ? '✅' : '📋'}
+                          <Icono nombre={copiedCode === code.code ? 'check' : 'copiar'} />
                         </button>
                       </td>
                     </tr>
@@ -362,7 +387,7 @@ const BillingCodes = () => {
             </table>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };

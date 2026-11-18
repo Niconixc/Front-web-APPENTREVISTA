@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login, mensajeDeError } from '../services/api';
+import Icono from './Icono';
 import './Login.css';
 
 const Login = ({ setIsAuthenticated }) => {
@@ -29,46 +30,67 @@ const Login = ({ setIsAuthenticated }) => {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <h1>Panel de Administración</h1>
-        <p className="subtitle">Entrevista App</p>
+    <main className="acceso">
+      <div className="acceso__contenido">
+        <div className="acceso-marca">
+          <span className="acceso-marca__logo" aria-hidden="true">
+            E
+          </span>
+          <span className="acceso-marca__texto">EntrevistaApp</span>
+        </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group">
-            <label htmlFor="correo">Correo electrónico</label>
-            <input
-              type="email"
-              id="correo"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
-              required
-              placeholder="admin@example.com"
-              autoComplete="email"
-            />
+        <div className="tarjeta">
+          <div className="tarjeta__cuerpo acceso__cuerpo">
+            <div className="acceso__textos">
+              <h1 className="acceso__titulo">Panel de administración</h1>
+              <p className="texto-2 texto-chico">Ingresa con tu cuenta de administrador.</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="formulario acceso__formulario">
+              <div className="campo">
+                <label htmlFor="correo" className="campo__etiqueta">
+                  Correo electrónico
+                </label>
+                <input
+                  type="email"
+                  id="correo"
+                  value={correo}
+                  onChange={(e) => setCorreo(e.target.value)}
+                  required
+                  placeholder="admin@example.com"
+                  autoComplete="email"
+                />
+              </div>
+
+              <div className="campo">
+                <label htmlFor="contrasena" className="campo__etiqueta">
+                  Contraseña
+                </label>
+                <input
+                  type="password"
+                  id="contrasena"
+                  value={contrasena}
+                  onChange={(e) => setContrasena(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
+
+              {error && (
+                <div className="aviso aviso--peligro" role="alert">
+                  <Icono nombre="alerta" className="aviso__icono" />
+                  <div className="aviso__contenido">{error}</div>
+                </div>
+              )}
+
+              <button type="submit" className="boton boton--primario boton--bloque" disabled={loading}>
+                {loading ? 'Iniciando sesión…' : 'Iniciar sesión'}
+              </button>
+            </form>
           </div>
-
-          <div className="form-group">
-            <label htmlFor="contrasena">Contraseña</label>
-            <input
-              type="password"
-              id="contrasena"
-              value={contrasena}
-              onChange={(e) => setContrasena(e.target.value)}
-              required
-              placeholder="••••••••"
-              autoComplete="current-password"
-            />
-          </div>
-
-          {error && <div className="error-message">{error}</div>}
-
-          <button type="submit" className="btn-login" disabled={loading}>
-            {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-          </button>
-        </form>
+        </div>
       </div>
-    </div>
+    </main>
   );
 };
 

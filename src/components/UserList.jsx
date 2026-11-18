@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   getUsers,
   updateUserRole,
@@ -10,12 +10,20 @@ import {
   usuarioActual,
 } from '../services/api';
 import { LIMITES, formatearFecha } from '../services/etiquetas';
+import Icono from './Icono';
 import './UserList.css';
 
 const IDIOMAS = { es: 'Español', en: 'Inglés', pt: 'Portugués', fr: 'Francés', de: 'Alemán' };
 
-// UserList.css no define estilo para botones deshabilitados; se marca aquí para no tocar la hoja de estilos compartida.
-const estiloDeshabilitado = { opacity: 0.4, cursor: 'not-allowed' };
+// Texto y variante de insignia para los valores que entrega V2; un valor desconocido se muestra tal cual.
+const ROLES = {
+  admin: { texto: 'Admin', clase: 'insignia--info' },
+  user: { texto: 'Usuario', clase: '' },
+};
+const ESTADOS = {
+  activo: { texto: 'Activo', clase: 'insignia--exito' },
+  inactivo: { texto: 'Inactivo', clase: '' },
+};
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -139,126 +147,155 @@ const UserList = () => {
     );
   };
 
+  const encabezado = (descripcion) => (
+    <header className="encabezado-pagina">
+      <div className="encabezado-pagina__textos">
+        <h1 className="encabezado-pagina__titulo">Usuarios</h1>
+        {descripcion && <p className="encabezado-pagina__descripcion">{descripcion}</p>}
+      </div>
+      <div className="encabezado-pagina__acciones">
+        <Link to="/crear-usuario" className="boton boton--primario">
+          <Icono nombre="usuario-mas" />
+          Crear usuario
+        </Link>
+      </div>
+    </header>
+  );
+
   if (loading) {
     return (
-      <div className="user-list">
-        <div className="loading">Cargando usuarios...</div>
+      <div className="pagina">
+        {encabezado()}
+        <p className="cargando cargando--bloque" role="status">
+          Cargando usuarios…
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="user-list">
-      <div className="header">
-        <h1>Gestión de Usuarios</h1>
-        <p className="subtitle">Total: {users.length} usuarios</p>
-      </div>
+    <div className="pagina">
+      {encabezado(`${users.length} ${users.length === 1 ? 'usuario' : 'usuarios'} en total`)}
 
-      {error && <div className="alert alert-error">{error}</div>}
-      {successMessage && <div className="alert alert-success">{successMessage}</div>}
+      {error && (
+        <div className="aviso aviso--peligro" role="alert">
+          <Icono nombre="alerta" className="aviso__icono" />
+          <div className="aviso__contenido">{error}</div>
+        </div>
+      )}
+      {successMessage && (
+        <div className="aviso aviso--exito" role="status">
+          <Icono nombre="check-circulo" className="aviso__icono" />
+          <div className="aviso__contenido">{successMessage}</div>
+        </div>
+      )}
 
-      <div className="table-container">
-        <table className="users-table">
-          <thead>
-            <tr>
-              <th>Correo</th>
-              <th>Nombre</th>
-              <th>Rol</th>
-              <th>Estado</th>
-              <th>Idioma</th>
-              <th>Fecha Creación</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => {
-              const esPropio = user.usuarioId === miUsuarioId;
-              const ocupado = procesando === user.usuarioId;
-              const bloquearRol = esPropio && user.rol === 'admin';
-              const tituloRol = bloquearRol
-                ? 'No puedes quitarte el rol de administrador a ti mismo'
-                : user.rol === 'admin'
-                  ? 'Cambiar a usuario'
-                  : 'Cambiar a admin';
-
-              return (
-                <tr key={user.usuarioId}>
-                  <td>
-                    {user.correo}
-                    {esPropio && <span className="subtitle"> (tú)</span>}
-                  </td>
-                  <td>{user.nombre ?? '-'}</td>
-                  <td>
-                    <span className={`badge badge-${user.rol}`}>{user.rol}</span>
-                  </td>
-                  <td>
-                    <span className={`badge badge-${user.estado}`}>{user.estado}</span>
-                  </td>
-                  <td>{IDIOMAS[user.idioma] ?? user.idioma ?? '-'}</td>
-                  <td>{formatearFecha(user.fechaCreacion)}</td>
-                  <td>
-                    <div className="actions">
-                      <button
-                        type="button"
-                        onClick={() => handleChangeRole(user)}
-                        className="btn btn-sm btn-primary"
-                        title={tituloRol}
-                        aria-label={tituloRol}
-                        disabled={ocupado || bloquearRol}
-                        style={ocupado || bloquearRol ? estiloDeshabilitado : undefined}
-                      >
-                        {user.rol === 'admin' ? '👤' : '🔑'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleResetPassword(user)}
-                        className="btn btn-sm btn-warning"
-                        title="Cambiar contraseña (cierra sus sesiones)"
-                        aria-label="Cambiar contraseña"
-                        disabled={ocupado}
-                        style={ocupado ? estiloDeshabilitado : undefined}
-                      >
-                        🔒
-                      </button>
-                      {user.estado === 'activo' ? (
-                        <button
-                          type="button"
-                          onClick={() => handleDeactivateUser(user)}
-                          className="btn btn-sm btn-danger"
-                          title={esPropio ? 'No puedes desactivar tu propia cuenta' : 'Desactivar usuario (cierra sus sesiones)'}
-                          aria-label="Desactivar"
-                          disabled={ocupado || esPropio}
-                          style={ocupado || esPropio ? estiloDeshabilitado : undefined}
-                        >
-                          Desactivar
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleActivateUser(user)}
-                          className="btn btn-sm btn-success"
-                          title="Activar usuario"
-                          aria-label="Activar"
-                          disabled={ocupado}
-                          style={ocupado ? estiloDeshabilitado : undefined}
-                        >
-                          Activar
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-
-        {users.length === 0 && (
-          <div className="empty-state">
-            <p>No hay usuarios registrados</p>
+      {users.length === 0 ? (
+        <div className="tarjeta">
+          <div className="vacio">
+            <p className="vacio__titulo">No hay usuarios registrados</p>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="tabla-contenedor">
+          <table className="tabla usuarios-tabla">
+            <thead>
+              <tr>
+                <th scope="col">Correo</th>
+                <th scope="col">Nombre</th>
+                <th scope="col">Rol</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Idioma</th>
+                <th scope="col">Fecha de creación</th>
+                <th scope="col" className="celda-acciones">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => {
+                const esPropio = user.usuarioId === miUsuarioId;
+                const ocupado = procesando === user.usuarioId;
+                const bloquearRol = esPropio && user.rol === 'admin';
+                const tituloRol = bloquearRol
+                  ? 'No puedes quitarte el rol de administrador a ti mismo'
+                  : user.rol === 'admin'
+                    ? 'Cambiar a usuario'
+                    : 'Cambiar a admin';
+                const rol = ROLES[user.rol];
+                const estado = ESTADOS[user.estado];
+
+                return (
+                  <tr key={user.usuarioId}>
+                    <td className="usuarios-tabla__correo">
+                      {user.correo}
+                      {esPropio && <span className="texto-3"> (tú)</span>}
+                    </td>
+                    <td>{user.nombre ?? <span className="texto-3">-</span>}</td>
+                    <td>
+                      <span className={`insignia ${rol?.clase ?? ''}`.trim()}>{rol?.texto ?? user.rol}</span>
+                    </td>
+                    <td>
+                      <span className={`insignia insignia--punto ${estado?.clase ?? ''}`.trim()}>
+                        {estado?.texto ?? user.estado}
+                      </span>
+                    </td>
+                    <td>{IDIOMAS[user.idioma] ?? user.idioma ?? '-'}</td>
+                    <td className="usuarios-tabla__fecha">{formatearFecha(user.fechaCreacion)}</td>
+                    <td className="celda-acciones">
+                      <div className="grupo-botones">
+                        <button
+                          type="button"
+                          onClick={() => handleChangeRole(user)}
+                          className="boton boton--chico boton--icono"
+                          title={tituloRol}
+                          aria-label={tituloRol}
+                          disabled={ocupado || bloquearRol}
+                        >
+                          <Icono nombre={user.rol === 'admin' ? 'usuarios' : 'escudo'} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleResetPassword(user)}
+                          className="boton boton--chico boton--icono"
+                          title="Cambiar contraseña (cierra sus sesiones)"
+                          aria-label="Cambiar contraseña"
+                          disabled={ocupado}
+                        >
+                          <Icono nombre="llave" />
+                        </button>
+                        {user.estado === 'activo' ? (
+                          <button
+                            type="button"
+                            onClick={() => handleDeactivateUser(user)}
+                            className="boton boton--chico boton--peligro-suave usuarios-tabla__estado-accion"
+                            title={esPropio ? 'No puedes desactivar tu propia cuenta' : 'Desactivar usuario (cierra sus sesiones)'}
+                            aria-label="Desactivar"
+                            disabled={ocupado || esPropio}
+                          >
+                            Desactivar
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleActivateUser(user)}
+                            className="boton boton--chico usuarios-tabla__estado-accion"
+                            title="Activar usuario"
+                            aria-label="Activar"
+                            disabled={ocupado}
+                          >
+                            Activar
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
