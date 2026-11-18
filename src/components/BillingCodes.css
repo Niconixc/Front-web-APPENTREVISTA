@@ -209,7 +209,7 @@
   color: #fde047;
 }
 
-.badge-general {
+.badge-neutral {
   background: rgba(107, 114, 128, 0.2);
   color: #9ca3af;
 }
@@ -228,15 +228,9 @@
   color: #86efac;
 }
 
-.status.inactive,
-.status.expired,
-.status.used {
+.status.expired {
   background: rgba(239, 68, 68, 0.2);
   color: #fca5a5;
-}
-
-.uses-full {
-  color: #f87171;
 }
 
 .expired {
@@ -257,9 +251,87 @@
   background: #333;
 }
 
-/* Loading */
-.loading {
-  text-align: center;
-  padding: 3rem;
+/* Ayuda bajo un campo */
+.form-help {
+  display: block;
+  margin-top: 0.4rem;
   color: #888;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+/* Selector de fecha y hora con el esquema oscuro (icono del calendario visible) */
+.form-group input.input-datetime {
+  color-scheme: dark;
+  font-family: inherit;
+}
+
+.form-group input.input-datetime::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+/* Aviso de éxito con el código y el botón copiar */
+.success-code {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.success-code code {
+  background: #2a2a3e;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: "Consolas", monospace;
+  color: #a78bfa;
+}
+
+/* Encabezado de la lista local */
+.codes-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.codes-list-header h2 {
+  margin-bottom: 0;
+}
+
+.btn-clear {
+  background: transparent;
+  border: 1px solid #444;
+  color: #aaa;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-clear:hover {
+  background: #333;
+  color: #fff;
+}
+
+/* Aviso: V2 no permite listar códigos */
+.info-note {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Usos: el contador real no está disponible en V2 */
+.uses-na {
+  color: #888;
+  cursor: help;
 }
