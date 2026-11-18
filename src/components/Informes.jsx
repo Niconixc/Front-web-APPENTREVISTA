@@ -6,48 +6,17 @@ import {
   getUsers, contarPreguntas, getCostosIa, getCargos, getSkillsTrending, mensajeDeError,
 } from '../services/api';
 import {
-  CATEGORIAS, ESTADOS_PREGUNTA, LIMITES, etiqueta, formatearDiaUtc, diaUtc, diasEntre, formatearPesos, NOTA_TIPO_CAMBIO,
+  CATEGORIAS, ESTADOS_PREGUNTA, LIMITES, etiqueta, formatearDiaUtc, diaUtc, diasEntre, formatearPesos, NOTA_TIPO_CAMBIO, formatearDiaSinZona,
 } from '../services/etiquetas';
 import { leerTopeGeneracion } from '../services/topeGeneracion';
 import TopeGeneracionIa from './TopeGeneracionIa';
 import Icono from './Icono';
+import usePaletaGrafico from './usePaletaGrafico';
 import './Informes.css';
 
 // ============================================
 // Utilidades locales
 // ============================================
-
-/**
- * Colores de los gráficos tomados de los tokens (tokens.css). Cambian con el tema del sistema, así que se vuelven a
- * leer cuando cambia prefers-color-scheme.
- */
-const leerPaleta = () => {
-  const estilos = getComputedStyle(document.documentElement);
-  const token = (nombre) => estilos.getPropertyValue(nombre).trim() || 'currentColor';
-  return {
-    series: ['--grafico-1', '--grafico-2', '--grafico-3', '--grafico-4'].map(token),
-    rejilla: token('--grafico-rejilla'),
-    ejes: token('--texto-3'),
-    texto: token('--texto'),
-    texto2: token('--texto-2'),
-    superficie: token('--superficie'),
-    borde: token('--borde'),
-    cursor: token('--superficie-hover'),
-    peligro: token('--peligro'),
-  };
-};
-
-const usePaletaGrafico = () => {
-  const [paleta, setPaleta] = useState(leerPaleta);
-  useEffect(() => {
-    const consulta = window.matchMedia?.('(prefers-color-scheme: dark)');
-    if (!consulta) return undefined;
-    const alCambiar = () => setPaleta(leerPaleta());
-    consulta.addEventListener('change', alCambiar);
-    return () => consulta.removeEventListener('change', alCambiar);
-  }, []);
-  return paleta;
-};
 
 const PRESETS = [7, 30, 90];
 const USUARIOS_VISIBLES = 50;
@@ -59,7 +28,7 @@ const numero = (n) => (typeof n === 'number' ? n.toLocaleString('es-CL') : '—'
 const pesosEje = (v) => formatearPesos(v);
 
 /** fechaCreacion de usuarios es LocalDateTime sin zona: se toma el día tal cual, sin pasar por new Date. */
-const formatearFechaLocal = (valor) => (valor ? formatearDiaUtc(String(valor).slice(0, 10)) : '—');
+const formatearFechaLocal = formatearDiaSinZona;
 
 /** 'AAAA-MM' → 'ene 2026'. */
 const etiquetaMes = (mes) => {

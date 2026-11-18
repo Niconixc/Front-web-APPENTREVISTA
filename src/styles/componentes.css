@@ -153,14 +153,11 @@
   border-radius: 0 0 var(--radio-lg) var(--radio-lg);
 }
 
-/* ============ Métricas (números clave) ============ */
+/* ============ Métricas (números clave): tarjetas separadas ============ */
 .metricas {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-lg);
-  background: var(--superficie);
-  overflow: hidden;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: var(--e-4);
 }
 
 .metrica {
@@ -168,11 +165,13 @@
   display: flex;
   flex-direction: column;
   gap: var(--e-1);
-  border-right: 1px solid var(--borde);
-  border-bottom: 1px solid var(--borde);
-  margin: 0 -1px -1px 0;
   min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-sutil);
 }
+.metrica__cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--e-2); margin-bottom: var(--e-1); }
 .metrica__etiqueta { font-size: var(--texto-sm); color: var(--texto-2); font-weight: var(--peso-medio); }
 .metrica__valor {
   font-size: var(--texto-2xl);
@@ -183,6 +182,87 @@
 }
 .metrica__detalle { font-size: var(--texto-xs); color: var(--texto-3); }
 .metrica__enlace { font-size: var(--texto-sm); margin-top: auto; padding-top: var(--e-2); }
+
+/* ============ Chip de ícono (cuadro suave con el ícono del mismo tono) ============ */
+.chip-icono {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radio-lg);
+  background: var(--chip-azul-fondo);
+  color: var(--chip-azul);
+}
+.chip-icono--chico { width: 1.75rem; height: 1.75rem; border-radius: var(--radio); }
+.chip-icono--verde { background: var(--chip-verde-fondo); color: var(--chip-verde); }
+.chip-icono--ambar { background: var(--chip-ambar-fondo); color: var(--chip-ambar); }
+.chip-icono--violeta { background: var(--chip-violeta-fondo); color: var(--chip-violeta); }
+
+/* ============ Avatar con iniciales ============ */
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--chip-azul-fondo);
+  color: var(--chip-azul);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.02em;
+}
+.avatar--chico { width: 1.75rem; height: 1.75rem; font-size: 0.6875rem; }
+.avatar--tono-1 { background: var(--chip-verde-fondo); color: var(--chip-verde); }
+.avatar--tono-2 { background: var(--chip-ambar-fondo); color: var(--chip-ambar); }
+.avatar--tono-3 { background: var(--chip-violeta-fondo); color: var(--chip-violeta); }
+
+/* ============ Barra apilada (partes de un total) con su leyenda ============ */
+.barra-apilada {
+  display: flex;
+  height: 0.5rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--superficie-2);
+  gap: 2px;
+}
+.barra-apilada__parte { height: 100%; min-width: 3px; background: var(--grafico-1); }
+.barra-apilada__parte--2 { background: var(--grafico-2); }
+.barra-apilada__parte--3 { background: var(--grafico-3); }
+.barra-apilada__parte--4 { background: var(--texto-3); }
+.barra-apilada__parte--peligro { background: var(--peligro); }
+.leyenda { display: flex; flex-wrap: wrap; gap: var(--e-1) var(--e-3); list-style: none; padding: 0; font-size: var(--texto-xs); color: var(--texto-2); }
+.leyenda li { display: inline-flex; align-items: center; gap: 0.35rem; }
+.leyenda__marca { width: 0.5rem; height: 0.5rem; border-radius: 2px; background: var(--grafico-1); flex: none; }
+.leyenda__marca--2 { background: var(--grafico-2); }
+.leyenda__marca--3 { background: var(--grafico-3); }
+.leyenda__marca--4 { background: var(--texto-3); }
+.leyenda__marca--peligro { background: var(--peligro); }
+
+/* ============ Lista de filas dentro de una tarjeta ============ */
+.filas { list-style: none; padding: 0; margin: 0; }
+.filas > li + li { border-top: 1px solid var(--borde); }
+.fila-item {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  padding: var(--e-3) var(--e-5);
+  min-width: 0;
+}
+.fila-item__textos { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.fila-item__titulo { font-weight: var(--peso-medio); color: var(--texto); }
+.fila-item__detalle { font-size: var(--texto-xs); color: var(--texto-3); display: flex; flex-wrap: wrap; gap: var(--e-1) var(--e-2); align-items: center; }
+.fila-item__lado { flex: none; display: flex; align-items: center; gap: var(--e-2); }
+
+/* ============ Esqueleto de carga (fondo plano que late; quieto con prefers-reduced-motion) ============ */
+.esqueleto {
+  display: block;
+  border-radius: var(--radio);
+  background: var(--esqueleto);
+  animation: esqueleto 1.4s ease-in-out infinite;
+}
+@keyframes esqueleto { 50% { opacity: 0.55; } }
 
 /* ============ Tablas ============ */
 .tabla-contenedor {
@@ -441,6 +521,14 @@
 .truncar { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .icono { flex: none; }
 
+/* Barras apiladas y esqueletos en alto contraste */
+@media (forced-colors: active) {
+  .barra-apilada { border: 1px solid CanvasText; }
+  .barra-apilada__parte,
+  .leyenda__marca { forced-color-adjust: none; }
+  .esqueleto { border: 1px solid CanvasText; }
+}
+
 @media (max-width: 720px) {
   .pagina { padding: var(--e-4) var(--e-4) var(--e-10); }
   .encabezado-pagina { align-items: flex-start; }
@@ -454,8 +542,9 @@
   .aviso,
   .tarjeta,
   .tabla-contenedor,
-  .metricas,
+  .metrica,
   .medidor { border-color: CanvasText; }
+  .chip-icono { border: 1px solid CanvasText; }
   .medidor__relleno { background: Highlight; forced-color-adjust: none; }
   .boton--primario { border: 2px solid ButtonText; }
 }

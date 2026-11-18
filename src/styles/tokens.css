@@ -7,7 +7,7 @@
   color-scheme: light;
 
   /* Superficies */
-  --fondo: #f5f6f8;
+  --fondo: #f2f4f7;
   --superficie: #ffffff;
   --superficie-2: #f0f2f5;
   --superficie-hover: #e9ecf0;
@@ -48,6 +48,31 @@
   --grafico-4: #7a5aa6;
   --grafico-rejilla: #e1e4e8;
 
+  /* Menú lateral: azul marino de marca (contraste ≥ 4.5:1 en todos sus textos) */
+  --lateral-fondo: #13243d;
+  --lateral-borde: #13243d;
+  --lateral-texto: #e9eef5;
+  --lateral-texto-2: #b9c4d3;
+  --lateral-texto-3: #8d9bb0;
+  --lateral-hover: rgba(255, 255, 255, 0.07);
+  --lateral-activo: rgba(255, 255, 255, 0.12);
+  --lateral-indicador: #8db4ea;
+  --lateral-logo-fondo: #ffffff;
+  --lateral-logo-texto: #13243d;
+
+  /* Chips de íconos (fondo suave + ícono del mismo tono) */
+  --chip-azul: #22579b;
+  --chip-azul-fondo: #e4ecf7;
+  --chip-verde: #1d6b40;
+  --chip-verde-fondo: #e1f1e7;
+  --chip-ambar: #8a5a00;
+  --chip-ambar-fondo: #fbefd2;
+  --chip-violeta: #5d4590;
+  --chip-violeta-fondo: #ece7f6;
+
+  /* Esqueleto de carga */
+  --esqueleto: #e2e6eb;
+
   /* Foco visible */
   --foco: #22579b;
   --velo: rgba(15, 19, 24, 0.45);
@@ -61,7 +86,7 @@
   --texto-base: 0.875rem; /* 14 */
   --texto-md: 1rem;      /* 16 */
   --texto-lg: 1.125rem;  /* 18 */
-  --texto-xl: 1.375rem;  /* 22 */
+  --texto-xl: 1.5rem;    /* 24 */
   --texto-2xl: 1.75rem;  /* 28 */
   --peso-normal: 400;
   --peso-medio: 500;
@@ -82,9 +107,9 @@
   /* Formas */
   --radio-sm: 4px;
   --radio: 6px;
-  --radio-lg: 8px;
+  --radio-lg: 10px;
   --sombra-flotante: 0 8px 24px rgba(16, 24, 40, 0.14), 0 2px 6px rgba(16, 24, 40, 0.08);
-  --sombra-sutil: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --sombra-sutil: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.07);
 
   /* Medidas del layout */
   --ancho-lateral: 232px;
@@ -135,9 +160,31 @@
     --grafico-4: #b49ad8;
     --grafico-rejilla: #2b3037;
 
+    --lateral-fondo: #0c0e11;
+    --lateral-borde: #23272d;
+    --lateral-texto: #e7e9ec;
+    --lateral-texto-2: #b5bcc5;
+    --lateral-texto-3: #8b939d;
+    --lateral-hover: rgba(255, 255, 255, 0.06);
+    --lateral-activo: rgba(134, 174, 230, 0.16);
+    --lateral-indicador: #86aee6;
+    --lateral-logo-fondo: #86aee6;
+    --lateral-logo-texto: #0f1318;
+
+    --chip-azul: #9dbdec;
+    --chip-azul-fondo: #1d2838;
+    --chip-verde: #74c999;
+    --chip-verde-fondo: #15291d;
+    --chip-ambar: #e2b55a;
+    --chip-ambar-fondo: #2e2512;
+    --chip-violeta: #c3aee6;
+    --chip-violeta-fondo: #2a2238;
+
+    --esqueleto: #262b32;
+
     --foco: #9dbdec;
     --velo: rgba(0, 0, 0, 0.6);
     --sombra-flotante: 0 10px 28px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
-    --sombra-sutil: none;
+    --sombra-sutil: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
 }

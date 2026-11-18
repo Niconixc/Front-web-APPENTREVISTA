@@ -5,9 +5,11 @@ sobrio y confiable, como un panel de un producto real. No tiene que parecer una 
 
 ## Principios
 
-1. **Claro y sobrio.** El fondo es gris muy claro y las superficies blancas, separadas con bordes finos. Hay un solo color de acento
-   (azul `--acento`), que se usa para lo que es acción principal o para lo seleccionado. El tema oscuro se activa solo si
-   el sistema lo pide (`prefers-color-scheme`), con los mismos tokens.
+1. **Claro y sobrio, con relieve.**
+   - El fondo es gris muy claro y las tarjetas son blancas, con borde fino y una sombra suave (`--sombra-sutil`).
+   - El menú lateral es azul marino de marca (tokens `--lateral-*`) y separa la navegación del contenido.
+   - Hay un solo color de acento (azul `--acento`), para la acción principal o lo seleccionado.
+   - El tema oscuro se activa solo si el sistema lo pide (`prefers-color-scheme`), con los mismos tokens.
 2. **Los datos primero.** Las tablas son compactas, los números se alinean a la derecha con `tabular-nums`, los títulos
    son cortos y las explicaciones largas van en texto secundario o dentro de un `<details>`.
 3. **Nada decorativo que no informe.** No se usan:
@@ -17,7 +19,7 @@ sobrio y confiable, como un panel de un producto real. No tiene que parecer una 
    - botones que «saltan» con `translateY` al pasar el mouse;
    - mayúsculas forzadas en títulos o insignias;
    - tarjetas enormes con un ícono gigante.
-4. **Jerarquía con tipografía, no con color.** Se usan pesos 400, 500 y 600 y una escala de tamaños corta (12, 13, 14, 16, 18, 22 y 28 px).
+4. **Jerarquía con tipografía, no con color.** Se usan pesos 400, 500 y 600 y una escala de tamaños corta (12, 13, 14, 16, 18, 24 y 28 px).
    Los títulos van en tipo oración («Crear usuario», no «Crear Usuario»).
 5. **Un botón primario por vista.** Las demás acciones son secundarias (`.boton`) o sutiles (`.boton--sutil`). Una acción
    destructiva en una fila de tabla usa `.boton--peligro-suave`, y la confirmación final usa `.boton--peligro`.
@@ -58,7 +60,12 @@ sobrio y confiable, como un panel de un producto real. No tiene que parecer una 
 
 **Contenedores**
 - `.tarjeta` lleva `__encabezado`, `__titulo`, `__cuerpo` y `__pie`.
-- `.metricas` es una fila de números clave con celdas `.metrica`, que llevan `__etiqueta`, `__valor`, `__detalle` y `__enlace`.
+- `.metricas` es una rejilla de números clave. Cada `.metrica` es una tarjeta con `__cabecera` (etiqueta y chip), `__etiqueta`, `__valor`, `__detalle` y `__enlace`.
+- `.chip-icono` es un cuadro suave con un ícono del mismo tono: azul por defecto, y las variantes `--verde`, `--ambar`, `--violeta` y `--chico` (tokens `--chip-*`).
+- `.avatar` es un círculo con iniciales (`iniciales()` y `tonoAvatar()` de `services/etiquetas.js`). Tiene las variantes `--chico` y `--tono-1…3`.
+- `.barra-apilada` con sus `__parte` (`--2`, `--3`, `--4`, `--peligro`) muestra las partes de un total. Va siempre con una `.leyenda` en texto, porque el color solo no basta.
+- `.filas` con `.fila-item` (`__textos`, `__titulo`, `__detalle`, `__lado`) es una lista de filas dentro de una tarjeta.
+- `.esqueleto` es el bloque de carga: un fondo plano que late y se queda quieto con `prefers-reduced-motion`.
 
 **Tablas**
 - `.tabla-contenedor` envuelve la tabla, que es `.tabla` (`--compacta` para la versión densa).
@@ -101,4 +108,4 @@ sobrio y confiable, como un panel de un producto real. No tiene que parecer una 
 - Los textos de estado van en insignias con palabras: «Aprobada», «Pendiente», «Rechazada», «Activo», «Inactivo», «Admin», «Usuario».
 - **Montos en pesos chilenos.** El backend guarda los costos de IA en dólares (así cobra el proveedor), y el panel los muestra en pesos con `formatearPesos`, por ejemplo «$4.038». Para eso usa un tipo de cambio referencial: `VITE_DOLAR_CLP`, que por defecto es 950. Los dólares exactos quedan solo en el CSV.
 - Las fechas y montos usan las utilidades existentes (`services/etiquetas.js`, `services/topeGeneracion.js`). No se cambia cómo se calculan.
-- Los gráficos (recharts) toman sus colores de `--grafico-1…4` y `--grafico-rejilla`, que se leen con `getComputedStyle`.
+- Los gráficos (recharts) usan `usePaletaGrafico()` y van con `accessibilityLayer={false}` cuando están dentro de un `role="img"` o un `aria-hidden`. Toman sus colores de `--grafico-1…4` y `--grafico-rejilla`, que se leen con `getComputedStyle`.

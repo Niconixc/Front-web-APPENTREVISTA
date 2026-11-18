@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { logout, usuarioActual } from '../services/api';
 import Icono from './Icono';
+import { iniciales } from '../services/etiquetas';
 import './Navbar.css';
 
 /** Menú lateral por secciones. En pantallas angostas se vuelve una barra superior con un botón «Menú». */
 const SECCIONES = [
   {
+    id: 'general',
     titulo: 'General',
     enlaces: [
       { a: '/dashboard', texto: 'Resumen', icono: 'resumen' },
@@ -14,6 +16,7 @@ const SECCIONES = [
     ],
   },
   {
+    id: 'usuarios',
     titulo: 'Usuarios',
     enlaces: [
       { a: '/usuarios', texto: 'Usuarios', icono: 'usuarios' },
@@ -21,6 +24,7 @@ const SECCIONES = [
     ],
   },
   {
+    id: 'banco',
     titulo: 'Banco de preguntas',
     enlaces: [
       { a: '/preguntas', texto: 'Preguntas', icono: 'preguntas' },
@@ -30,6 +34,7 @@ const SECCIONES = [
     ],
   },
   {
+    id: 'suscripciones',
     titulo: 'Suscripciones',
     enlaces: [{ a: '/codigos', texto: 'Códigos', icono: 'codigos' }],
   },
@@ -97,11 +102,11 @@ const Navbar = ({ setIsAuthenticated }) => {
 
         <nav className="lateral__nav" aria-label="Secciones del panel">
           {SECCIONES.map((seccion) => (
-            <div key={seccion.titulo} className="lateral__grupo">
-              <p className="lateral__titulo-grupo" id={`grupo-${seccion.titulo}`}>
+            <div key={seccion.id} className="lateral__grupo">
+              <p className="lateral__titulo-grupo" id={`grupo-${seccion.id}`}>
                 {seccion.titulo}
               </p>
-              <ul aria-labelledby={`grupo-${seccion.titulo}`}>
+              <ul aria-labelledby={`grupo-${seccion.id}`}>
                 {seccion.enlaces.map((enlace) => (
                   <li key={enlace.a}>
                     <NavLink to={enlace.a} className="lateral__enlace">
@@ -116,9 +121,13 @@ const Navbar = ({ setIsAuthenticated }) => {
         </nav>
 
         <div className="lateral__pie">
-          <p className="lateral__correo truncar" title={user.correo || undefined}>
-            {user.correo}
-          </p>
+          <div className="lateral__usuario">
+            <span className="avatar avatar--chico" aria-hidden="true">{iniciales(user.correo)}</span>
+            <span className="lateral__usuario-textos">
+              <span className="lateral__correo truncar" title={user.correo || undefined}>{user.correo}</span>
+              <span className="lateral__rol">Administrador</span>
+            </span>
+          </div>
           <button
             type="button"
             onClick={handleLogout}

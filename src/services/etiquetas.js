@@ -71,6 +71,9 @@ export const formatearDiaUtc = (dia) => {
 };
 
 /** 'AAAA-MM-DD' de hoy en UTC menos [dias] días (para rangos de costos de IA). */
+/** Fecha sin zona (LocalDateTime del backend, p. ej. fechaCreacion de usuarios): el día tal cual, sin new Date. */
+export const formatearDiaSinZona = (valor) => (valor ? formatearDiaUtc(String(valor).slice(0, 10)) : '—');
+
 export const diaUtc = (diasAtras = 0) => new Date(Date.now() - diasAtras * 86_400_000).toISOString().slice(0, 10);
 
 /** Todos los días 'AAAA-MM-DD' entre desde y hasta (incluidos). */
@@ -121,6 +124,28 @@ export const formatearPesos = (montoUsd, tipoCambio = TIPO_CAMBIO_CLP) => {
   if (abs < 0.05) return 'menos de $0,1';
   if (abs < 10) return `${signo}$${abs.toFixed(1).replace('.', ',').replace(/,0$/, '')}`;
   return `${signo}$${conPuntos(Math.round(abs))}`;
+};
+
+// ---------- Avatares ----------
+
+/**
+ * Dos iniciales para el avatar: del nombre («Camila Rojas» → «CR») o, sin nombre, del correo («diego.fuentes@…» → «DF»,
+ * «admin@…» → «AD»). Sin nada, «?».
+ */
+export const iniciales = (nombreOCorreo) => {
+  const texto = String(nombreOCorreo || '').trim();
+  if (!texto) return '?';
+  const base = texto.includes('@') ? texto.split('@')[0] : texto;
+  const partes = base.split(/[\s._-]+/).filter(Boolean);
+  const letras = partes.length >= 2 ? partes[0][0] + partes[1][0] : (partes[0] || '?').slice(0, 2);
+  return letras.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase() || '?';
+};
+
+/** Tono estable del avatar (0 a 3) según el texto: la misma persona siempre tiene el mismo color. */
+export const tonoAvatar = (texto) => {
+  let h = 0;
+  for (const c of String(texto || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return h % 4;
 };
 
 /** Texto corto para explicar la conversión (notas de Informes y Generar con IA). */
