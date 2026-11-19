@@ -562,7 +562,9 @@ const GenerarPreguntas = () => {
       <TopeGeneracionIa
         tope={tope}
         desactualizado={lecturaTopeFallida}
-        encabezado="Tope mensual de gasto en generar preguntas con IA (todos los administradores)"
+        encabezado={tope?.unidad === 'creditos'
+          ? 'Credits del Token Plan de MiMo (todos los administradores)'
+          : 'Tope mensual de gasto en generar preguntas con IA (todos los administradores)'}
       />
 
       <form onSubmit={abrirConfirmacion} className="tarjeta gp-tarjeta" noValidate>

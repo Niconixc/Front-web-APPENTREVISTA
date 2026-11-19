@@ -34,6 +34,68 @@ export const formatearMesUtc = (mes) => {
   return coincide ? `${MESES[Number(coincide[2]) - 1]} de ${coincide[1]}` : String(mes);
 };
 
+const esEntero = (n) => Number.isSafeInteger(n) && n >= 0;
+
+/** Credits del Token Plan de MiMo: '2,92 M', '4.100 M' (millones), o el número entero si es menos de un millón. */
+export const formatearCreditos = (n) => {
+  const valor = Number(n) || 0;
+  if (valor < 1_000_000) return Math.round(valor).toLocaleString('es-CL');
+  const millones = valor / 1_000_000;
+  return `${millones.toLocaleString('es-CL', { maximumFractionDigits: millones < 100 ? 2 : 0 })} M`;
+};
+
+/** Monto del tope en su unidad: pesos (tope en dinero) o Credits (Token Plan de MiMo). */
+export const formatearMontoTope = (tope, valor) =>
+  (tope?.unidad === 'creditos' ? `${formatearCreditos(valor)} Credits` : formatearPesos(valor));
+
+/** Solo la cifra, sin la palabra «Credits» (para cifras grandes con la unidad aparte). */
+export const formatearCifraTope = (tope, valor) =>
+  (tope?.unidad === 'creditos' ? formatearCreditos(valor) : formatearPesos(valor));
+
+/** Porcentaje para leer: con dos decimales bajo 1 % (0,07 %), entero desde ahí. '' sin medidor. */
+export const porcentajeTexto = (tope) => {
+  if (!tope || tope.porcentaje === null || tope.porcentaje === undefined) return '';
+  const exacto = tope.porcentajeExacto;
+  if (!tope.agotado && typeof exacto === 'number' && exacto > 0 && exacto < 1) {
+    return `${exacto.toLocaleString('es-CL', { maximumFractionDigits: 2, minimumFractionDigits: 2 })} %`;
+  }
+  return `${tope.porcentaje} %`;
+};
+
+/**
+ * planTokenMimo de Costos IA (D31) → el mismo formato que el tope en pesos, con unidad 'creditos', o null si no viene
+ * (el servidor no tiene Token Plan) o viene roto. El servidor cuenta los Credits con los tokens de cada llamada a MiMo
+ * de la app; lo gastado con la misma clave fuera de la app no aparece.
+ */
+export const leerPlanTokenMimo = (respuestaCostos) => {
+  const p = respuestaCostos?.planTokenMimo;
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
+  const { desde, hasta, creditosPlan, creditosUsados, creditosRestantes, llamadas, estaAgotado } = p;
+  if (typeof desde !== 'string' || !PATRON_DIA.test(desde) || typeof hasta !== 'string' || !PATRON_DIA.test(hasta)) return null;
+  if (!esEntero(creditosPlan) || creditosPlan <= 0 || !esEntero(creditosUsados) || !esEntero(creditosRestantes)) return null;
+  if (typeof estaAgotado !== 'boolean') return null;
+  const exacto = (creditosUsados / creditosPlan) * 100;
+  const porcentaje = estaAgotado ? 100 : Math.min(99, Math.floor(exacto + EPSILON_PORCENTAJE));
+  let nivel = 'ok';
+  if (estaAgotado) nivel = 'agotado';
+  else if (porcentaje >= Math.round(UMBRAL_AVISO_TOPE * 100)) nivel = 'cerca';
+  return {
+    unidad: 'creditos',
+    mes: null,
+    desde,
+    gastado: creditosUsados,
+    tope: creditosPlan,
+    restante: estaAgotado ? 0 : creditosRestantes,
+    llamadas: esEntero(llamadas) ? llamadas : null,
+    fechaReposicion: hasta,
+    desactivado: false,
+    agotado: estaAgotado,
+    porcentaje,
+    porcentajeExacto: estaAgotado ? 100 : exacto,
+    nivel,
+  };
+};
+
 /**
  * topeGeneracionPreguntas de la respuesta de Costos IA → datos listos para mostrar, o null si el campo no viene (backend
  * anterior al tope en Costos IA) o viene roto (tipos, NaN, estados incompatibles). Con null el panel oculta el bloque:
@@ -46,6 +108,9 @@ export const formatearMesUtc = (mes) => {
  * - restante: nunca negativo (dos generaciones simultáneas pueden pasar el tope: no hay reserva previa).
  */
 export const leerTopeGeneracion = (respuestaCostos) => {
+  // Con Token Plan de MiMo (D31) el límite real son sus Credits, no un monto en dinero: reemplaza al tope en pesos.
+  const plan = leerPlanTokenMimo(respuestaCostos);
+  if (plan) return plan;
   const t = respuestaCostos?.topeGeneracionPreguntas;
   if (!t || typeof t !== 'object' || Array.isArray(t)) return null;
   const { mes, gastadoUsd, topeUsd, restanteUsd, fechaReposicion, estaDesactivado, estaAgotado } = t;
@@ -57,6 +122,7 @@ export const leerTopeGeneracion = (respuestaCostos) => {
 
   if (estaDesactivado) {
     return {
+      unidad: 'pesos',
       mes,
       gastado: gastadoUsd,
       tope: topeUsd,
@@ -80,6 +146,7 @@ export const leerTopeGeneracion = (respuestaCostos) => {
   else if (porcentaje >= Math.round(UMBRAL_AVISO_TOPE * 100)) nivel = 'cerca';
 
   return {
+    unidad: 'pesos',
     mes,
     gastado: gastadoUsd,
     tope: topeUsd,
@@ -92,7 +159,7 @@ export const leerTopeGeneracion = (respuestaCostos) => {
   };
 };
 
-const usadoDeTope = (tope) => `${formatearPesos(tope.gastado)} de ${formatearPesos(tope.tope)}`;
+const usadoDeTope = (tope) => `${formatearMontoTope(tope, tope.gastado)} de ${formatearMontoTope(tope, tope.tope)}`;
 
 /**
  * Textos del bloque del tope: {estado, titulo, detalle}. El estado va en palabras (no solo con el color). Desactivado no
@@ -100,6 +167,23 @@ const usadoDeTope = (tope) => `${formatearPesos(tope.gastado)} de ${formatearPes
  */
 export const textoTope = (tope) => {
   if (!tope) return null;
+  if (tope.unidad === 'creditos') {
+    const renueva = formatearDiaUtc(tope.fechaReposicion);
+    if (tope.agotado) {
+      return {
+        estado: 'Plan agotado',
+        titulo: `Token Plan de MiMo agotado: ${usadoDeTope(tope)}`,
+        detalle: `Hasta el ${renueva} (UTC), día en que se renueva el plan, cada generación con MiMo responde «tope `
+          + 'alcanzado» sin llamar a la IA.',
+      };
+    }
+    return {
+      estado: tope.nivel === 'cerca' ? 'Cerca del límite' : 'Disponible',
+      titulo: `${usadoDeTope(tope)} usados desde el ${formatearDiaUtc(tope.desde)} (${porcentajeTexto(tope)})`,
+      detalle: `Quedan ${formatearMontoTope(tope, tope.restante)}. El plan se renueva el ${renueva} (UTC). Calculado con `
+        + 'los tokens de cada llamada de la app a MiMo; lo que se use con la misma clave fuera de la app no aparece.',
+    };
+  }
   const mes = formatearMesUtc(tope.mes);
   const repone = formatearDiaUtc(tope.fechaReposicion);
   if (tope.desactivado) {
@@ -128,7 +212,7 @@ export const textoTope = (tope) => {
 
 /** aria-valuetext del medidor: 'US$ X de US$ Y (N %)'. Vacío si no hay medidor (sin dato o desactivado). */
 export const valorTextoMedidor = (tope) =>
-  (tope && !tope.desactivado ? `${usadoDeTope(tope)} (${tope.porcentaje} %)` : '');
+  (tope && !tope.desactivado ? `${usadoDeTope(tope)} (${porcentajeTexto(tope)})` : '');
 
 /**
  * Nota del bloque del tope cuando la última lectura de Costos IA falló y se sigue mostrando la anterior (por ejemplo,
@@ -155,6 +239,13 @@ export const avisoAntesDeGenerar = (tope, costoEstimado) => {
     return 'La generación con IA está desactivada en el servidor: la rechazará sin llamar a la IA (sin costo).';
   }
   const repone = formatearDiaUtc(tope.fechaReposicion);
+  if (tope.unidad === 'creditos') {
+    // El costo estimado viene en dinero y el plan en Credits: solo se avisa si el plan ya se agotó.
+    return tope.agotado
+      ? 'Ya se usaron todos los Credits del Token Plan de MiMo: el servidor responderá «tope alcanzado» sin llamar a la '
+        + `IA hasta el ${repone} (UTC), día en que se renueva el plan.`
+      : null;
+  }
   if (tope.agotado) {
     return `Ya se alcanzó el tope del mes (${formatearPesos(tope.tope)}): el servidor responderá «tope alcanzado» sin `
       + `llamar a la IA (sin costo) hasta el ${repone} (UTC).`;
@@ -202,8 +293,11 @@ export const lineaTopeEnConfirmacion = (tope, costoEstimado, { actualizando = fa
   }
   const aviso = avisoAntesDeGenerar(tope, costoEstimado);
   const texto = aviso
-    || `Quedan ${formatearPesos(tope.restante)} del tope del mes (${formatearPesos(tope.tope)}); se repone el `
-      + `${formatearDiaUtc(tope.fechaReposicion)} (UTC).`;
+    || (tope.unidad === 'creditos'
+      ? `Quedan ${formatearMontoTope(tope, tope.restante)} del Token Plan de MiMo (${formatearMontoTope(tope, tope.tope)}); `
+        + `se renueva el ${formatearDiaUtc(tope.fechaReposicion)} (UTC).`
+      : `Quedan ${formatearPesos(tope.restante)} del tope del mes (${formatearPesos(tope.tope)}); se repone el `
+        + `${formatearDiaUtc(tope.fechaReposicion)} (UTC).`);
   let prefijo = '';
   if (actualizando) prefijo = PREFIJO_LECTURA_ANTERIOR;
   else if (sinActualizar) prefijo = PREFIJO_LECTURA_FALLIDA;
@@ -246,6 +340,11 @@ export const anuncioTopeActualizado = ({
 /** Una línea para la tarjeta de gasto del Dashboard, o null si no hay dato del tope. */
 export const resumenCortoTope = (tope) => {
   if (!tope) return null;
+  if (tope.unidad === 'creditos') {
+    if (tope.agotado) return `Token Plan de MiMo agotado: se renueva el ${formatearDiaUtc(tope.fechaReposicion)} (UTC)`;
+    const prefijo = tope.nivel === 'cerca' ? 'Token Plan de MiMo, cerca del límite' : 'Token Plan de MiMo';
+    return `${prefijo}: ${porcentajeTexto(tope)} usado (${usadoDeTope(tope)})`;
+  }
   if (tope.desactivado) return 'Generación con IA desactivada en el servidor';
   if (tope.agotado) return `Tope de generación alcanzado: se repone el ${formatearDiaUtc(tope.fechaReposicion)} (UTC)`;
   const prefijo = tope.nivel === 'cerca' ? 'Cerca del tope de generación' : 'Tope de generación del mes';
@@ -264,6 +363,10 @@ export const notaTopeAlcanzado = (tope) => {
   if (!tope) {
     return `${base} El tope mensual lo define ${VARIABLE_TOPE} en el servidor; si vale 0, la generación queda `
       + 'desactivada hasta cambiarlo.';
+  }
+  if (tope.unidad === 'creditos') {
+    return `${base} Se usaron todos los Credits del Token Plan de MiMo; se renueva el `
+      + `${formatearDiaUtc(tope.fechaReposicion)} (UTC). Mientras, se puede generar con otro modelo si está configurado.`;
   }
   if (tope.desactivado) {
     return `${base} La generación con IA está desactivada: ${VARIABLE_TOPE} vale 0 o no es un monto válido. Para `

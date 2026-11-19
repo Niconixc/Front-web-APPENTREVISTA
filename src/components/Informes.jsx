@@ -538,8 +538,14 @@ const Informes = () => {
           <div className={`tarjeta informes-tope${costos.cargando ? ' informes-actualizando' : ''}`}>
             <div className="informes-tarjeta__cabecera">
               <div className="informes-tarjeta__textos">
-                <h3 className="informes-tarjeta__titulo">Tope mensual de generación de preguntas</h3>
-                <p className="informes-tarjeta__sub">Mes en curso (UTC) · no depende del rango de fechas</p>
+                <h3 className="informes-tarjeta__titulo">
+                  {topeGeneracion.unidad === 'creditos' ? 'Token Plan de MiMo' : 'Tope mensual de generación de preguntas'}
+                </h3>
+                <p className="informes-tarjeta__sub">
+                  {topeGeneracion.unidad === 'creditos'
+                    ? 'Periodo del plan en curso (UTC) · no depende del rango de fechas'
+                    : 'Mes en curso (UTC) · no depende del rango de fechas'}
+                </p>
               </div>
             </div>
             <div className="informes-tope__cuerpo">
@@ -547,6 +553,16 @@ const Informes = () => {
               <details className="desplegable">
                 <summary>Cómo se calcula el tope</summary>
                 <div className="desplegable__cuerpo">
+                  {topeGeneracion.unidad === 'creditos' ? (
+                    <p>
+                      El Token Plan de MiMo es de precio fijo y trae una cuota de Credits por periodo. MiMo no tiene una
+                      API para leer el saldo, así que el servidor lo calcula: suma los tokens de cada llamada de la app a
+                      MiMo (reportes y generación, también las fallidas) y los convierte con la tabla oficial de Credits
+                      (flash: 100 por token de entrada y 200 de salida; pro: 300 y 600), sin descontar la caché. Por eso
+                      puede marcar algo más que la consola de MiMo, y no incluye lo que se use con la misma clave fuera
+                      de la app. Con el plan agotado, generar con MiMo responde «tope alcanzado» sin llamar a la IA.
+                    </p>
+                  ) : (
                   <p>
                     Este bloque no depende del rango de abajo: siempre muestra el mes en curso (UTC). Es el mismo cálculo
                     que hace el servidor antes de cada generación: suma lo que gastaron todos los administradores,
@@ -554,6 +570,7 @@ const Informes = () => {
                     (provider_timeout) no suma, porque el proveedor no informó tokens, así que lo cobrado de verdad
                     puede ser algo mayor.
                   </p>
+                  )}
                 </div>
               </details>
             </div>
