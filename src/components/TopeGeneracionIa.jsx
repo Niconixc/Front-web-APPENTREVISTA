@@ -44,7 +44,7 @@ const TopeGeneracionIa = ({ tope, encabezado = '', desactualizado = false, plano
           <div
             className={`medidor tope-ia-barra ${estilo.medidor}`.trim()}
             role="meter"
-            aria-label="Gasto del mes en generar preguntas con IA"
+            aria-label={tope.unidad === 'creditos' ? 'Credits usados del Token Plan de MiMo' : 'Gasto del mes en generar preguntas con IA'}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={tope.porcentaje}

@@ -76,6 +76,7 @@ test('un tope con datos rotos (tipos, NaN, estados incompatibles) se descarta en
 
 test('normal: 1.25 de 5 es 25 % y nivel ok, con los montos tal como llegan', () => {
   assert.deepEqual(leerTopeGeneracion(respuesta()), {
+    unidad: 'pesos',
     mes: '2026-11',
     gastado: 1.25,
     tope: 5,

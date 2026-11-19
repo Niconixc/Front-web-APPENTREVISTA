@@ -8,7 +8,9 @@ import {
   CATEGORIAS, NIVELES, TIPO_CAMBIO_CLP, diaUtc, diasEntre, etiqueta, formatearDiaSinZona, formatearDiaUtc,
   formatearPesos, iniciales, tonoAvatar,
 } from '../services/etiquetas';
-import { leerTopeGeneracion, resumenCortoTope, textoTope, valorTextoMedidor } from '../services/topeGeneracion';
+import {
+  formatearCifraTope, leerTopeGeneracion, porcentajeTexto, resumenCortoTope, textoTope, valorTextoMedidor,
+} from '../services/topeGeneracion';
 import Icono from './Icono';
 import usePaletaGrafico from './usePaletaGrafico';
 import './Dashboard.css';
@@ -99,7 +101,7 @@ const MedidorTope = ({ tope }) => {
     <div
       className={`resumen-medidor resumen-medidor--${tope.nivel}`}
       role="meter"
-      aria-label="Gasto del mes en generar preguntas con IA"
+      aria-label={tope.unidad === 'creditos' ? 'Credits usados del Token Plan de MiMo' : 'Gasto del mes en generar preguntas con IA'}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={tope.porcentaje}
@@ -117,9 +119,10 @@ const MedidorTope = ({ tope }) => {
         )}
       </svg>
       <div className="resumen-medidor__valor" aria-hidden="true">
-        <span className="resumen-medidor__cifra num">{formatearPesos(tope.gastado)}</span>
+        <span className="resumen-medidor__cifra num">{formatearCifraTope(tope, tope.gastado)}</span>
         <span className="resumen-medidor__de">
-          de {formatearPesos(tope.tope)} · <span className="mono">{tope.porcentaje} %</span>
+          de {formatearCifraTope(tope, tope.tope)}{tope.unidad === 'creditos' ? ' Credits' : ''} ·{' '}
+          <span className="mono">{porcentajeTexto(tope)}</span>
         </span>
       </div>
     </div>
@@ -301,6 +304,7 @@ const Dashboard = () => {
   const topeGeneracion = leerTopeGeneracion(costos.valor);
   const resumenTope = resumenCortoTope(topeGeneracion);
   const textosTope = textoTope(topeGeneracion);
+  const esPlanMimo = topeGeneracion?.unidad === 'creditos';
   const diasReposicion = topeGeneracion?.fechaReposicion ? diasHasta(topeGeneracion.fechaReposicion) : null;
   const hayGastoDiario = costosPorDia.some((d) => d.total > 0);
   const primerDia = costosPorDia[0]?.fecha;
@@ -577,8 +581,12 @@ const Dashboard = () => {
         <section className="tarjeta resumen-tope-tarjeta resumen-aparece" style={{ '--orden': 6 }} aria-labelledby="resumen-tope-titulo">
           <div className="resumen-tarjeta__cabecera">
             <div>
-              <h2 id="resumen-tope-titulo" className="resumen-tarjeta__titulo">Tope de generación del mes</h2>
-              <p className="resumen-tarjeta__sub">Generación de preguntas con IA</p>
+              <h2 id="resumen-tope-titulo" className="resumen-tarjeta__titulo">
+                {esPlanMimo ? 'Token Plan de MiMo' : 'Tope de generación del mes'}
+              </h2>
+              <p className="resumen-tarjeta__sub">
+                {esPlanMimo ? 'Credits del plan · reportes y generación con MiMo' : 'Generación de preguntas con IA'}
+              </p>
             </div>
             {textosTope && (
               <span className={`insignia insignia--punto ${claseInsigniaTope[topeGeneracion.nivel] || ''}`.trim()}>
@@ -596,11 +604,14 @@ const Dashboard = () => {
               {!topeGeneracion.desactivado && (
                 <dl className="resumen-tope-datos">
                   <div>
-                    <dt>Usado</dt>
-                    <dd className="num">{formatearPesos(topeGeneracion.gastado)} <span className="texto-3">de {formatearPesos(topeGeneracion.tope)}</span></dd>
+                    <dt>{esPlanMimo ? 'Credits usados' : 'Usado'}</dt>
+                    <dd className="num">
+                      {formatearCifraTope(topeGeneracion, topeGeneracion.gastado)}{' '}
+                      <span className="texto-3">de {formatearCifraTope(topeGeneracion, topeGeneracion.tope)}</span>
+                    </dd>
                   </div>
                   <div>
-                    <dt>Reposición</dt>
+                    <dt>{esPlanMimo ? 'Renovación' : 'Reposición'}</dt>
                     <dd>{diasReposicion === null ? '—' : diasReposicion <= 0 ? 'Hoy' : `en ${contar(diasReposicion, 'día', 'días')}`}</dd>
                   </div>
                 </dl>
