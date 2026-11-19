@@ -27,6 +27,9 @@ export const ESTADOS_PREGUNTA = [
 
 /** Modelos con precio cargado en V2 (costoLlmUsd): con otro modelo el costo se registraría como 0. */
 export const MODELOS_IA = [
+  // Xiaomi MiMo primero: es el proveedor configurado en el backend (D30). Cada modelo necesita la clave de su proveedor.
+  { value: 'mimo-v2.6-flash', label: 'MiMo V2.6 Flash (Xiaomi)' },
+  { value: 'mimo-v2.6-pro', label: 'MiMo V2.6 Pro (Xiaomi)' },
   { value: 'gpt-4o-mini', label: 'GPT-4o mini (OpenAI)' },
   { value: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 (Anthropic)' },
 ];
