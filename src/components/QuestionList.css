@@ -6,19 +6,8 @@
 /* ---------- Filtros ---------- */
 .lista-preguntas .filtros .lista-preguntas__campo-tamano { flex: 0 1 140px; }
 
-/* Botón con aspecto de enlace («Ver detalle», «Ver todas las skills») */
-.lista-preguntas__enlace {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--acento-texto);
-  font-size: var(--texto-sm);
-  font-weight: var(--peso-medio);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 2px;
-}
-.lista-preguntas__enlace:hover { color: var(--acento-hover); }
+/* «Ver detalle» dentro de la tabla: el enlace común, en el tamaño de la tabla */
+.lista-preguntas .boton-enlace { font-size: var(--texto-sm); }
 
 /* ---------- Aprobación masiva ---------- */
 .lista-preguntas__masivo {
@@ -55,7 +44,7 @@
 .lista-preguntas__col-check { width: 1%; }
 .lista-preguntas__col-check input { margin-top: 0.2rem; }
 
-.lista-preguntas__col-enunciado { min-width: 250px; }
+.lista-preguntas__col-enunciado { min-width: 236px; }
 
 /* El enunciado ocupa a lo más dos líneas; el texto completo está en «Ver detalle». */
 .lista-preguntas__enunciado {
@@ -78,8 +67,8 @@
 
 /* max-width no se aplica a un <td> con layout automático: el límite va en un bloque propio. */
 .lista-preguntas__contexto {
-  min-width: 6.5rem;
-  max-width: 8.5rem;
+  min-width: 6rem;
+  max-width: 7.5rem;
   overflow-wrap: break-word;
 }
 

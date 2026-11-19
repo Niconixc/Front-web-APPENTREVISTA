@@ -6,7 +6,7 @@ import {
   getUsers, contarPreguntas, getCostosIa, getCargos, getSkillsTrending, mensajeDeError,
 } from '../services/api';
 import {
-  CATEGORIAS, ESTADOS_PREGUNTA, LIMITES, etiqueta, formatearDiaUtc, diaUtc, diasEntre, formatearPesos, NOTA_TIPO_CAMBIO, formatearDiaSinZona,
+  CATEGORIAS, ESTADOS_PREGUNTA, LIMITES, etiqueta, formatearDiaUtc, diaUtc, diasEntre, formatearPesos, NOTA_TIPO_CAMBIO, formatearDiaSinZona, TIPO_CAMBIO_CLP,
 } from '../services/etiquetas';
 import { leerTopeGeneracion } from '../services/topeGeneracion';
 import TopeGeneracionIa from './TopeGeneracionIa';
@@ -24,8 +24,8 @@ const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'o
 
 const numero = (n) => (typeof n === 'number' ? n.toLocaleString('es-CL') : '—');
 
-/** Monto del eje Y en pesos (el gráfico recibe USD, como los guarda el backend). */
-const pesosEje = (v) => formatearPesos(v);
+/** Monto del eje Y: el gráfico diario ya viene en pesos (así las divisiones del eje son redondas en pesos). */
+const pesosEje = (v) => formatearPesos(v, 1);
 
 /** fechaCreacion de usuarios es LocalDateTime sin zona: se toma el día tal cual, sin pasar por new Date. */
 const formatearFechaLocal = formatearDiaSinZona;
@@ -165,15 +165,15 @@ const Informes = () => {
       neutro: paleta.ejes,
       separador: paleta.superficie,
       rejilla: { stroke: paleta.rejilla },
-      eje: { stroke: paleta.rejilla, tick: { fill: paleta.ejes, fontSize: 12 }, tickLine: false },
+      eje: { stroke: paleta.rejilla, tick: { fill: paleta.ejes, fontSize: 13 }, tickLine: false },
       tooltip: {
         contentStyle: {
           backgroundColor: paleta.superficie,
           border: `1px solid ${paleta.borde}`,
-          borderRadius: 6,
+          borderRadius: 8,
           fontSize: 13,
         },
-        labelStyle: { color: paleta.texto, fontWeight: 600 },
+        labelStyle: { color: paleta.texto, fontWeight: 500 },
         itemStyle: { color: paleta.texto2 },
         cursor: { fill: paleta.cursor },
       },
@@ -330,6 +330,17 @@ const Informes = () => {
       return { fecha, reportes, generacion, total: d ? Number(d.costoUsd) || reportes + generacion : 0 };
     });
   }, [datosCostos]);
+
+  // Copia en pesos solo para el gráfico (el CSV sigue en dólares exactos con costosPorDia).
+  const gastoDiarioPesos = useMemo(
+    () => costosPorDia.map((d) => ({
+      ...d,
+      reportes: d.reportes * TIPO_CAMBIO_CLP,
+      generacion: d.generacion * TIPO_CAMBIO_CLP,
+      total: d.total * TIPO_CAMBIO_CLP,
+    })),
+    [costosPorDia]
+  );
 
   const costosPorModelo = useMemo(
     () => (datosCostos?.porModelo || [])
@@ -554,14 +565,14 @@ const Informes = () => {
               <>
                 <TarjetaGrafico titulo="Gasto por día">
                   <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={costosPorDia}>
+                    <BarChart data={gastoDiarioPesos}>
                       <CartesianGrid {...grafico.rejilla} vertical={false} />
                       <XAxis dataKey="fecha" {...grafico.eje} tickFormatter={formatearDiaUtc} minTickGap={16} />
                       <YAxis {...grafico.eje} tickFormatter={pesosEje} width={80} />
                       <Tooltip
                         {...grafico.tooltip}
                         labelFormatter={(fecha) => `${formatearDiaUtc(fecha)} (UTC)`}
-                        formatter={(valor, nombre) => [formatearPesos(valor), nombre]}
+                        formatter={(valor, nombre) => [formatearPesos(valor, 1), nombre]}
                       />
                       <Legend {...grafico.leyenda} />
                       <Bar dataKey="reportes" stackId="a" fill={grafico.reportes} name="Reportes de entrevista" />

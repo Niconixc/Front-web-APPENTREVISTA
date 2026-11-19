@@ -22,13 +22,12 @@
   justify-content: space-between;
   gap: var(--e-4);
   flex-wrap: wrap;
-  padding-bottom: var(--e-4);
-  border-bottom: 1px solid var(--borde);
+  padding-bottom: var(--e-2);
 }
 
 .encabezado-pagina__textos { display: flex; flex-direction: column; gap: var(--e-1); min-width: 0; }
-.encabezado-pagina__titulo { font-size: var(--texto-xl); }
-.encabezado-pagina__descripcion { color: var(--texto-2); max-width: 70ch; }
+.encabezado-pagina__titulo { font-size: var(--texto-titulo); }
+.encabezado-pagina__descripcion { color: var(--texto-2); font-size: var(--texto-md); max-width: 62ch; }
 .encabezado-pagina__acciones { display: flex; gap: var(--e-2); flex-wrap: wrap; align-items: center; }
 
 .miga {
@@ -66,10 +65,26 @@
   line-height: 1;
   white-space: nowrap;
   text-decoration: none;
-  transition: background-color var(--transicion), border-color var(--transicion), color var(--transicion);
+  transition:
+    transform var(--m-out) var(--ease-out),
+    background-color var(--m-out) var(--ease-out),
+    border-color var(--m-out) var(--ease-out),
+    color var(--m-out) var(--ease-out);
 }
 
-.boton:hover:not(:disabled) { background: var(--superficie-hover); color: var(--texto); }
+.boton:hover:not(:disabled) { background: var(--superficie-hover); border-color: var(--borde-control); color: var(--texto); }
+
+/* Solo con mouse: el botón sube 1 px al pasar y se hunde al presionar (nunca en táctil) */
+@media (hover: hover) and (pointer: fine) {
+  .boton:hover:not(:disabled):not([aria-disabled='true']) {
+    transform: translateY(-1px);
+    transition-duration: var(--m-in);
+  }
+}
+.boton:active:not(:disabled):not([aria-disabled='true']) {
+  transform: translateY(0) scale(0.97);
+  transition-duration: var(--m-press);
+}
 .boton:disabled,
 .boton[aria-disabled='true'] { opacity: 0.55; }
 
@@ -92,15 +107,32 @@
 .boton--peligro-suave:hover:not(:disabled) { background: var(--peligro-suave); border-color: var(--peligro-borde); color: var(--peligro); }
 
 .boton--sutil { background: transparent; border-color: transparent; color: var(--texto-2); }
-.boton--sutil:hover:not(:disabled) { background: var(--superficie-hover); color: var(--texto); }
+.boton--sutil:hover:not(:disabled) { background: var(--superficie-hover); border-color: transparent; color: var(--texto); }
 
-.boton--chico { min-height: var(--alto-control-sm); padding: 0 var(--e-3); font-size: var(--texto-sm); }
+.boton--chico { min-height: var(--alto-control-sm); padding: 0 0.625rem; font-size: var(--texto-sm); gap: var(--e-1); }
 .boton--icono { padding: 0; width: var(--alto-control); }
 .boton--chico.boton--icono { width: var(--alto-control-sm); }
 .boton--bloque { width: 100%; }
 
 .grupo-botones { display: flex; gap: var(--e-2); flex-wrap: wrap; align-items: center; }
 .grupo-botones--fin { justify-content: flex-end; }
+
+/* Botón que se ve y se comporta como un enlace (un solo aspecto de enlace en todo el panel) */
+.boton-enlace {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--acento-texto);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, currentColor 65%, transparent);
+  transition: color var(--m-in) var(--ease-out), text-decoration-color var(--m-in) var(--ease-out);
+}
+.boton-enlace:hover { color: var(--acento-hover); text-decoration-color: currentColor; }
+.boton-enlace:disabled { color: var(--texto-3); cursor: not-allowed; }
 
 /* ============ Campos de formulario ============ */
 .formulario { display: flex; flex-direction: column; gap: var(--e-5); }
@@ -174,30 +206,28 @@
 .metrica__cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--e-2); margin-bottom: var(--e-1); }
 .metrica__etiqueta { font-size: var(--texto-sm); color: var(--texto-2); font-weight: var(--peso-medio); }
 .metrica__valor {
+  font-family: var(--fuente-display);
   font-size: var(--texto-2xl);
-  font-weight: var(--peso-fuerte);
-  line-height: 1.15;
+  font-weight: var(--peso-medio);
+  line-height: 1.1;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-titulo);
 }
 .metrica__detalle { font-size: var(--texto-xs); color: var(--texto-3); }
 .metrica__enlace { font-size: var(--texto-sm); margin-top: auto; padding-top: var(--e-2); }
 
-/* ============ Chip de ícono (cuadro suave con el ícono del mismo tono) ============ */
+/* ============ Chip de ícono: cuadro neutro con el ícono en tinta secundaria ============ */
 .chip-icono {
   display: inline-grid;
   place-items: center;
   flex: none;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--radio-lg);
-  background: var(--chip-azul-fondo);
-  color: var(--chip-azul);
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radio);
+  background: var(--superficie-2);
+  color: var(--texto-2);
 }
-.chip-icono--chico { width: 1.75rem; height: 1.75rem; border-radius: var(--radio); }
-.chip-icono--verde { background: var(--chip-verde-fondo); color: var(--chip-verde); }
-.chip-icono--ambar { background: var(--chip-ambar-fondo); color: var(--chip-ambar); }
-.chip-icono--violeta { background: var(--chip-violeta-fondo); color: var(--chip-violeta); }
+.chip-icono--chico { width: 1.75rem; height: 1.75rem; border-radius: var(--radio-sm); }
 
 /* ============ Avatar con iniciales ============ */
 .avatar {
@@ -207,16 +237,15 @@
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background: var(--chip-azul-fondo);
-  color: var(--chip-azul);
+  background: var(--acento-suave);
+  color: var(--acento-texto);
   font-size: var(--texto-xs);
-  font-weight: var(--peso-fuerte);
-  letter-spacing: 0.02em;
+  font-weight: var(--peso-medio);
 }
-.avatar--chico { width: 1.75rem; height: 1.75rem; font-size: 0.6875rem; }
-.avatar--tono-1 { background: var(--chip-verde-fondo); color: var(--chip-verde); }
-.avatar--tono-2 { background: var(--chip-ambar-fondo); color: var(--chip-ambar); }
-.avatar--tono-3 { background: var(--chip-violeta-fondo); color: var(--chip-violeta); }
+.avatar--chico { width: 1.75rem; height: 1.75rem; }
+.avatar--tono-1 { background: var(--exito-suave); color: var(--exito); }
+.avatar--tono-2 { background: var(--aviso-suave); color: var(--aviso); }
+.avatar--tono-3 { background: var(--neutro-suave); color: var(--neutro); }
 
 /* ============ Barra apilada (partes de un total) con su leyenda ============ */
 .barra-apilada {
@@ -278,12 +307,12 @@
 .tabla {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--texto-base);
+  font-size: var(--texto-sm); /* datos, no texto corrido: 14 px */
 }
 
 .tabla th,
 .tabla td {
-  padding: var(--e-2) var(--e-4);
+  padding: var(--e-2) var(--e-3);
   text-align: left;
   vertical-align: middle;
   border-bottom: 1px solid var(--borde);
@@ -460,6 +489,12 @@
   border-radius: var(--radio-lg);
   box-shadow: var(--sombra-flotante);
   overflow: hidden;
+  transition: transform var(--m-dialogo) var(--ease-out), opacity var(--m-dialogo) var(--ease-out);
+}
+.dialogo-fondo { transition: opacity var(--m-dialogo) var(--ease-out); }
+@starting-style {
+  .dialogo-fondo { opacity: 0; }
+  .dialogo { opacity: 0; transform: scale(0.96); }
 }
 .dialogo--ancho { max-width: 760px; }
 .dialogo__encabezado {
@@ -537,6 +572,9 @@
 
 /* Alto contraste de Windows: bordes visibles y estados que no dependan solo del color */
 @media (forced-colors: active) {
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible { outline: 2px solid Highlight; }
   .boton,
   .insignia,
   .aviso,

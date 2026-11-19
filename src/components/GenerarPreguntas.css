@@ -16,17 +16,6 @@
 .gp-campo-mercado { padding-top: var(--e-1); }
 .gp-ayuda-casilla { padding-left: calc(1rem + var(--e-2)); max-width: 75ch; }
 
-/* «Reintentar» dentro del error de un campo: se ve como enlace, es un botón */
-.gp-boton-enlace {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--acento-texto);
-  font: inherit;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.gp-boton-enlace:hover { color: var(--acento-hover); }
 
 /* Indicador mientras se genera (región viva) */
 .gp-progress {
@@ -41,7 +30,6 @@
 }
 .gp-progress .cargando { margin-top: 0.15rem; }
 .gp-progress__texto { display: flex; flex-direction: column; gap: var(--e-1); min-width: 0; }
-.gp-progress__texto strong { font-weight: var(--peso-medio); }
 
 /* Pie del formulario (la clase form-actions la busca tests/generarPreguntasConfirmacion.test.mjs) */
 .gp-pagina .form-actions {

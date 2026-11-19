@@ -20,14 +20,16 @@ const ESTILO_POR_NIVEL = {
  * encabezado: texto que dice de qué es el bloque cuando la pantalla no tiene ya un título para él (opcional).
  * desactualizado: la última lectura de Costos IA falló y `tope` es el de una lectura anterior. Se dice en palabras antes
  * de los montos (notaTopeDesactualizado), para que no se lean como el saldo actual (opcional).
+ * plano: dentro de una tarjeta que ya tiene su marco (el Resumen) se pinta sin el recuadro del aviso, para no poner
+ * una caja dentro de otra (opcional).
  */
-const TopeGeneracionIa = ({ tope, encabezado = '', desactualizado = false }) => {
+const TopeGeneracionIa = ({ tope, encabezado = '', desactualizado = false, plano = false }) => {
   const textos = textoTope(tope);
   if (!textos) return null;
   const nota = notaTopeDesactualizado(tope, desactualizado);
   const estilo = ESTILO_POR_NIVEL[tope.nivel] ?? ESTILO_POR_NIVEL.ok;
   return (
-    <div className={`aviso tope-ia tope-ia-${tope.nivel} ${estilo.aviso}`.trim()}>
+    <div className={`aviso tope-ia tope-ia-${tope.nivel} ${estilo.aviso}${plano ? ' tope-ia--plano' : ''}`.trim()}>
       <Icono nombre={estilo.icono} className="aviso__icono" />
       <div className="aviso__contenido tope-ia-contenido">
         {encabezado && <p className="tope-ia-encabezado">{encabezado}</p>}
@@ -46,7 +48,7 @@ const TopeGeneracionIa = ({ tope, encabezado = '', desactualizado = false }) => 
             aria-valuenow={tope.porcentaje}
             aria-valuetext={valorTextoMedidor(tope)}
           >
-            <div className="medidor__relleno tope-ia-relleno" style={{ width: `${tope.porcentaje}%` }} />
+            <div className="medidor__relleno tope-ia-relleno" style={{ transform: `scaleX(${tope.porcentaje / 100})` }} />
           </div>
         )}
         <p className="tope-ia-detalle">{textos.detalle}</p>

@@ -37,7 +37,6 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--e-2);
 }
 
 .qform-opcion {
@@ -45,15 +44,15 @@
   grid-template-columns: 1.5rem minmax(0, 1fr) auto;
   gap: var(--e-2) var(--e-3);
   align-items: start;
-  padding: var(--e-3);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--superficie-2);
+  padding: var(--e-3) 0;
 }
+.qform-opcion + .qform-opcion { border-top: 1px solid var(--borde); }
 
+/* La correcta se marca con una barra de acento a la izquierda (además del radio «Correcta») */
 .qform-opcion--correcta {
-  border-color: var(--acento);
-  background: var(--acento-suave);
+  box-shadow: inset 3px 0 0 var(--acento);
+  padding-left: var(--e-3);
+  margin-left: calc(-1 * var(--e-3));
 }
 
 .qform-opcion__letra {

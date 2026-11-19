@@ -47,7 +47,7 @@
   font-size: var(--texto-sm);
   font-weight: var(--peso-medio);
   white-space: nowrap;
-  transition: background-color var(--transicion), color var(--transicion);
+  transition: background-color var(--transicion), color var(--transicion), transform var(--m-out) var(--ease-out);
 }
 
 .informes-segmentado__opcion:first-child { border-left: 0; }
@@ -146,3 +146,5 @@
 
 /* El nombre del modelo no se parte en dos líneas. */
 .informes-modelo { white-space: nowrap; }
+
+.informes-segmentado__opcion:active:not(:disabled) { transform: scale(0.97); transition-duration: var(--m-press); }

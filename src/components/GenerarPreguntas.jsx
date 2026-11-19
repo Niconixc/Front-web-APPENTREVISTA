@@ -589,7 +589,7 @@ const GenerarPreguntas = () => {
                 {errorCargos && (
                   <div className="campo__error">
                     {errorCargos}{' '}
-                    <button type="button" className="gp-boton-enlace" onClick={cargarCargos}>Reintentar</button>
+                    <button type="button" className="boton-enlace" onClick={cargarCargos}>Reintentar</button>
                   </div>
                 )}
               </div>
@@ -718,7 +718,7 @@ const GenerarPreguntas = () => {
             {errorGeneracion.tipo !== 'sin_costo' && (
               <div className="grupo-botones gp-result-actions">
                 <Link to={RUTA_PENDIENTES_IA} className="boton boton--chico">Revisar pendientes</Link>
-                <Link to="/informes" className="boton boton--chico boton--sutil">Ver Costos IA</Link>
+                <Link to="/informes" className="texto-chico">Ver Costos IA</Link>
               </div>
             )}
           </div>

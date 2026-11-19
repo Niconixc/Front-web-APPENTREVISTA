@@ -5,11 +5,15 @@ sobrio y confiable, como un panel de un producto real. No tiene que parecer una 
 
 ## Principios
 
-1. **Claro y sobrio, con relieve.**
-   - El fondo es gris muy claro y las tarjetas son blancas, con borde fino y una sombra suave (`--sombra-sutil`).
-   - El menú lateral es azul marino de marca (tokens `--lateral-*`) y separa la navegación del contenido.
-   - Hay un solo color de acento (azul `--acento`), para la acción principal o lo seleccionado.
-   - El tema oscuro se activa solo si el sistema lo pide (`prefers-color-scheme`), con los mismos tokens.
+1. **Neutro, cálido y con una sola marca.** Se aplican las skills *taste* (Leonxlnx/taste-skill) y *emil-design-eng* (emilkowalski/skills), instaladas en `~/.claude/skills`.
+   - La interfaz es 90-95 % neutra: fondo gris cálido, tarjetas blancas y bordes finos.
+   - La tinta es casi negra y cálida (`--texto`).
+   - Hay un solo acento, el azul de la app Android (`#3451D1`, `--acento`). Se usa en el botón principal, el foco, los enlaces y lo seleccionado.
+   - Nada violeta ni lavanda: el tono OKLCH queda bajo 270°, también en el tema oscuro.
+   - El menú lateral es claro y la sección actual se marca con una barra de acento.
+   - Tipografía: Funnel Display para títulos y cifras, y Funnel Sans para el texto (Google Fonts), solo en pesos 400 y 500.
+   - Nada baja de 13 px.
+   - El tema oscuro se activa solo si el sistema lo pide (`prefers-color-scheme`).
 2. **Los datos primero.** Las tablas son compactas, los números se alinean a la derecha con `tabular-nums`, los títulos
    son cortos y las explicaciones largas van en texto secundario o dentro de un `<details>`.
 3. **Nada decorativo que no informe.** No se usan:
@@ -19,7 +23,7 @@ sobrio y confiable, como un panel de un producto real. No tiene que parecer una 
    - botones que «saltan» con `translateY` al pasar el mouse;
    - mayúsculas forzadas en títulos o insignias;
    - tarjetas enormes con un ícono gigante.
-4. **Jerarquía con tipografía, no con color.** Se usan pesos 400, 500 y 600 y una escala de tamaños corta (12, 13, 14, 16, 18, 24 y 28 px).
+4. **Jerarquía con tipografía, no con color.** Se usan pesos 400, 500 y 600 y una escala de tamaños corta (13, 14, 15, 16, 18, 24, 30 y 32 px; tablas en 14).
    Los títulos van en tipo oración («Crear usuario», no «Crear Usuario»).
 5. **Un botón primario por vista.** Las demás acciones son secundarias (`.boton`) o sutiles (`.boton--sutil`). Una acción
    destructiva en una fila de tabla usa `.boton--peligro-suave`, y la confirmación final usa `.boton--peligro`.
@@ -29,6 +33,12 @@ sobrio y confiable, como un panel de un producto real. No tiene que parecer una 
    - Los estados no dependen solo del color: la insignia lleva texto.
    - Funciona con `forced-colors` y `prefers-reduced-motion`.
    - Se mantienen los `aria-*`, `role` y regiones vivas que ya existen.
+7. **Movimiento con intención** (emil-design-eng):
+   - Curvas propias (`--ease-out`, `--ease-drawer`), nunca `ease-in` ni `transition: all`.
+   - Los botones suben 1 px al pasar el mouse (solo con mouse) y se hunden con `scale(0.97)` al presionar.
+   - Los diálogos entran desde `scale(0.96)` con `@starting-style` en 200 ms, y el cajón móvil usa la curva tipo iOS.
+   - Solo se animan `transform` y `opacity`.
+   - Con `prefers-reduced-motion` todo queda quieto.
 
 ## Archivos
 
@@ -50,6 +60,7 @@ sobrio y confiable, como un panel de un producto real. No tiene que parecer una 
 - `.seccion` agrupa `__encabezado`, `__titulo` (h2), `__descripcion`.
 
 **Botones**
+- `.boton-enlace` es un botón que se ve como enlace. Es el único aspecto de enlace del panel.
 - `.boton` es la acción secundaria. Variantes: `--primario`, `--peligro`, `--peligro-suave`, `--sutil`, `--chico`, `--icono` y `--bloque`.
 - `.grupo-botones` los agrupa; con `--fin` se alinean a la derecha.
 
@@ -61,8 +72,8 @@ sobrio y confiable, como un panel de un producto real. No tiene que parecer una 
 **Contenedores**
 - `.tarjeta` lleva `__encabezado`, `__titulo`, `__cuerpo` y `__pie`.
 - `.metricas` es una rejilla de números clave. Cada `.metrica` es una tarjeta con `__cabecera` (etiqueta y chip), `__etiqueta`, `__valor`, `__detalle` y `__enlace`.
-- `.chip-icono` es un cuadro suave con un ícono del mismo tono: azul por defecto, y las variantes `--verde`, `--ambar`, `--violeta` y `--chico` (tokens `--chip-*`).
-- `.avatar` es un círculo con iniciales (`iniciales()` y `tonoAvatar()` de `services/etiquetas.js`). Tiene las variantes `--chico` y `--tono-1…3`.
+- `.chip-icono` es un cuadro neutro con el ícono en tinta secundaria; con `--chico` es más pequeño.
+- `.avatar` es un círculo con iniciales (`iniciales()` y `tonoAvatar()` de `services/etiquetas.js`). Tiene las variantes `--chico` y `--tono-1…3` (verde, ámbar y neutro; por defecto, azul).
 - `.barra-apilada` con sus `__parte` (`--2`, `--3`, `--4`, `--peligro`) muestra las partes de un total. Va siempre con una `.leyenda` en texto, porque el color solo no basta.
 - `.filas` con `.fila-item` (`__textos`, `__titulo`, `__detalle`, `__lado`) es una lista de filas dentro de una tarjeta.
 - `.esqueleto` es el bloque de carga: un fondo plano que late y se queda quieto con `prefers-reduced-motion`.

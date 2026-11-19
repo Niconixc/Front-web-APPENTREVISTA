@@ -15,6 +15,7 @@ html {
 
 body {
   font-family: var(--fuente);
+  font-optical-sizing: auto;
   font-size: var(--texto-base);
   line-height: var(--interlineado);
   color: var(--texto);
@@ -27,27 +28,37 @@ h1,
 h2,
 h3,
 h4 {
-  font-weight: var(--peso-fuerte);
+  font-weight: var(--peso-medio);
   line-height: 1.25;
   color: var(--texto);
   text-wrap: balance;
 }
 
-h1 { font-size: var(--texto-xl); letter-spacing: -0.01em; }
-h2 { font-size: var(--texto-lg); }
+/* Títulos en la letra de display, con el peso y el tracking ajustado haciendo el trabajo (nunca negrita grande) */
+h1,
+h2 { font-family: var(--fuente-display); letter-spacing: var(--tracking-titulo); }
+h1 { font-size: var(--texto-titulo); line-height: 1.15; }
+h2 { font-size: var(--texto-lg); letter-spacing: -0.01em; }
 h3 { font-size: var(--texto-md); }
 h4 { font-size: var(--texto-base); }
 
 p { text-wrap: pretty; }
 
+/* Énfasis en 500: no se carga 700 (taste) */
+strong,
+b { font-weight: var(--peso-medio); }
+
+/* Enlaces: descansan sobre una línea fina y tenue que se oscurece al pasar el mouse */
 a {
   color: var(--acento-texto);
   text-decoration: underline;
   text-decoration-thickness: 1px;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, currentColor 65%, transparent); /* 3:1 sobre los fondos */
+  transition: color var(--m-in) var(--ease-out), text-decoration-color var(--m-in) var(--ease-out);
 }
 
-a:hover { color: var(--acento-hover); }
+a:hover { color: var(--acento-hover); text-decoration-color: currentColor; }
 
 img,
 svg { display: block; max-width: 100%; }
@@ -57,7 +68,7 @@ ol { padding-left: var(--e-5); }
 
 code,
 kbd,
-pre { font-family: var(--fuente-mono); font-size: 0.92em; }
+pre { font-family: var(--fuente-mono); font-size: max(0.92em, var(--texto-xs)); }
 
 code {
   background: var(--superficie-2);
@@ -91,9 +102,9 @@ textarea {
   padding: 0 var(--e-3);
   background: var(--superficie);
   color: var(--texto);
-  border: 1px solid var(--borde-fuerte);
+  border: 1px solid var(--borde-control);
   border-radius: var(--radio);
-  transition: border-color var(--transicion), box-shadow var(--transicion);
+  transition: border-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
 }
 
 textarea {
@@ -106,7 +117,7 @@ textarea {
 select {
   appearance: none;
   padding-right: var(--e-8);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23626b76' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6762' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right var(--e-3) center;
 }
@@ -116,14 +127,17 @@ textarea::placeholder { color: var(--texto-3); opacity: 1; }
 
 input:hover:not(:disabled),
 select:hover:not(:disabled),
-textarea:hover:not(:disabled) { border-color: var(--texto-3); }
+textarea:hover:not(:disabled) { border-color: var(--texto-2); }
 
 input:focus,
 select:focus,
 textarea:focus {
-  outline: none;
+  /* Transparente en pantalla normal, pero el alto contraste de Windows lo pinta: el foco nunca desaparece */
+  outline: 2px solid transparent;
+  outline-offset: 1px;
   border-color: var(--foco);
-  box-shadow: 0 0 0 3px var(--acento-suave);
+  /* Borde efectivo de 2 px en el color del foco: se distingue por el grosor, no solo por el tono */
+  box-shadow: 0 0 0 1px var(--foco);
 }
 
 input:disabled,
@@ -159,7 +173,7 @@ label { font-weight: var(--peso-medio); }
 /* Los campos de texto ya muestran el foco con el borde y el halo; casillas y radios conservan el contorno. */
 input:not([type='checkbox']):not([type='radio']):focus-visible,
 select:focus-visible,
-textarea:focus-visible { outline: none; }
+textarea:focus-visible { outline: 2px solid transparent; outline-offset: 1px; }
 
 /* ---------- Accesibilidad ---------- */
 .sr-only {

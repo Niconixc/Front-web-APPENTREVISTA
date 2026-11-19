@@ -38,9 +38,11 @@
   border-color: var(--texto-3);
 }
 
+/* Ancho completo escalado desde la izquierda: se anima transform, nunca width (emil-design-eng) */
 .tope-ia-relleno {
-  max-width: 100%;
-  transition: width var(--transicion);
+  width: 100%;
+  transform-origin: left center;
+  transition: transform 200ms var(--ease-out);
 }
 
 .tope-ia-detalle {
@@ -64,4 +66,11 @@
     forced-color-adjust: none;
     background: Highlight;
   }
+}
+
+/* Dentro de una tarjeta (Resumen): sin el recuadro del aviso; el estado lo dicen la insignia y la barra */
+.tope-ia.tope-ia--plano {
+  padding: 0;
+  border: 0;
+  background: transparent;
 }

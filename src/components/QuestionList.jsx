@@ -601,7 +601,7 @@ const QuestionList = () => {
                   : 'Mostrando solo las preguntas de una skill (abierto desde Cobertura).'}{' '}
                 <button
                   type="button"
-                  className="lista-preguntas__enlace"
+                  className="boton-enlace"
                   onClick={() => {
                     const nuevos = new URLSearchParams(searchParams);
                     ['skillId', 'paraCargoId', 'pagina'].forEach((clave) => nuevos.delete(clave));
@@ -734,7 +734,7 @@ const QuestionList = () => {
                     </div>
                     <button
                       type="button"
-                      className="lista-preguntas__enlace"
+                      className="boton-enlace"
                       aria-expanded={abierta}
                       onClick={() => toggleExpandida(question.id)}
                     >

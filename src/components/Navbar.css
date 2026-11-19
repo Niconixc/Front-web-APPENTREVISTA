@@ -1,4 +1,4 @@
-/* Menú lateral fijo en azul marino de marca (escritorio) y cajón deslizable (celular). */
+/* Menú lateral fijo, claro y con un borde fino (escritorio), y cajón deslizable (celular). */
 .marca { display: inline-flex; align-items: center; gap: var(--e-2); color: var(--texto); }
 .marca__logo {
   display: inline-grid;
@@ -26,7 +26,7 @@
   color: var(--lateral-texto);
 }
 
-/* Dentro del menú, la marca usa los colores del fondo oscuro */
+/* Dentro del menú, la marca usa los colores del menú */
 .lateral .marca { color: var(--lateral-texto); }
 .lateral .marca__logo { background: var(--lateral-logo-fondo); color: var(--lateral-logo-texto); }
 .lateral .marca__sub { color: var(--lateral-texto-3); }
@@ -86,7 +86,7 @@
 .lateral__enlace:focus-visible { outline-color: var(--lateral-indicador); outline-offset: 0; }
 
 .lateral__pie {
-  border-top: 1px solid var(--lateral-hover);
+  border-top: 1px solid var(--lateral-borde);
   padding: var(--e-3) var(--e-3) var(--e-4);
   display: flex;
   flex-direction: column;
@@ -135,13 +135,14 @@
   .lateral {
     transform: translateX(-100%);
     visibility: hidden;
-    transition: transform 160ms ease, visibility 0s linear 160ms;
+    /* Cajón: curva tipo iOS (emil-design-eng); cierra un poco más rápido de lo que abre */
+    transition: transform 240ms var(--ease-drawer), visibility 0s linear 240ms;
     box-shadow: var(--sombra-flotante);
   }
   .lateral--abierto {
     transform: none;
     visibility: visible;
-    transition: transform 160ms ease;
+    transition: transform 300ms var(--ease-drawer);
   }
   .lateral-fondo {
     display: block;
@@ -149,6 +150,10 @@
     inset: 0;
     z-index: 35;
     background: var(--velo);
+    transition: opacity 300ms var(--ease-out);
+  }
+  @starting-style {
+    .lateral-fondo { opacity: 0; }
   }
 }
 

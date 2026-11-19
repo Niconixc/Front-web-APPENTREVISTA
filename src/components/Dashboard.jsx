@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import { getUsers, contarPreguntas, getQuestions, getCostosIa, mensajeDeError } from '../services/api';
 import {
-  CATEGORIAS, NIVELES, diasEntre, etiqueta, formatearDiaSinZona, formatearDiaUtc, formatearPesos, iniciales, tonoAvatar,
+  CATEGORIAS, NIVELES, TIPO_CAMBIO_CLP, diasEntre, etiqueta, formatearDiaSinZona, formatearDiaUtc, formatearPesos, iniciales, tonoAvatar,
 } from '../services/etiquetas';
 import { leerTopeGeneracion, resumenCortoTope } from '../services/topeGeneracion';
 import TopeGeneracionIa from './TopeGeneracionIa';
@@ -108,7 +108,14 @@ const Dashboard = () => {
       const d = porFecha.get(fecha);
       const reportes = Number(d?.reportes?.costoUsd) || 0;
       const generacion = Number(d?.generacionPreguntas?.costoUsd) || 0;
-      return { fecha, reportes, generacion, total: d ? Number(d.costoUsd) || reportes + generacion : 0 };
+      const total = d ? Number(d.costoUsd) || reportes + generacion : 0;
+      // En pesos: el eje del gráfico se divide en montos redondos de pesos, no de dólares convertidos.
+      return {
+        fecha,
+        reportes: reportes * TIPO_CAMBIO_CLP,
+        generacion: generacion * TIPO_CAMBIO_CLP,
+        total: total * TIPO_CAMBIO_CLP,
+      };
     });
   }, [datos]);
 
@@ -175,11 +182,11 @@ const Dashboard = () => {
     contentStyle: {
       backgroundColor: paleta.superficie, border: `1px solid ${paleta.borde}`, borderRadius: 8, fontSize: 13,
     },
-    labelStyle: { color: paleta.texto, fontWeight: 600 },
+    labelStyle: { color: paleta.texto, fontWeight: 500 },
     itemStyle: { color: paleta.texto2 },
     cursor: { fill: paleta.cursor },
   };
-  const eje = { stroke: paleta.rejilla, tick: { fill: paleta.ejes, fontSize: 12 }, tickLine: false };
+  const eje = { stroke: paleta.rejilla, tick: { fill: paleta.ejes, fontSize: 13 }, tickLine: false };
 
   return (
     <div className="pagina">
@@ -226,7 +233,7 @@ const Dashboard = () => {
           <article className="metrica">
             <div className="metrica__cabecera">
               <p className="metrica__etiqueta">Preguntas aprobadas</p>
-              <span className="chip-icono chip-icono--verde" aria-hidden="true"><Icono nombre="check-circulo" tamano={18} /></span>
+              <span className="chip-icono" aria-hidden="true"><Icono nombre="check-circulo" tamano={18} /></span>
             </div>
             <p className="metrica__valor">
               {aprobadas.ok ? numero(numAprobadas) : '—'}
@@ -271,7 +278,7 @@ const Dashboard = () => {
           <article className="metrica">
             <div className="metrica__cabecera">
               <p className="metrica__etiqueta">Pendientes de revisión</p>
-              <span className="chip-icono chip-icono--ambar" aria-hidden="true"><Icono nombre="reloj" tamano={18} /></span>
+              <span className="chip-icono" aria-hidden="true"><Icono nombre="reloj" tamano={18} /></span>
             </div>
             <p className="metrica__valor">{pendientes.ok ? numero(numPendientes) : '—'}</p>
             {pendientes.ok ? (
@@ -297,7 +304,7 @@ const Dashboard = () => {
           <article className="metrica">
             <div className="metrica__cabecera">
               <p className="metrica__etiqueta">Gasto en IA (30 días)</p>
-              <span className="chip-icono chip-icono--violeta" aria-hidden="true"><Icono nombre="dinero" tamano={18} /></span>
+              <span className="chip-icono" aria-hidden="true"><Icono nombre="dinero" tamano={18} /></span>
             </div>
             <p className="metrica__valor">{costos.ok && gasto ? formatearPesos(gasto.costoUsd) : '—'}</p>
             {costos.ok && gasto ? (
@@ -364,11 +371,11 @@ const Dashboard = () => {
                     <BarChart data={costosPorDia} margin={{ top: 8, right: 4, bottom: 0, left: 0 }} accessibilityLayer={false}>
                       <CartesianGrid vertical={false} stroke={paleta.rejilla} />
                       <XAxis dataKey="fecha" {...eje} tickFormatter={(f) => formatearDiaUtc(f).slice(0, 5)} minTickGap={24} />
-                      <YAxis {...eje} tickFormatter={(v) => formatearPesos(v)} width={64} />
+                      <YAxis {...eje} tickFormatter={(v) => formatearPesos(v, 1)} width={72} />
                       <Tooltip
                         {...tooltip}
                         labelFormatter={formatearDiaUtc}
-                        formatter={(valor, nombre) => [formatearPesos(valor), nombre]}
+                        formatter={(valor, nombre) => [formatearPesos(valor, 1), nombre]}
                       />
                       <Bar dataKey="reportes" name="Reportes de entrevista" stackId="g" fill={paleta.series[0]} isAnimationActive={false} />
                       <Bar dataKey="generacion" name="Generación de preguntas" stackId="g" fill={paleta.series[1]} radius={[3, 3, 0, 0]} isAnimationActive={false} />
@@ -390,7 +397,7 @@ const Dashboard = () => {
           </div>
           <div className="tarjeta__cuerpo">
             {topeGeneracion ? (
-              <TopeGeneracionIa tope={topeGeneracion} />
+              <TopeGeneracionIa tope={topeGeneracion} plano />
             ) : (
               <p className="nota">{costos.ok ? 'El servidor no informó el tope del mes.' : 'No disponible.'}</p>
             )}
@@ -416,7 +423,7 @@ const Dashboard = () => {
             <div className="tarjeta__cuerpo"><p className="nota">No disponible.</p></div>
           ) : listaPendientes.length === 0 ? (
             <div className="vacio resumen-vacio">
-              <span className="chip-icono chip-icono--verde" aria-hidden="true"><Icono nombre="check" tamano={18} /></span>
+              <span className="chip-icono" aria-hidden="true"><Icono nombre="check" tamano={18} /></span>
               <p className="vacio__titulo">Todo al día</p>
               <p>No hay preguntas esperando revisión.</p>
             </div>
@@ -424,7 +431,7 @@ const Dashboard = () => {
             <ul className="filas">
               {listaPendientes.map((p) => (
                 <li key={p.id} className="fila-item">
-                  <span className={`chip-icono chip-icono--chico ${p.generadaPorIa ? 'chip-icono--violeta' : ''}`.trim()} aria-hidden="true">
+                  <span className="chip-icono chip-icono--chico" aria-hidden="true">
                     <Icono nombre={p.generadaPorIa ? 'generar' : 'preguntas'} tamano={15} />
                   </span>
                   <span className="fila-item__textos">
@@ -448,7 +455,7 @@ const Dashboard = () => {
             </ul>
           )}
           <div className="tarjeta__pie resumen-pie">
-            <Link to="/preguntas?estado=pendiente&generadaPorIa=true" className="boton boton--chico boton--sutil">
+            <Link to="/preguntas?estado=pendiente&generadaPorIa=true" className="texto-chico">
               Solo las generadas con IA
             </Link>
             <Link to="/preguntas?estado=pendiente" className="boton boton--chico">
@@ -492,8 +499,7 @@ const Dashboard = () => {
             </ul>
           )}
           <div className="tarjeta__pie resumen-pie">
-            <Link to="/crear-usuario" className="boton boton--chico boton--sutil">
-              <Icono nombre="usuario-mas" />
+            <Link to="/crear-usuario" className="texto-chico">
               Crear usuario
             </Link>
             <Link to="/usuarios" className="boton boton--chico">

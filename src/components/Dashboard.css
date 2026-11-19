@@ -40,6 +40,9 @@
 /* Mini gráfico del gasto (sin ejes): solo la forma de los últimos 30 días */
 .resumen-chispa { height: 2.5rem; margin: 0 calc(-1 * var(--e-1)); }
 
+/* Pie de las listas: enlaces de texto a la izquierda, el botón a la derecha */
+.resumen-pie { align-items: center; justify-content: space-between; }
+
 /* ---------- Filas de tarjetas ---------- */
 .resumen-fila {
   display: grid;
