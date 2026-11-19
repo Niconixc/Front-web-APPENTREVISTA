@@ -112,7 +112,11 @@ const clasificarError = (err) => {
 
   if (estado === 503) {
     if (codigo === 'provider_not_configured') {
-      return { tipo: 'sin_costo', mensaje: 'El proveedor de IA no está configurado en el servidor.', nota: 'No se llamó a la IA: no hubo costo.' };
+      return {
+        tipo: 'sin_costo',
+        mensaje: 'El servidor no tiene la clave del proveedor de este modelo.',
+        nota: 'No se llamó a la IA: no hubo costo. Elige un modelo de un proveedor configurado o agrega su clave en Railway (MIMO_API_KEY, OPENAI_API_KEY o ANTHROPIC_API_KEY).',
+      };
     }
     return { tipo: 'sin_costo', mensaje: mensajeDeError(err, 'El servicio de IA no está disponible en este momento'), nota: 'No se llamó a la IA: no hubo costo.' };
   }
