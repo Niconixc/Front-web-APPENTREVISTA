@@ -2,94 +2,124 @@
  * Tokens del panel: la ÚNICA fuente de colores, tamaños, espacios y movimiento.
  * Las pantallas usan var(--…); no escriben colores hex propios.
  *
- * Criterio (skills taste y emil-design-eng):
- * - La interfaz es 90-95 % neutra: tinta casi negra y cálida, bordes finos (12-15 % de la tinta).
- * - Un solo acento, el azul de la app Android (AzulConfianza #3451D1): botón principal, foco, enlaces y lo
- *   seleccionado. Nada violeta.
- * - Tema claro por defecto; el oscuro se activa solo si el sistema lo pide.
+ * Dirección «Claro con color» (elegida por el usuario entre tres propuestas):
+ * - Un lienzo cálido (--lienzo) con el menú, y el contenido en una «hoja» clara redondeada (--fondo).
+ * - Tarjetas blancas con sombras suaves en capas; cada métrica con su propio color de la app:
+ *   azul (#3451D1, el de la marca), verde azulado (#0E8C7C), ámbar (#B4610E) y coral. Nada violeta.
+ * - Letra Funnel Display (títulos y cifras) + Funnel Sans (texto) + Geist Mono (fechas y cifras chicas).
+ * - Movimiento según emil-design-eng: curvas propias, nunca ease-in, solo transform y opacity.
+ * Tema claro por defecto; el oscuro se activa solo si el sistema lo pide.
  */
 :root {
   color-scheme: light;
 
   /* Superficies */
-  --fondo: #f7f7f5;
+  --lienzo: #f1efea;
+  --fondo: #fbfaf8;
   --superficie: #ffffff;
-  --superficie-2: #f3f3f1;
-  --superficie-hover: #ededea;
-  --borde: #e4e3df;
-  --borde-fuerte: #cfcdc8;
-  --borde-control: #8f8b85; /* 3:1 sobre el fondo: el borde de un campo se distingue */
+  --superficie-2: #f6f4f0;
+  --superficie-hover: #f1eee8;
+  --borde: #e8e5df;
+  --borde-fuerte: #d9d5cd;
+  --borde-control: #8f8b85; /* 3:1: el borde de un campo se distingue */
 
-  /* Texto (contraste ≥ 4.5:1 sobre --superficie, --superficie-2 y --fondo) */
-  --texto: #1c1b19;
-  --texto-2: #55524d;
-  --texto-3: #6b6762;
+  /* Texto (contraste ≥ 4.5:1 sobre lienzo, hoja, tarjetas y tintes) */
+  --texto: #1c1b18;
+  --texto-2: #47443d;
+  --texto-3: #66625a;
   --texto-invertido: #ffffff;
 
   /* Acento: el azul de la app */
   --acento: #3451d1;
-  --acento-hover: #2a43b4;
-  --acento-suave: #eaf0fc;
-  --acento-texto: #2f49bf;
+  --acento-hover: #2a40a6;
+  --acento-suave: #e4ebfc;
+  --acento-tinte: #edf1fe;
+  --acento-texto: #2a40a6;
 
-  /* Estados (los tonos de la app, oscurecidos para texto) */
-  --exito: #0b6b5f;
-  --exito-suave: #e3f4f0;
-  --exito-borde: #b6e0d7;
-  --aviso: #8f4f0a;
-  --aviso-suave: #fdf1e3;
-  --aviso-borde: #f0cfa7;
+  /* Colores de la app para identidad de bloques (fondo tintado + tono para íconos y textos) */
+  --verde: #0e8c7c;
+  --verde-texto: #0a6b5f;
+  --verde-tinte: #e9f5f1;
+  --verde-suave: #ddf0eb;
+  --ambar: #b4610e;
+  --ambar-texto: #8a4808;
+  --ambar-tinte: #fcf2e4;
+  --ambar-suave: #f9e5c8;
+  --coral: #e06a4e;
+  --coral-texto: #a63d27;
+  --coral-tinte: #fdefea;
+  --coral-suave: #fadfd6;
+
+  /* Estados */
+  --exito: #0a6b5f;
+  --exito-suave: #e9f5f1;
+  --exito-borde: #bfe3da;
+  --aviso: #8a4808;
+  --aviso-suave: #fcf2e4;
+  --aviso-borde: #efd2a6;
   --peligro: #b42318;
   --peligro-hover: #93190f;
+  --peligro-boton: #b42318; /* fondo del botón destructivo (texto blanco) */
   --peligro-suave: #fdecea;
   --peligro-borde: #f3c2bd;
-  --neutro: #55524d;
-  --neutro-suave: #f0efec;
-  --neutro-borde: #dcdad5;
+  --neutro: #47443d;
+  --neutro-suave: #f1efea;
+  --neutro-borde: #dcd8d0;
 
   /* Gráficos (orden fijo de series) */
   --grafico-1: #3451d1;
   --grafico-2: #c26a14;
   --grafico-3: #0e8c7c;
-  --grafico-4: #8a857e;
-  --grafico-rejilla: #ebeae6;
+  --grafico-4: #e2a04f;
+  --grafico-5: #e06a4e;
+  --grafico-rejilla: #e8e5df;
 
-  /* Menú lateral: superficie clara con un borde fino; lo actual en el acento */
-  --lateral-fondo: #ffffff;
-  --lateral-borde: #e4e3df;
-  --lateral-texto: #1c1b19;
-  --lateral-texto-2: #55524d;
-  --lateral-texto-3: #6b6762;
-  --lateral-hover: #f3f3f1;
-  --lateral-activo: #eaf0fc;
+  /* Botón principal: degradado de un solo tono (blanco ≥ 4.5:1 en todo el alto) */
+  --primario-arriba: #4462d8;
+  --primario-abajo: #3451d1;
+  --primario-sombra: 0 1px 2px rgba(23, 35, 94, 0.3), 0 6px 16px -8px rgba(52, 81, 209, 0.7);
+  --primario-sombra-hover: 0 2px 4px rgba(23, 35, 94, 0.3), 0 10px 22px -10px rgba(52, 81, 209, 0.8);
+  --brillo-interior: rgba(255, 255, 255, 0.22);
+  --brillo-tarjeta: rgba(255, 255, 255, 0.6);
+  --sombra-boton-hover: 0 1px 2px rgba(28, 27, 24, 0.06), 0 6px 14px -8px rgba(28, 27, 24, 0.25);
+  --sombra-icono: 0 1px 2px rgba(28, 27, 24, 0.06);
+
+  /* Menú lateral sobre el lienzo */
+  --lateral-fondo: #f1efea;
+  --lateral-borde: #e2ded6;
+  --lateral-texto: #1c1b18;
+  --lateral-texto-2: #47443d;
+  --lateral-texto-3: #66625a;
+  --lateral-hover: rgba(28, 27, 24, 0.05);
+  --lateral-activo: #e4ebfc;
   --lateral-indicador: #3451d1;
   --lateral-logo-fondo: #3451d1;
   --lateral-logo-texto: #ffffff;
 
   /* Esqueleto de carga */
-  --esqueleto: #ecebe7;
+  --esqueleto: #ece9e3;
 
   /* Foco visible y velo de diálogos */
   --foco: #3451d1;
-  --velo: rgba(20, 19, 17, 0.4);
+  --velo: rgba(28, 27, 24, 0.4);
 
-  /* Tipografía: Funnel Display (títulos y cifras) + Funnel Sans (texto) */
+  /* Tipografía */
   --fuente: 'Funnel Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --fuente-display: 'Funnel Display', 'Funnel Sans', system-ui, sans-serif;
-  --fuente-mono: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Consolas, 'Liberation Mono', monospace;
+  --fuente-mono: 'Geist Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
   --texto-xs: 0.8125rem;  /* 13: lo mínimo (etiquetas, fechas) */
   --texto-sm: 0.875rem;   /* 14 */
-  --texto-base: 0.9375rem; /* 15: interfaz y tablas */
-  --texto-md: 1rem;       /* 16: texto que se lee */
-  --texto-lg: 1.125rem;   /* 18 */
-  --texto-xl: 1.5rem;     /* 24 */
-  --texto-2xl: 2rem;      /* 32: cifras clave */
-  --texto-titulo: 1.875rem; /* 30: h1 de cada pantalla */
+  --texto-base: 0.9375rem; /* 15 */
+  --texto-md: 1rem;       /* 16 */
+  --texto-lg: 1.0625rem;  /* 17: títulos de tarjeta */
+  --texto-xl: 1.625rem;   /* 26 */
+  --texto-2xl: 2.375rem;  /* 38: cifras clave */
+  --texto-titulo: 2.25rem; /* 36: h1 de cada pantalla */
   --peso-normal: 400;
   --peso-medio: 500;
-  --peso-fuerte: 500; /* taste: el texto va en 400 y 500; la jerarquía la dan tamaño y color */
-  --interlineado: 1.55;
-  --tracking-titulo: -0.02em;
+  --peso-fuerte: 500; /* el texto va en 400 y 500; la jerarquía la dan tamaño y color */
+  --interlineado: 1.5;
+  --tracking-titulo: -0.025em;
 
   /* Espacios (escala de 4 px) */
   --e-1: 0.25rem;
@@ -103,14 +133,17 @@
   --e-12: 3rem;
 
   /* Formas */
-  --radio-sm: 6px;
-  --radio: 8px;
-  --radio-lg: 12px;
-  --sombra-sutil: 0 1px 1px rgba(28, 27, 25, 0.03);
-  --sombra-hover: 0 6px 20px rgba(28, 27, 25, 0.08);
-  --sombra-flotante: 0 16px 40px rgba(28, 27, 25, 0.14), 0 2px 6px rgba(28, 27, 25, 0.06);
+  --radio-sm: 7px;
+  --radio: 10px;
+  --radio-lg: 16px;
+  --radio-hoja: 18px;
+  --sombra-sutil: 0 1px 0 rgba(28, 27, 24, 0.03), 0 1px 2px rgba(28, 27, 24, 0.05);
+  --sombra-tarjeta: 0 1px 0 rgba(28, 27, 24, 0.03), 0 1px 3px rgba(28, 27, 24, 0.05), 0 10px 28px -14px rgba(28, 27, 24, 0.16);
+  --sombra-hover: 0 2px 4px rgba(28, 27, 24, 0.05), 0 16px 30px -18px rgba(28, 27, 24, 0.3);
+  --sombra-flotante: 0 16px 40px rgba(28, 27, 24, 0.16), 0 2px 6px rgba(28, 27, 24, 0.06);
+  --sombra-hoja: 0 1px 2px rgba(28, 27, 24, 0.04), 0 12px 40px -24px rgba(28, 27, 24, 0.18);
 
-  /* Movimiento (emil-design-eng): curvas propias, nunca ease-in */
+  /* Movimiento (emil-design-eng) */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -121,9 +154,9 @@
   --transicion: var(--m-in) var(--ease-out);
 
   /* Medidas del layout */
-  --ancho-lateral: 240px;
-  --ancho-contenido: 1200px;
-  --alto-control: 2.5rem;
+  --ancho-lateral: 252px;
+  --ancho-contenido: 1180px;
+  --alto-control: 2.375rem;
   --alto-control-sm: 2rem;
 }
 
@@ -131,61 +164,89 @@
   :root {
     color-scheme: dark;
 
-    --fondo: #141412;
-    --superficie: #1c1b19;
-    --superficie-2: #242320;
-    --superficie-hover: #2b2a27;
+    --lienzo: #121211;
+    --fondo: #181816;
+    --superficie: #1f1e1c;
+    --superficie-2: #262522;
+    --superficie-hover: #2c2b28;
     --borde: #33312d;
-    --borde-fuerte: #47443f;
+    --borde-fuerte: #45423d;
     --borde-control: #77736c;
 
     --texto: #edece9;
-    --texto-2: #bab6b0;
-    --texto-3: #9d9992;
-    --texto-invertido: #141412;
+    --texto-2: #c3bfb8;
+    --texto-3: #a29e96;
+    --texto-invertido: #ffffff;
 
-    --acento: #8db4ff;
-    --acento-hover: #a8c5ff;
-    --acento-suave: #1e2a40;
+    --acento: #3f5fd8;
+    --acento-hover: #3d5bd9;
+    --acento-suave: #1e2a44;
+    --acento-tinte: #1b2236;
     --acento-texto: #9cbdff;
 
+    --verde: #3fb8a6;
+    --verde-texto: #6fd3bf;
+    --verde-tinte: #142824;
+    --verde-suave: #183530;
+    --ambar: #e09a4a;
+    --ambar-texto: #f2b071;
+    --ambar-tinte: #2a2012;
+    --ambar-suave: #3a2b16;
+    --coral: #ec8a71;
+    --coral-texto: #f4a48f;
+    --coral-tinte: #2c1b16;
+    --coral-suave: #3c231c;
+
     --exito: #6fd3bf;
-    --exito-suave: #13302b;
+    --exito-suave: #142824;
     --exito-borde: #1f4a42;
     --aviso: #f2b071;
-    --aviso-suave: #33240f;
+    --aviso-suave: #2a2012;
     --aviso-borde: #5a3f1c;
     --peligro: #ff9b8f;
     --peligro-hover: #ffb4aa;
+    --peligro-boton: #c23a2c;
     --peligro-suave: #3a1a16;
     --peligro-borde: #5e2a24;
-    --neutro: #bab6b0;
+    --neutro: #c3bfb8;
     --neutro-suave: #262522;
-    --neutro-borde: #47443f;
+    --neutro-borde: #45423d;
 
-    --grafico-1: #8db4ff;
-    --grafico-2: #f2a35a;
-    --grafico-3: #5fcbb9;
-    --grafico-4: #9d9992;
+    --grafico-1: #6b93ff;
+    --grafico-2: #e09a4a;
+    --grafico-3: #3fb8a6;
+    --grafico-4: #e09a4a;
+    --grafico-5: #ec8a71;
     --grafico-rejilla: #33312d;
 
-    --lateral-fondo: #1c1b19;
-    --lateral-borde: #33312d;
-    --lateral-texto: #edece9;
-    --lateral-texto-2: #bab6b0;
-    --lateral-texto-3: #9d9992;
-    --lateral-hover: #242320;
-    --lateral-activo: #1e2a40;
-    --lateral-indicador: #8db4ff;
-    --lateral-logo-fondo: #8db4ff;
-    --lateral-logo-texto: #141412;
+    --primario-arriba: #3f5fd8;
+    --primario-abajo: #2f4cc0;
+    --primario-sombra: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px -8px rgba(63, 95, 216, 0.6);
+    --primario-sombra-hover: 0 2px 4px rgba(0, 0, 0, 0.4), 0 10px 22px -10px rgba(63, 95, 216, 0.7);
+    --brillo-interior: rgba(255, 255, 255, 0.12);
+    --brillo-tarjeta: rgba(255, 255, 255, 0.04);
+    --sombra-boton-hover: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 14px -8px rgba(0, 0, 0, 0.5);
+    --sombra-icono: 0 1px 2px rgba(0, 0, 0, 0.3);
 
-    --esqueleto: #2b2a27;
+    --lateral-fondo: #121211;
+    --lateral-borde: #2a2926;
+    --lateral-texto: #edece9;
+    --lateral-texto-2: #c3bfb8;
+    --lateral-texto-3: #a29e96;
+    --lateral-hover: rgba(255, 255, 255, 0.05);
+    --lateral-activo: #1e2a44;
+    --lateral-indicador: #8db4ff;
+    --lateral-logo-fondo: #3f5fd8;
+    --lateral-logo-texto: #ffffff;
+
+    --esqueleto: #2c2b28;
 
     --foco: #8db4ff;
     --velo: rgba(0, 0, 0, 0.6);
-    --sombra-sutil: none;
-    --sombra-hover: 0 6px 20px rgba(0, 0, 0, 0.35);
+    --sombra-sutil: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --sombra-tarjeta: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px -14px rgba(0, 0, 0, 0.5);
+    --sombra-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 30px -18px rgba(0, 0, 0, 0.6);
     --sombra-flotante: 0 16px 40px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+    --sombra-hoja: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 40px -24px rgba(0, 0, 0, 0.5);
   }
 }

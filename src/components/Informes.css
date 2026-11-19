@@ -1,7 +1,7 @@
 /*
- * Informes y costos IA: solo el layout propio de la pantalla. Colores, tablas, tarjetas, métricas y avisos vienen de
- * componentes.css. Las secciones son contenedores (container queries) para que las rejillas se adapten al ancho real
- * del contenido, que depende del menú lateral.
+ * Informes y costos IA, dirección «Claro con color» (mismo nivel que el Resumen). Colores, tablas, tarjetas, métricas y
+ * avisos vienen de componentes.css; aquí solo lo propio de la pantalla. Las secciones son contenedores (container
+ * queries) para que las rejillas se adapten al ancho real del contenido, que depende del menú lateral.
  */
 
 /* ---------- Secciones ---------- */
@@ -11,50 +11,103 @@
 }
 
 .informes-seccion + .informes-seccion {
-  padding-top: var(--e-6);
+  padding-top: var(--e-8);
   border-top: 1px solid var(--borde);
 }
 
-.informes-seccion > .seccion__encabezado .seccion__titulo { font-size: var(--texto-lg); }
+.informes-seccion__titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-3);
+  font-family: var(--fuente-display);
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-medio);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+/* Cuadro de color junto al título: la identidad de la sección (coral gasto, azul usuarios, verde banco, ámbar mercado) */
+.informes-seccion__icono {
+  --s-tono: var(--acento);
+  --s-tinte: var(--acento-tinte);
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radio);
+  background: var(--s-tinte);
+  color: var(--s-tono);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--s-tono) 20%, transparent);
+}
+.informes-seccion__icono--coral { --s-tono: var(--coral); --s-tinte: var(--coral-tinte); }
+.informes-seccion__icono--verde { --s-tono: var(--verde); --s-tinte: var(--verde-tinte); }
+.informes-seccion__icono--ambar { --s-tono: var(--ambar); --s-tinte: var(--ambar-tinte); }
 
 .informes-bloque { display: flex; flex-direction: column; gap: var(--e-3); min-width: 0; }
 
-.informes-subtitulo { font-size: var(--texto-base); font-weight: var(--peso-fuerte); }
+.informes-bloque__cabecera { display: flex; flex-direction: column; gap: 3px; }
+.informes-bloque__titulo,
+.informes-tarjeta__titulo {
+  font-family: var(--fuente-display);
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-medio);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.informes-bloque__sub,
+.informes-tarjeta__sub { font-size: var(--texto-xs); color: var(--texto-3); }
 
 /* Datos que se están volviendo a pedir: se atenúan sin moverse */
 .informes-actualizando { opacity: 0.55; transition: opacity var(--transicion); }
 
+/* ---------- Tope del mes ---------- */
+.informes-tope { display: flex; flex-direction: column; min-width: 0; }
+.informes-tope__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
+  padding: var(--e-4) 1.25rem 1.25rem;
+}
+
 /* ---------- Rango de fechas ---------- */
 .informes-rango .boton--primario { flex: none; }
 
-/* Rangos rápidos: grupo segmentado (botones unidos con un borde común) */
+.informes-nota-rango { max-width: 90ch; }
+.informes-nota-rango .mono { font-weight: var(--peso-medio); color: var(--texto); }
+
+/* Rangos rápidos: control segmentado (una pista con las opciones dentro) */
 .informes-segmentado {
   display: inline-flex;
+  gap: 2px;
   margin-left: auto;
-  border: 1px solid var(--borde-fuerte);
+  padding: 3px;
   border-radius: var(--radio);
-  background: var(--superficie);
-  overflow: hidden;
+  background: var(--superficie-2);
+  box-shadow: inset 0 0 0 1px var(--borde);
 }
 
 .informes-segmentado__opcion {
-  min-height: calc(var(--alto-control) - 2px);
+  min-height: calc(var(--alto-control) - 6px);
   padding: 0 var(--e-3);
   border: 0;
-  border-left: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-sm);
   background: transparent;
   color: var(--texto-2);
   font-size: var(--texto-sm);
   font-weight: var(--peso-medio);
   white-space: nowrap;
-  transition: background-color var(--transicion), color var(--transicion), transform var(--m-out) var(--ease-out);
+  transition: background-color var(--transicion), color var(--transicion), box-shadow var(--transicion),
+    transform var(--m-out) var(--ease-out);
 }
 
-.informes-segmentado__opcion:first-child { border-left: 0; }
-.informes-segmentado__opcion:hover:not(:disabled) { background: var(--superficie-hover); color: var(--texto); }
+.informes-segmentado__opcion:hover:not(:disabled) {
+  background: var(--superficie);
+  color: var(--texto);
+  box-shadow: var(--sombra-sutil);
+}
 .informes-segmentado__opcion:disabled { opacity: 0.55; }
-/* El grupo recorta lo que sobresale: el foco se dibuja hacia adentro */
-.informes-segmentado__opcion:focus-visible { outline-offset: -2px; }
+.informes-segmentado__opcion:active:not(:disabled) { transform: scale(0.97); transition-duration: var(--m-press); }
 
 /* ---------- Avisos de error, carga y vacío dentro de la pantalla ---------- */
 .informes-error { align-items: center; flex-wrap: wrap; }
@@ -66,23 +119,29 @@
 .informes-vacio { padding: var(--e-8) var(--e-4); }
 
 /* ---------- Números clave ---------- */
-.informes-metricas .metrica__valor { overflow-wrap: anywhere; }
+.informes-metricas .metrica { gap: 0; padding: var(--e-4) 1.125rem 0.875rem; }
+.informes-metricas .metrica__valor { margin-top: 0.875rem; overflow-wrap: anywhere; }
+.informes-metricas .metrica__pie { margin-top: 0.875rem; }
 
 .informes-metricas--costos,
 .informes-metricas--usuarios { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
-/* Los montos en USD son largos: se achican en los anchos chicos */
-.informes-metricas--costos .metrica { padding: var(--e-3) var(--e-4); }
-.informes-metricas--costos .metrica__valor { font-size: var(--texto-lg); }
-
-@container (min-width: 440px) {
-  .informes-metricas--costos .metrica__valor { font-size: var(--texto-xl); }
-}
+/* Los montos son largos: se achican en los anchos chicos */
+.informes-metricas--costos .metrica__valor { font-size: var(--texto-xl); }
 
 @container (min-width: 640px) {
   .informes-metricas--costos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .informes-metricas--costos .metrica { padding: var(--e-4) var(--e-5); }
   .informes-metricas--usuarios { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@container (min-width: 900px) {
+  .informes-metricas--costos .metrica__valor { font-size: 2rem; }
+}
+
+@container (max-width: 439px) {
+  .informes-metricas .metrica { padding: var(--e-3) var(--e-4) var(--e-3); }
+  .informes-metricas .metrica__etiqueta { font-size: var(--texto-xs); }
+  .informes-metricas .metrica__icono { display: none; }
 }
 
 /* ---------- Tarjetas de gráficos y tablas ---------- */
@@ -101,23 +160,125 @@
 }
 
 .informes-tarjeta { min-width: 0; display: flex; flex-direction: column; }
-.informes-tarjeta .tarjeta__cuerpo { flex: 1; padding: var(--e-4); }
-.informes-tarjeta .tarjeta__titulo { margin-right: auto; }
 
-/* Tabla dentro de una tarjeta: sin borde propio para no duplicar el de la tarjeta */
-.informes-tarjeta__tabla { min-width: 0; }
-.informes-tabla-contenedor { border: 0; border-radius: 0 0 var(--radio-lg) var(--radio-lg); background: transparent; }
+/* Cabecera como la del Resumen: título display con subtítulo, y a la derecha un control o una cifra */
+.informes-tarjeta__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--e-3) var(--e-4);
+  padding: 1.125rem 1.25rem 0;
+}
+.informes-tarjeta__textos { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 
+.informes-tarjeta__cuerpo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  min-width: 0;
+  padding: var(--e-3) 1.25rem 1.25rem var(--e-3);
+}
+
+.informes-tarjeta__pie {
+  padding: var(--e-2) var(--e-3);
+  border-top: 1px solid var(--borde);
+}
+
+/* Total a la derecha de la cabecera del gráfico diario */
+.informes-total { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+.informes-total__cifra {
+  font-family: var(--fuente-display);
+  font-size: var(--texto-xl);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.informes-total .informes-tarjeta__sub { margin-top: 5px; }
+
+.informes-leyenda { gap: var(--e-1) 1.125rem; padding-left: var(--e-2); }
+.informes-leyenda .leyenda__marca { width: 0.625rem; height: 0.625rem; border-radius: 3px; }
+
+/* Tabla dentro de una tarjeta: sin borde ni sombra propios para no duplicar los de la tarjeta */
+.informes-tarjeta__tabla { min-width: 0; margin-top: var(--e-3); }
+.informes-tabla-contenedor {
+  border: 0;
+  border-top: 1px solid var(--borde);
+  border-radius: 0 0 var(--radio-lg) var(--radio-lg);
+  background: transparent;
+  box-shadow: none;
+}
 .informes-tabla td.num,
 .informes-tabla th.num { white-space: nowrap; }
+.informes-tabla th:first-child,
+.informes-tabla td:first-child { padding-left: 1.25rem; }
+.informes-tabla th:last-child,
+.informes-tabla td:last-child { padding-right: 1.25rem; }
+.tabla.informes-tabla td { padding-block: var(--e-2); }
+.informes-tabla__monto { color: var(--coral-texto); font-weight: var(--peso-medio); }
 
-/* Selector de categoría en el encabezado de una tarjeta */
+/* El nombre del modelo no se parte en dos líneas. */
+.informes-modelo { white-space: nowrap; }
+
+/* Persona en la lista de usuarios: avatar con tono + nombre */
+.informes-persona { display: inline-flex; align-items: center; gap: var(--e-2); min-width: 0; }
+.informes-persona__avatar.avatar { font-family: var(--fuente-display); }
+.informes-persona__nombre { font-weight: var(--peso-medio); color: var(--texto); }
+
+/* Leyenda del gasto por modelo: marca, nombre en mono, monto y porcentaje */
+.informes-modelos { list-style: none; margin: 0; padding: 0 0 0 var(--e-2); }
+.informes-modelos__fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+  padding: var(--e-2) 0;
+  font-size: var(--texto-sm);
+}
+.informes-modelos__fila + .informes-modelos__fila { border-top: 1px solid var(--borde); }
+.informes-modelos__nombre { display: inline-flex; align-items: center; gap: var(--e-2); min-width: 0; }
+.informes-modelos__marca { width: 0.625rem; height: 0.625rem; border-radius: 3px; flex: none; }
+.informes-modelos__cifras { display: inline-flex; align-items: baseline; gap: var(--e-3); flex: none; }
+.informes-modelos__cifras .mono { font-size: var(--texto-xs); min-width: 3.5ch; text-align: right; }
+
+/* Selector de categoría en la cabecera de una tarjeta */
 .informes-selector {
   width: auto;
   min-width: 9rem;
   max-width: 100%;
 }
 .informes-tarjeta .informes-selector { min-height: var(--alto-control-sm); font-size: var(--texto-sm); }
+
+/* Globo de los gráficos (el del Resumen): oscuro y compacto */
+.informes-globo {
+  min-width: 11rem;
+  max-width: 18rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 12px;
+  background: var(--texto);
+  color: var(--fondo);
+  font-size: var(--texto-xs);
+  box-shadow: var(--sombra-flotante);
+}
+.informes-globo__titulo { color: color-mix(in oklch, var(--fondo) 75%, transparent); margin-bottom: 6px; }
+.informes-globo__total {
+  margin-bottom: 8px;
+  font-family: var(--fuente-display);
+  font-size: var(--texto-lg);
+  line-height: 1;
+}
+.informes-globo__fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+  color: color-mix(in oklch, var(--fondo) 90%, transparent);
+}
+.informes-globo__fila + .informes-globo__fila { margin-top: 3px; }
+.informes-globo__fila > span { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+.informes-globo__fila b { font-weight: var(--peso-normal); white-space: nowrap; }
+.informes-globo__marca { width: 8px; height: 8px; border-radius: 2.5px; flex: none; background: var(--grafico-1); }
+.informes-globo__marca--2 { background: var(--grafico-2); }
 
 /* Recharts dibuja un foco propio en el svg al hacer clic: se deja solo el de teclado */
 .informes-tarjeta .recharts-wrapper:focus:not(:focus-visible),
@@ -142,9 +303,18 @@
     line-height: 1.2;
   }
   .informes-rango .boton--primario { flex: 1 1 100%; }
+  .informes-tarjeta__cabecera { padding: var(--e-4) var(--e-4) 0; }
+  .informes-tarjeta__cuerpo { padding: var(--e-3) var(--e-4) var(--e-4) var(--e-2); }
+  .informes-tope__cuerpo { padding: var(--e-3) var(--e-4) var(--e-4); }
+  .informes-tabla th:first-child,
+  .informes-tabla td:first-child { padding-left: var(--e-4); }
+  .informes-tabla th:last-child,
+  .informes-tabla td:last-child { padding-right: var(--e-4); }
 }
 
-/* El nombre del modelo no se parte en dos líneas. */
-.informes-modelo { white-space: nowrap; }
-
-.informes-segmentado__opcion:active:not(:disabled) { transform: scale(0.97); transition-duration: var(--m-press); }
+@media (forced-colors: active) {
+  .informes-seccion__icono,
+  .informes-segmentado { border: 1px solid CanvasText; }
+  .informes-modelos__marca,
+  .informes-globo__marca { forced-color-adjust: none; }
+}

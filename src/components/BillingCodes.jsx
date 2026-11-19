@@ -55,6 +55,14 @@ const TIPOS_LICENCIA = {
 
 const getLicenseTypeBadge = (type) => TIPOS_LICENCIA[type] || { label: type || '—' };
 
+/** Ícono del botón copiar: los dos están montados y se cruzan (el check entra con escala y desenfoque). */
+const IconoCopiar = ({ copiado }) => (
+  <span className={`codigos-copiar__iconos${copiado ? ' codigos-copiar__iconos--hecho' : ''}`}>
+    <Icono nombre="copiar" className="codigos-copiar__icono codigos-copiar__icono--copiar" />
+    <Icono nombre="check" className="codigos-copiar__icono codigos-copiar__icono--check" />
+  </span>
+);
+
 const BillingCodes = () => {
   const [codes, setCodes] = useState(leerCodigosGuardados);
   const [creating, setCreating] = useState(false);
@@ -175,9 +183,15 @@ const BillingCodes = () => {
       </header>
 
       {/* Formulario de creación */}
-      <section className="tarjeta" aria-labelledby="codigos-crear-titulo">
-        <div className="tarjeta__encabezado">
-          <h2 id="codigos-crear-titulo" className="tarjeta__titulo">Crear nuevo código</h2>
+      <p className="sr-only" role="status">{copiedCode ? `Código ${copiedCode} copiado al portapapeles.` : ''}</p>
+
+      <section className="tarjeta codigos-tarjeta" aria-labelledby="codigos-crear-titulo">
+        <div className="codigos-cabecera">
+          <span className="codigos-cabecera__icono" aria-hidden="true"><Icono nombre="codigos" tamano={18} /></span>
+          <div className="codigos-cabecera__textos">
+            <h2 id="codigos-crear-titulo" className="codigos-cabecera__titulo">Crear nuevo código</h2>
+            <p className="codigos-cabecera__sub">El servidor genera el código; aquí eliges qué entrega y cuántas veces se puede canjear.</p>
+          </div>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="tarjeta__cuerpo">
@@ -272,17 +286,17 @@ const BillingCodes = () => {
               <div className="aviso aviso--exito" role="status">
                 <Icono nombre="check-circulo" className="aviso__icono" />
                 <div className="aviso__contenido codigos-exito">
-                  <span>
-                    {success.texto}: <code className="mono">{success.code}</code>
+                  <span className="codigos-exito__texto">
+                    {success.texto}: <code className="mono codigos-exito__codigo">{success.code}</code>
                   </span>
                   <button
                     type="button"
-                    className="boton boton--chico boton--icono"
+                    className={`boton boton--chico boton--icono codigos-copiar${copiedCode === success.code ? ' codigos-copiar--hecho' : ''}`}
                     onClick={() => copyToClipboard(success.code)}
-                    title="Copiar código"
-                    aria-label="Copiar código"
+                    title={copiedCode === success.code ? 'Código copiado' : 'Copiar código'}
+                    aria-label={copiedCode === success.code ? `Código ${success.code} copiado` : `Copiar el código ${success.code}`}
                   >
-                    <Icono nombre={copiedCode === success.code ? 'check' : 'copiar'} />
+                    <IconoCopiar copiado={copiedCode === success.code} />
                   </button>
                 </div>
               </div>
@@ -299,11 +313,17 @@ const BillingCodes = () => {
       </section>
 
       {/* Lista local de códigos */}
-      <section className="seccion" aria-labelledby="codigos-lista-titulo">
-        <div className="seccion__encabezado">
-          <h2 id="codigos-lista-titulo" className="seccion__titulo">
-            Códigos creados en esta sesión <span className="texto-3 num">({codes.length})</span>
-          </h2>
+      <section className="tarjeta codigos-tarjeta" aria-labelledby="codigos-lista-titulo">
+        <div className="codigos-cabecera">
+          <div className="codigos-cabecera__textos">
+            <h2 id="codigos-lista-titulo" className="codigos-cabecera__titulo">
+              Códigos creados en esta sesión <span className="codigos-contador mono">{codes.length}</span>
+            </h2>
+            <p className="codigos-cabecera__sub">
+              El servidor V2 todavía no permite listar códigos: aquí ves solo los creados en esta sesión del navegador.
+              Los usos no se actualizan en tiempo real.
+            </p>
+          </div>
           {codes.length > 0 && (
             <button type="button" className="boton boton--chico" onClick={limpiarLista}>
               Quitar lista
@@ -311,81 +331,74 @@ const BillingCodes = () => {
           )}
         </div>
 
-        <div className="aviso aviso--info">
-          <Icono nombre="info" className="aviso__icono" />
-          <p className="aviso__contenido">
-            El servidor V2 todavía no permite listar códigos: aquí ves solo los creados en esta sesión del navegador.
-            Los usos no se actualizan en tiempo real.
-          </p>
-        </div>
-
         {codes.length === 0 ? (
-          <div className="tarjeta vacio">
+          <div className="vacio codigos-vacio">
+            <span className="chip-icono" aria-hidden="true"><Icono nombre="codigos" tamano={18} /></span>
             <p>No hay códigos creados en esta sesión.</p>
           </div>
         ) : (
-          <div className="tabla-contenedor">
-            <table className="tabla tabla--compacta codigos-tabla">
-              <thead>
-                <tr>
-                  <th scope="col">Código</th>
-                  <th scope="col">Tipo</th>
-                  <th scope="col">Etiqueta</th>
-                  <th scope="col" className="num">Duración</th>
-                  <th scope="col" className="num">Usos</th>
-                  <th scope="col">Creado</th>
-                  <th scope="col">Canjeable hasta</th>
-                  <th scope="col">Estado</th>
-                  <th scope="col" className="celda-acciones">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {codes.map((code) => {
-                  const badge = getLicenseTypeBadge(code.license_type);
-                  const vence = code.expires_at ? Date.parse(code.expires_at) : Number.NaN;
-                  const isExpired = !Number.isNaN(vence) && vence < Date.now();
+          <ul className="codigos-filas">
+            {codes.map((code) => {
+              const badge = getLicenseTypeBadge(code.license_type);
+              const vence = code.expires_at ? Date.parse(code.expires_at) : Number.NaN;
+              const isExpired = !Number.isNaN(vence) && vence < Date.now();
+              const tipo = TIPOS_LICENCIA[code.license_type] ? code.license_type : 'otro';
 
-                  return (
-                    <tr key={code.codigo_id} className={isExpired ? 'codigos-fila-expirada' : ''}>
-                      <td>
-                        <span className="mono codigos-codigo">{code.code}</span>
-                      </td>
-                      <td>
-                        <span className="insignia">{badge.label}</span>
-                      </td>
-                      <td className="codigos-etiqueta">{code.label || '-'}</td>
-                      <td className="num">{code.duracion_dias != null ? `${code.duracion_dias} días` : '—'}</td>
-                      <td className="num">
-                        <span className="codigos-usos" title="No disponible en V2">
-                          —/{code.max_uses ?? '—'}
-                        </span>
-                      </td>
-                      <td>{formatDate(code.created_at)}</td>
-                      <td>{formatDate(code.expires_at)}</td>
-                      <td>
-                        {isExpired ? (
-                          <span className="insignia insignia--punto">Expirado</span>
-                        ) : (
-                          <span className="insignia insignia--punto insignia--exito">Vigente</span>
-                        )}
-                      </td>
-                      <td className="celda-acciones">
-                        <button
-                          type="button"
-                          className="boton boton--sutil boton--chico boton--icono"
-                          onClick={() => copyToClipboard(code.code)}
-                          title="Copiar código"
-                          aria-label="Copiar código"
-                        >
-                          <Icono nombre={copiedCode === code.code ? 'check' : 'copiar'} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+              return (
+                <li key={code.codigo_id} className={`codigos-fila${isExpired ? ' codigos-fila--expirada' : ''}`}>
+                  <span className={`codigos-fila__icono codigos-fila__icono--${tipo}`} aria-hidden="true">
+                    <Icono nombre="codigos" tamano={16} />
+                  </span>
+                  <div className="codigos-fila__principal">
+                    <div className="codigos-fila__linea">
+                      <span className="mono codigos-codigo">{code.code}</span>
+                      <span className="insignia">{badge.label}</span>
+                      {isExpired ? (
+                        <span className="insignia insignia--punto">Expirado</span>
+                      ) : (
+                        <span className="insignia insignia--punto insignia--exito">Vigente</span>
+                      )}
+                    </div>
+                    <dl className="codigos-datos">
+                      <div className="codigos-dato codigos-dato--etiqueta">
+                        <dt>Etiqueta</dt>
+                        <dd>{code.label || '-'}</dd>
+                      </div>
+                      <div className="codigos-dato">
+                        <dt>Duración</dt>
+                        <dd className="mono">{code.duracion_dias != null ? `${code.duracion_dias} días` : '—'}</dd>
+                      </div>
+                      <div className="codigos-dato">
+                        <dt>Usos</dt>
+                        <dd>
+                          <span className="codigos-usos mono" title="No disponible en V2">
+                            —/{code.max_uses ?? '—'}
+                          </span>
+                        </dd>
+                      </div>
+                      <div className="codigos-dato">
+                        <dt>Creado</dt>
+                        <dd className="mono">{formatDate(code.created_at)}</dd>
+                      </div>
+                      <div className="codigos-dato">
+                        <dt>Canjeable hasta</dt>
+                        <dd className="mono">{formatDate(code.expires_at)}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                  <button
+                    type="button"
+                    className={`boton boton--sutil boton--chico boton--icono codigos-copiar${copiedCode === code.code ? ' codigos-copiar--hecho' : ''}`}
+                    onClick={() => copyToClipboard(code.code)}
+                    title={copiedCode === code.code ? 'Código copiado' : 'Copiar código'}
+                    aria-label={copiedCode === code.code ? `Código ${code.code} copiado` : `Copiar el código ${code.code}`}
+                  >
+                    <IconoCopiar copiado={copiedCode === code.code} />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </section>
     </div>

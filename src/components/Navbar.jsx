@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { logout, usuarioActual } from '../services/api';
+import { contarPreguntas, logout, usuarioActual } from '../services/api';
 import Icono from './Icono';
 import { iniciales } from '../services/etiquetas';
 import './Navbar.css';
@@ -27,7 +27,7 @@ const SECCIONES = [
     id: 'banco',
     titulo: 'Banco de preguntas',
     enlaces: [
-      { a: '/preguntas', texto: 'Preguntas', icono: 'preguntas' },
+      { a: '/preguntas', texto: 'Preguntas', icono: 'preguntas', contador: 'pendientes' },
       { a: '/crear-pregunta', texto: 'Crear pregunta', icono: 'pregunta-mas' },
       { a: '/generar-preguntas', texto: 'Generar con IA', icono: 'generar' },
       { a: '/cobertura', texto: 'Cobertura', icono: 'cobertura' },
@@ -42,10 +42,24 @@ const SECCIONES = [
 
 const Navbar = ({ setIsAuthenticated }) => {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const user = usuarioActual() || {};
   const [saliendo, setSaliendo] = useState(false);
   const [abierto, setAbierto] = useState(false);
+  // Preguntas pendientes de revisión: un número junto a «Preguntas». Se vuelve a contar al navegar (una petición
+  // liviana: tamano=1). Si falla, simplemente no se muestra.
+  const [pendientes, setPendientes] = useState(null);
+
+  useEffect(() => {
+    let vigente = true;
+    const contar = () => contarPreguntas({ estado: 'pendiente' })
+      .then((n) => { if (vigente) setPendientes(Number(n) || 0); })
+      .catch(() => { if (vigente) setPendientes(null); });
+    contar();
+    // Al volver a la pestaña (p. ej. después de aprobar en otra) el número se pone al día.
+    window.addEventListener('focus', contar);
+    return () => { vigente = false; window.removeEventListener('focus', contar); };
+  }, [pathname, search]);
 
   // Al navegar se cierra el menú del celular.
   useEffect(() => {
@@ -95,7 +109,7 @@ const Navbar = ({ setIsAuthenticated }) => {
             <span className="marca__logo" aria-hidden="true">E</span>
             <span className="marca__texto">
               EntrevistaApp
-              <span className="marca__sub">Administración</span>
+              <span className="marca__sub">Panel de administración</span>
             </span>
           </span>
         </div>
@@ -112,6 +126,12 @@ const Navbar = ({ setIsAuthenticated }) => {
                     <NavLink to={enlace.a} className="lateral__enlace">
                       <Icono nombre={enlace.icono} />
                       <span>{enlace.texto}</span>
+                      {enlace.contador === 'pendientes' && pendientes > 0 && (
+                        <span className="lateral__contador">
+                          {pendientes}
+                          <span className="sr-only"> por revisar</span>
+                        </span>
+                      )}
                     </NavLink>
                   </li>
                 ))}
@@ -122,7 +142,7 @@ const Navbar = ({ setIsAuthenticated }) => {
 
         <div className="lateral__pie">
           <div className="lateral__usuario">
-            <span className="avatar avatar--chico" aria-hidden="true">{iniciales(user.correo)}</span>
+            <span className="avatar lateral__avatar" aria-hidden="true">{iniciales(user.correo).charAt(0)}</span>
             <span className="lateral__usuario-textos">
               <span className="lateral__correo truncar" title={user.correo || undefined}>{user.correo}</span>
               <span className="lateral__rol">Administrador</span>
@@ -131,7 +151,7 @@ const Navbar = ({ setIsAuthenticated }) => {
           <button
             type="button"
             onClick={handleLogout}
-            className="boton boton--sutil boton--chico lateral__salir"
+            className="lateral__salir"
             disabled={saliendo}
           >
             <Icono nombre="salir" />

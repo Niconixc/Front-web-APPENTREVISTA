@@ -192,8 +192,8 @@ const QuestionEdit = () => {
       <div className="pagina pagina--angosta">
         {miga}
         <div className="tarjeta">
-          <div className="vacio">
-            <Icono nombre="alerta" tamano={24} />
+          <div className="vacio qform-vacio">
+            <span className="qform-vacio__icono" aria-hidden="true"><Icono nombre="alerta" tamano={22} /></span>
             <h1 className="vacio__titulo">
               {errorCarga?.noExiste ? 'La pregunta no existe' : 'No se pudo cargar la pregunta'}
             </h1>
@@ -236,11 +236,11 @@ const QuestionEdit = () => {
             <span className={`insignia insignia--punto ${CLASE_ESTADO[pregunta.estado] || ''}`.trim()}>
               {etiqueta(ESTADOS_PREGUNTA, pregunta.estado)}
             </span>
-            {pregunta.generadaPorIa && <span className="insignia insignia--info">Generada con IA</span>}
-            <span className="num">
+            {pregunta.generadaPorIa && <span className="insignia qform-insignia-ia">Generada con IA</span>}
+            <span className="num qform-meta__dato">
               {pregunta.vecesUsada === 1 ? 'Usada 1 vez' : `Usada ${pregunta.vecesUsada ?? 0} veces`}
             </span>
-            <span className="num">Creada el {formatearFecha(pregunta.fechaCreacion)}</span>
+            <span className="qform-meta__dato">Creada el <span className="mono">{formatearFecha(pregunta.fechaCreacion)}</span></span>
           </div>
         </div>
         {pregunta.estado !== 'rechazada' && (
@@ -262,7 +262,14 @@ const QuestionEdit = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="tarjeta" noValidate>
+      <form onSubmit={handleSubmit} className="tarjeta qform-tarjeta" noValidate>
+        <div className="qform-cabecera">
+          <span className="qform-cabecera__icono" aria-hidden="true"><Icono nombre="editar" tamano={18} /></span>
+          <div className="qform-cabecera__textos">
+            <h2 className="qform-cabecera__titulo">Datos de la pregunta</h2>
+            <p className="qform-cabecera__sub">Los campos marcados con * son obligatorios.</p>
+          </div>
+        </div>
         <div className="tarjeta__cuerpo">
           <fieldset className="qform-bloqueo" disabled={ocupado}>
             <QuestionFields form={form} setForm={setForm} />

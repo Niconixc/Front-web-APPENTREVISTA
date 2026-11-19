@@ -1,4 +1,7 @@
-/* Cobertura del banco: solo el layout propio. Las piezas (filtros, métricas, tabla, insignias) vienen de componentes.css. */
+/*
+ * Cobertura del banco, dirección «Claro con color». Las piezas (filtros, .metrica, .tarjeta, tabla, insignias) vienen de
+ * componentes.css; aquí va solo lo propio: métricas con su tono, cada cargo como tarjeta y las celdas que faltan en ámbar.
+ */
 
 /* ---------- Filtros ---------- */
 .cobertura-filtros-bloque { display: flex; flex-direction: column; gap: var(--e-2); }
@@ -22,36 +25,140 @@
 
 .cobertura-reintentar { align-self: flex-start; }
 
-.cobertura-metrica-fecha { font-size: var(--texto-lg); padding-top: var(--e-2); }
+/* ---------- Métricas: faltan (ámbar), cargos incompletos (coral), ofertas leídas (azul); verde si todo está al día ---------- */
+.cobertura-metricas { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+.cobertura-metrica { gap: 0; padding: var(--e-4) 1.125rem 0.875rem; }
+.cobertura-metrica .metrica__etiqueta { white-space: nowrap; }
+.cobertura-metrica .metrica__pie { margin-top: var(--e-4); }
 
-/* ---------- Cargo ---------- */
-.cobertura-cargo-titulo { display: flex; align-items: baseline; gap: var(--e-2); flex-wrap: wrap; min-width: 0; }
+/* Las tres cifras se apoyan en la misma línea base aunque la fecha sea más chica */
+.cobertura-metrica__valor {
+  display: flex;
+  align-items: flex-end;
+  min-height: 2.375rem;
+  margin-top: var(--e-4);
+}
+.cobertura-metrica__de {
+  margin-left: var(--e-1);
+  font-family: var(--fuente-display);
+  font-size: var(--texto-lg);
+  color: var(--texto-3);
+  letter-spacing: -0.01em;
+}
+.cobertura-metrica-fecha {
+  font-family: var(--fuente-mono);
+  font-size: var(--texto-xl);
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
 
-.cobertura-sin-skills { padding: var(--e-4) var(--e-5); }
+/* ---------- Estado vacío ---------- */
+.cobertura-vacio-icono { background: var(--verde-tinte); color: var(--verde); }
+
+/* ---------- Cada cargo: tarjeta con cabecera y su matriz ---------- */
+.cobertura-cargo { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+.cobertura-cargo__cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  flex-wrap: wrap;
+  padding: 1.125rem 1.25rem var(--e-4);
+}
+.cobertura-cargo__icono {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: var(--radio);
+  background: var(--superficie-2);
+  color: var(--texto-3);
+  box-shadow: inset 0 0 0 1px var(--borde);
+}
+.cobertura-cargo__icono--falta {
+  background: var(--ambar-tinte);
+  color: var(--ambar);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--ambar) 20%, transparent);
+}
+.cobertura-cargo__icono--ok {
+  background: var(--verde-tinte);
+  color: var(--verde);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--verde) 18%, transparent);
+}
+
+.cobertura-cargo-titulo { display: flex; flex-direction: column; gap: 3px; flex: 1 1 14rem; min-width: 0; }
+.cobertura-cargo__titulo {
+  font-family: var(--fuente-display);
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-medio);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+.cobertura-cargo__sub { font-size: var(--texto-xs); color: var(--texto-3); }
+
+.cobertura-sin-skills {
+  margin: 0 1.25rem 1.25rem;
+  padding: var(--e-3) var(--e-4);
+  border-radius: 12px;
+  background: var(--superficie-2);
+  box-shadow: inset 0 0 0 1px var(--borde);
+  max-width: none;
+}
+
+/* La tabla vive dentro de la tarjeta: sin segundo borde ni segunda sombra */
+.cobertura-tabla-contenedor {
+  border: 0;
+  border-top: 1px solid var(--borde);
+  border-radius: 0;
+  box-shadow: none;
+}
 
 /* ---------- Matriz skill × nivel ---------- */
 .cobertura-tabla { min-width: 640px; }
 
+.cobertura-tabla th:first-child,
+.cobertura-tabla td:first-child { padding-left: 1.25rem; }
+.cobertura-tabla th:last-child,
+.cobertura-tabla td:last-child { padding-right: 1.25rem; }
+
 .cobertura-tabla tbody th { font-weight: var(--peso-normal); }
 /* componentes.css solo resalta los td: la skill es un th de fila y debe resaltarse con el resto. */
 .cobertura-tabla tbody tr:hover th { background: var(--superficie-2); }
-.cobertura-skill { min-width: 12rem; }
+.cobertura-skill { min-width: 12rem; padding-block: var(--e-2); }
 .cobertura-skill-nombre { display: block; font-weight: var(--peso-medio); color: var(--texto); }
 .cobertura-skill-meta {
   display: flex;
   align-items: center;
   gap: var(--e-2);
   flex-wrap: wrap;
+  margin-top: 2px;
   font-size: var(--texto-xs);
   color: var(--texto-3);
 }
 
-.cobertura-tabla thead th.num:nth-child(n + 3) { width: 11rem; }
-.cobertura-celda { white-space: nowrap; }
+.cobertura-peso { color: var(--texto-2); font-size: var(--texto-xs); }
 
-.cobertura-conteo { display: block; font-weight: var(--peso-medio); }
-.cobertura-conteo-minimo { color: var(--texto-3); font-weight: var(--peso-normal); }
-.cobertura-celda--falta .cobertura-conteo { color: var(--aviso); }
+.cobertura-tabla thead th.num:nth-child(n + 3) { width: 11rem; }
+.cobertura-celda { white-space: nowrap; padding-block: var(--e-2); }
+
+/* Conteo «aprobadas/mínimo» en mono: se lee de un vistazo y las columnas quedan alineadas */
+.cobertura-conteo {
+  display: block;
+  font-family: var(--fuente-mono);
+  font-size: var(--texto-base);
+  font-weight: var(--peso-normal);
+  color: var(--texto);
+}
+.cobertura-conteo-minimo { color: var(--texto-3); font-weight: var(--peso-normal); font-size: var(--texto-xs); }
+
+/* Falta: la celda entera toma un tinte ámbar suave (el estado también va en texto: «Faltan N») */
+.tabla .cobertura-celda--falta {
+  background: var(--ambar-tinte);
+  box-shadow: inset 1px 0 0 color-mix(in oklch, var(--ambar) 14%, transparent);
+}
+.tabla tbody tr:hover td.cobertura-celda--falta { background: var(--ambar-suave); }
+.cobertura-celda--falta .cobertura-conteo { color: var(--ambar-texto); }
 .cobertura-celda--revisar .cobertura-conteo { color: var(--acento-texto); }
 
 .cobertura-celda-acciones {
@@ -70,4 +177,11 @@
 @media (max-width: 720px) {
   .filtros .cobertura-filtro-cargo { max-width: none; }
   .cobertura-actualizar { margin-left: 0; }
+  .cobertura-cargo__cabecera { padding: var(--e-4); }
+  .cobertura-sin-skills { margin: 0 var(--e-4) var(--e-4); }
+}
+
+@media (forced-colors: active) {
+  .cobertura-cargo__icono { border: 1px solid CanvasText; }
+  .tabla .cobertura-celda--falta { outline: 1px solid CanvasText; outline-offset: -1px; }
 }

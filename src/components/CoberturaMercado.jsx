@@ -87,6 +87,8 @@ const CoberturaMercado = () => {
   useEffect(() => { cargar(); }, [cargar]);
 
   const resumen = useMemo(() => resumenCobertura(datos), [datos]);
+  // Verde solo si de verdad no falta nada: un cargo sin skills del mercado tampoco está completo.
+  const alDia = resumen.cargos > 0 && resumen.preguntasFaltantes === 0 && resumen.cargosSinSkills === 0;
   const cargosVisibles = useMemo(() => {
     const lista = Array.isArray(datos?.cargos) ? datos.cargos : [];
     // Un cargo sin skills del mercado no está "completo": se muestra siempre.
@@ -182,29 +184,48 @@ const CoberturaMercado = () => {
       )}
 
       {datos && (
-        <div className="metricas" aria-busy={cargando}>
-          <div className="metrica">
-            <span className="metrica__etiqueta">Faltan</span>
-            <strong className="metrica__valor">{resumen.preguntasFaltantes}</strong>
-            <small className="metrica__detalle">preguntas aprobadas</small>
-          </div>
-          <div className="metrica">
-            <span className="metrica__etiqueta">Cargos incompletos</span>
-            <strong className="metrica__valor">{resumen.cargosIncompletos}</strong>
-            <small className="metrica__detalle">
-              de {resumen.cargos}{resumen.cargosSinSkills > 0 ? ` · ${resumen.cargosSinSkills} sin skills del mercado` : ''}
+        <div className="metricas cobertura-metricas" aria-busy={cargando}>
+          <div className={`metrica ${alDia ? 'metrica--verde' : 'metrica--ambar'} cobertura-metrica`}>
+            <span className="metrica__etiqueta">
+              <span className="metrica__icono" aria-hidden="true"><Icono nombre={alDia ? 'check-circulo' : 'alerta'} tamano={15} /></span>
+              Faltan
+            </span>
+            <strong className="metrica__valor cobertura-metrica__valor">{resumen.preguntasFaltantes}</strong>
+            <small className="metrica__pie">
+              <span><span className="metrica__destacado">preguntas aprobadas</span> para el mínimo de <span className="mono">{datos.minimo}</span> por nivel</span>
             </small>
           </div>
-          <div className="metrica">
-            <span className="metrica__etiqueta">Ofertas leídas</span>
-            <strong className="metrica__valor cobertura-metrica-fecha">{formatearSincronizacion(datos.ultimaSincronizacionMercado)}</strong>
-            <small className="metrica__detalle">hora del servidor · se leen solas cada 7 días</small>
+          <div className={`metrica ${alDia ? 'metrica--verde' : 'metrica--coral'} cobertura-metrica`}>
+            <span className="metrica__etiqueta">
+              <span className="metrica__icono" aria-hidden="true"><Icono nombre="cobertura" tamano={15} /></span>
+              Cargos incompletos
+            </span>
+            <strong className="metrica__valor cobertura-metrica__valor">
+              {resumen.cargosIncompletos}
+              <span className="cobertura-metrica__de">de {resumen.cargos}</span>
+            </strong>
+            <small className="metrica__pie">
+              {resumen.cargosSinSkills > 0 ? (
+                <span><span className="metrica__destacado">{resumen.cargosSinSkills}</span> sin skills del mercado</span>
+              ) : (
+                <span>{resumen.cargos > 0 ? 'Todos con skills del mercado' : 'No hay cargos activos'}</span>
+              )}
+            </small>
+          </div>
+          <div className="metrica cobertura-metrica">
+            <span className="metrica__etiqueta">
+              <span className="metrica__icono" aria-hidden="true"><Icono nombre="calendario" tamano={15} /></span>
+              Ofertas leídas
+            </span>
+            <strong className="metrica__valor cobertura-metrica__valor cobertura-metrica-fecha">{formatearSincronizacion(datos.ultimaSincronizacionMercado)}</strong>
+            <small className="metrica__pie">hora del servidor · se leen solas cada 7 días</small>
           </div>
         </div>
       )}
 
       {datos && !cargando && cargosVisibles.length === 0 && (
         <div className="tarjeta vacio">
+          <span className="chip-icono cobertura-vacio-icono" aria-hidden="true"><Icono nombre="check" tamano={18} /></span>
           <p>{textoVacio()}</p>
         </div>
       )}
@@ -212,12 +233,19 @@ const CoberturaMercado = () => {
       {cargosVisibles.map((cargo) => {
         const vacio = sinSkills(cargo);
         const falta = Number(cargo.preguntasFaltantes) > 0;
+        const tono = vacio ? 'vacio' : falta ? 'falta' : 'ok';
         return (
-          <section key={cargo.cargoId} className="seccion" aria-labelledby={`cob-${cargo.cargoId}`}>
-            <div className="seccion__encabezado">
+          <section key={cargo.cargoId} className="tarjeta cobertura-cargo" aria-labelledby={`cob-${cargo.cargoId}`}>
+            <div className="cobertura-cargo__cabecera">
+              <span className={`cobertura-cargo__icono cobertura-cargo__icono--${tono}`} aria-hidden="true">
+                <Icono nombre={vacio ? 'info' : falta ? 'alerta' : 'check-circulo'} tamano={16} />
+              </span>
               <div className="cobertura-cargo-titulo">
-                <h2 id={`cob-${cargo.cargoId}`} className="seccion__titulo">{cargo.nombre}</h2>
-                <span className="texto-3 texto-chico">{cargo.area}</span>
+                <h2 id={`cob-${cargo.cargoId}`} className="cobertura-cargo__titulo">{cargo.nombre}</h2>
+                <span className="cobertura-cargo__sub">
+                  {cargo.area}
+                  {!vacio && <> · <span className="mono">{cargo.skills.length}</span> skills del mercado</>}
+                </span>
               </div>
               <span className={`insignia insignia--punto${vacio ? '' : falta ? ' insignia--aviso' : ' insignia--exito'}`}>
                 {vacio ? 'Sin skills del mercado' : falta ? `Faltan ${cargo.preguntasFaltantes} en ${cargo.skillsIncompletas} skills` : 'Completo'}
@@ -225,12 +253,12 @@ const CoberturaMercado = () => {
             </div>
 
             {vacio ? (
-              <p className="tarjeta nota cobertura-sin-skills">
+              <p className="nota cobertura-sin-skills">
                 El mercado todavía no tiene skills para este cargo: se completan en la próxima lectura semanal de ofertas.
                 Mientras tanto no se puede saber qué preguntas le faltan.
               </p>
             ) : (
-              <div className="tabla-contenedor">
+              <div className="tabla-contenedor cobertura-tabla-contenedor">
                 <table className="tabla tabla--compacta cobertura-tabla">
                   <caption className="sr-only">Preguntas aprobadas por skill y nivel para {cargo.nombre}</caption>
                   <thead>
@@ -250,7 +278,7 @@ const CoberturaMercado = () => {
                             {skill.obligatoria && <span className="insignia">Obligatoria</span>}
                           </span>
                         </th>
-                        <td className="num">{skill.peso}</td>
+                        <td className="num mono cobertura-peso">{skill.peso}</td>
                         {NIVELES.map((n) => {
                           const celda = celdaCobertura(skill, n.value);
                           return (

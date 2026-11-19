@@ -1,6 +1,8 @@
 /*
- * Lista de preguntas: solo el layout propio de la pantalla.
- * Las piezas (página, filtros, tabla, insignias, avisos, diálogo) vienen de componentes.css.
+ * Lista de preguntas, dirección «Claro con color».
+ * Las piezas (página, filtros, tabla, insignias, avisos, diálogo) vienen de componentes.css; aquí va solo lo propio.
+ * Ancho: la tabla cabe sin desplazamiento en 1366 px con el menú de 252 px (~1040 px útiles): columnas con poco
+ * relleno lateral, etiquetas apiladas y acciones compactas.
  */
 
 /* ---------- Filtros ---------- */
@@ -9,17 +11,31 @@
 /* «Ver detalle» dentro de la tabla: el enlace común, en el tamaño de la tabla */
 .lista-preguntas .boton-enlace { font-size: var(--texto-sm); }
 
-/* ---------- Aprobación masiva ---------- */
+/* ---------- Aprobación masiva: barra con relieve en el tono del acento ---------- */
 .lista-preguntas__masivo {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: var(--e-3) var(--e-4);
-  padding: var(--e-2) var(--e-3);
-  background: var(--acento-suave);
-  border: 1px solid var(--borde);
+  gap: var(--e-3) var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  background: linear-gradient(180deg, var(--acento-tinte) 0%, var(--superficie) 160%);
+  border: 1px solid color-mix(in oklch, var(--acento) 22%, transparent);
   border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-sutil), 0 10px 24px -16px var(--acento);
   font-size: var(--texto-sm);
+  animation: lista-preguntas-aparece 220ms var(--ease-out) both;
+}
+
+.lista-preguntas__masivo-icono {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--alto-control-sm);
+  height: var(--alto-control-sm);
+  border-radius: var(--radio);
+  background: var(--superficie);
+  color: var(--acento);
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--acento) 22%, transparent), var(--sombra-sutil);
 }
 
 .lista-preguntas__masivo-progreso {
@@ -27,24 +43,90 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--e-2) var(--e-3);
+  flex: 1 1 16rem;
   min-height: var(--alto-control-sm);
   min-width: 0;
+  color: var(--texto-2);
 }
 
 .lista-preguntas__masivo-errores {
   flex-basis: 100%;
   margin: 0;
+  padding: var(--e-2) var(--e-3) var(--e-2) var(--e-6);
+  border-radius: var(--radio);
+  background: var(--peligro-suave);
   color: var(--peligro);
   font-size: var(--texto-xs);
 }
 
+@keyframes lista-preguntas-aparece { from { opacity: 0; transform: translateY(-4px); } }
+
+/* Aprobar: el verde de lo aprobado, sin gritar hasta el hover */
+.boton.lista-preguntas__aprobar { color: var(--verde-texto); }
+.boton.lista-preguntas__aprobar:hover:not(:disabled) {
+  background: var(--verde-tinte);
+  border-color: color-mix(in oklch, var(--verde) 40%, transparent);
+  color: var(--verde-texto);
+}
+
+/* ---------- Tarjeta de la tabla con su cabecera ---------- */
+.lista-preguntas__tarjeta { display: flex; flex-direction: column; min-width: 0; }
+
+.lista-preguntas__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e-4);
+  padding: 1.125rem 1.25rem var(--e-4);
+}
+.lista-preguntas__cabecera-textos { display: flex; flex-direction: column; min-width: 0; }
+.lista-preguntas__cabecera-titulo {
+  font-family: var(--fuente-display);
+  font-size: var(--texto-lg);
+  letter-spacing: -0.01em;
+}
+.lista-preguntas__cabecera-sub { margin-top: 3px; font-size: var(--texto-xs); color: var(--texto-3); }
+
+.lista-preguntas__conteo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  flex: none;
+  min-height: 1.625rem;
+  padding: 0 0.625rem;
+  border-radius: 999px;
+  background: var(--superficie-2);
+  box-shadow: inset 0 0 0 1px var(--borde);
+  color: var(--texto-3);
+  font-size: var(--texto-xs);
+  white-space: nowrap;
+}
+.lista-preguntas__conteo .mono { color: var(--texto); }
+
+/* La tabla va dentro de la tarjeta: sin borde ni sombra propios, solo la línea que la separa de la cabecera */
+.lista-preguntas__tarjeta .tabla-contenedor {
+  border: 0;
+  border-top: 1px solid var(--borde);
+  border-radius: 0 0 var(--radio-lg) var(--radio-lg);
+  box-shadow: none;
+  background: transparent;
+}
+
 /* ---------- Tabla ---------- */
-.tabla.lista-preguntas__tabla td { vertical-align: top; }
+.tabla.lista-preguntas__tabla th,
+.tabla.lista-preguntas__tabla td { padding-inline: 0.625rem; }
+.tabla.lista-preguntas__tabla td { vertical-align: top; padding-block: var(--e-3); }
+.tabla.lista-preguntas__tabla th:first-child,
+.tabla.lista-preguntas__tabla td:first-child { padding-left: var(--e-4); }
+.tabla.lista-preguntas__tabla th:last-child,
+.tabla.lista-preguntas__tabla td:last-child { padding-right: var(--e-4); }
+.tabla.lista-preguntas__tabla thead th { padding-block: var(--e-2); }
+.tabla.lista-preguntas__tabla tbody td { transition: background-color var(--m-in) var(--ease-out); }
 
 .lista-preguntas__col-check { width: 1%; }
 .lista-preguntas__col-check input { margin-top: 0.2rem; }
 
-.lista-preguntas__col-enunciado { min-width: 236px; }
+.lista-preguntas__col-enunciado { min-width: 200px; }
 
 /* El enunciado ocupa a lo más dos líneas; el texto completo está en «Ver detalle». */
 .lista-preguntas__enunciado {
@@ -53,21 +135,49 @@
   -webkit-line-clamp: 2;
   line-clamp: 2;
   overflow: hidden;
+  margin-bottom: var(--e-1);
+  font-size: var(--texto-base);
+  line-height: 1.4;
   font-weight: var(--peso-medio);
   color: var(--texto);
 }
 
 .lista-preguntas__sub {
   display: block;
+  margin-top: 2px;
   font-size: var(--texto-xs);
   color: var(--texto-3);
 }
+
+/* Categoría y nivel: etiquetas apiladas (como las del Resumen), así la columna queda angosta */
+.lista-preguntas__etiquetas { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+.lista-preguntas__etiqueta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.375rem;
+  padding: 0 0.5rem;
+  border-radius: var(--radio-sm);
+  background: var(--superficie-2);
+  color: var(--texto-2);
+  font-size: var(--texto-xs);
+  white-space: nowrap;
+  box-shadow: inset 0 0 0 1px var(--borde);
+}
+
+/* Estado en pastilla, un poco más alta que la insignia común */
+.insignia.lista-preguntas__estado { min-height: 1.5rem; padding: 0 0.625rem 0 0.5rem; }
+
+/* Origen: las generadas con IA llevan su ícono en verde azulado */
+.lista-preguntas__origen { display: flex; align-items: flex-start; gap: 5px; margin-top: var(--e-2); line-height: 1.35; }
+.lista-preguntas__origen .icono { margin-top: 0.15em; }
+.lista-preguntas__origen--ia { color: var(--verde-texto); }
+.lista-preguntas__origen--ia .icono { color: var(--verde); }
 
 .lista-preguntas__col-contexto { color: var(--texto-2); }
 
 /* max-width no se aplica a un <td> con layout automático: el límite va en un bloque propio. */
 .lista-preguntas__contexto {
-  min-width: 6rem;
+  min-width: 5.5rem;
   max-width: 7.5rem;
   overflow-wrap: break-word;
 }
@@ -77,15 +187,23 @@
   font-variant-numeric: tabular-nums;
   color: var(--texto-2);
 }
+.lista-preguntas__col-fecha .mono { font-size: var(--texto-xs); }
 
 .lista-preguntas__motivo {
-  max-width: 14rem;
+  max-width: 11rem;
   margin-top: var(--e-1);
   font-size: var(--texto-xs);
   color: var(--texto-3);
 }
 
+/* Acciones compactas para que la tabla no se desplace de lado */
+.lista-preguntas__tabla .celda-acciones .grupo-botones { gap: 6px; }
+.lista-preguntas__tabla .celda-acciones .boton--chico:not(.boton--icono) { padding: 0 0.5rem; }
+
+/* Fila abierta: fondo suave y una línea de acento a la izquierda que sigue en el detalle */
 .lista-preguntas__tabla .lista-preguntas__fila--abierta td { background: var(--superficie-2); border-bottom-color: transparent; }
+.lista-preguntas__tabla .lista-preguntas__fila--abierta td:first-child,
+.lista-preguntas__tabla .lista-preguntas__fila-detalle td { box-shadow: inset 3px 0 0 var(--acento); }
 
 .lista-preguntas__actualizando {
   padding: var(--e-2) var(--e-4);
@@ -111,7 +229,7 @@
   gap: var(--e-4);
   max-width: min(80ch, calc(100vw - 2 * var(--e-4) - 2px));
   max-width: min(80ch, 100cqi);
-  padding: var(--e-3) var(--e-4) var(--e-4) var(--e-10);
+  padding: var(--e-2) var(--e-4) var(--e-5) var(--e-10);
 }
 
 .lista-preguntas__bloque { display: flex; flex-direction: column; gap: var(--e-1); }
@@ -119,7 +237,7 @@
 .lista-preguntas__bloque-titulo {
   font-size: var(--texto-xs);
   font-weight: var(--peso-fuerte);
-  color: var(--texto-2);
+  color: var(--texto-3);
 }
 
 .lista-preguntas__texto-largo { white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -140,20 +258,20 @@
   flex: none;
   display: inline-grid;
   place-items: center;
-  width: 1.375rem;
-  height: 1.375rem;
-  border: 1px solid var(--borde-fuerte);
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: var(--radio-sm);
   background: var(--superficie);
+  box-shadow: inset 0 0 0 1px var(--borde-fuerte);
+  font-family: var(--fuente-mono);
   font-size: var(--texto-xs);
-  font-weight: var(--peso-fuerte);
   color: var(--texto-2);
 }
 
 .lista-preguntas__opcion--correcta .lista-preguntas__letra {
-  border-color: var(--exito-borde);
-  background: var(--exito-suave);
-  color: var(--exito);
+  background: var(--verde-tinte);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--verde) 35%, transparent);
+  color: var(--verde-texto);
 }
 
 .lista-preguntas__opcion-texto {
@@ -162,6 +280,7 @@
   align-items: center;
   gap: var(--e-1) var(--e-2);
   min-width: 0;
+  padding-top: 1px;
 }
 
 .lista-preguntas__explicacion {
@@ -193,14 +312,28 @@
 
 /* ---------- Diálogo de rechazo ---------- */
 .lista-preguntas__cita {
-  padding-left: var(--e-3);
+  margin: 0;
+  padding: var(--e-3) var(--e-4);
   border-left: 3px solid var(--borde-fuerte);
+  border-radius: 0 var(--radio) var(--radio) 0;
+  background: var(--superficie-2);
   color: var(--texto-2);
   overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lista-preguntas__masivo { animation: none; }
+}
+
+@media (forced-colors: active) {
+  .lista-preguntas__masivo,
+  .lista-preguntas__etiqueta,
+  .lista-preguntas__conteo { border: 1px solid CanvasText; }
 }
 
 @media (max-width: 720px) {
   .lista-preguntas__detalle { padding-left: var(--e-4); }
   .lista-preguntas__col-enunciado { min-width: 260px; }
   .lista-preguntas .filtros .lista-preguntas__campo-tamano { flex: 1 1 140px; }
+  .lista-preguntas__cabecera { flex-wrap: wrap; padding: var(--e-4); }
 }

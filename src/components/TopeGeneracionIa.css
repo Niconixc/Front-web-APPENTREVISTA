@@ -1,76 +1,167 @@
 /*
- * Tope mensual de generación con IA (D23). Usa .aviso, .insignia y .medidor de componentes.css; aquí solo el layout
- * propio. El color acompaña al estado escrito, nunca lo reemplaza. La pista de la barra es --superficie con borde
- * --texto-3 (más de 3:1 en ambos temas), así el 100 % se distingue aunque el aviso tenga fondo de color; los rellenos
- * (--acento, --aviso, --peligro) superan 3:1 sobre esa pista.
+ * Tope mensual de generación con IA (D23), dirección «Claro con color». Usa .aviso, .insignia y .medidor de
+ * componentes.css; aquí solo su aspecto propio: una tarjeta blanca con aire, el estado en una pastilla, una barra gruesa
+ * redondeada y el detalle en una nota con el tinte del estado.
+ *
+ * El color acompaña al estado escrito, nunca lo reemplaza. Cada nivel define su tono (--tope-tono, --tope-texto y
+ * --tope-tinte): verde si hay saldo, ámbar cerca del tope, rojo agotado y neutro desactivado. El borde de la barra va
+ * en el mismo tono (más de 3:1 contra la tarjeta en ambos temas), así el largo total y el 100 % se distinguen aunque la
+ * pista sea un tinte claro; el relleno, también en el tono, supera 3:1 sobre esa pista.
  */
+
+.aviso.tope-ia {
+  --tope-tono: var(--verde);
+  --tope-texto: var(--verde-texto);
+  --tope-tinte: var(--verde-tinte);
+  align-items: flex-start;
+  gap: var(--e-4);
+  padding: var(--e-5);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  background: var(--superficie);
+  box-shadow: var(--sombra-tarjeta);
+}
+
+.aviso.tope-ia-cerca {
+  --tope-tono: var(--ambar);
+  --tope-texto: var(--ambar-texto);
+  --tope-tinte: var(--ambar-tinte);
+  border-color: var(--aviso-borde);
+}
+
+.aviso.tope-ia-agotado {
+  --tope-tono: var(--peligro);
+  --tope-texto: var(--peligro);
+  --tope-tinte: var(--peligro-suave);
+  border-color: var(--peligro-borde);
+}
+
+.aviso.tope-ia-desactivado {
+  --tope-tono: var(--texto-3);
+  --tope-texto: var(--texto-2);
+  --tope-tinte: var(--superficie-2);
+}
+
+/* Ícono en un cuadro con el tinte del estado (como el de las métricas) */
+.tope-ia-icono {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radio);
+  background: var(--tope-tinte);
+  color: var(--tope-tono);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--tope-tono) 20%, transparent);
+}
+
+.tope-ia .tope-ia-icono .aviso__icono {
+  margin-top: 0;
+  color: inherit;
+}
 
 .tope-ia-contenido {
   flex: 1 1 auto;
-  gap: var(--e-2);
+  gap: var(--e-3);
 }
 
 .tope-ia-encabezado {
   color: var(--texto-2);
+  font-size: var(--texto-sm);
   font-weight: var(--peso-medio);
 }
 
 /* La última lectura falló: el texto lo dice; el color solo lo acompaña. */
 .tope-ia-nota {
   color: var(--aviso);
-  font-weight: var(--peso-fuerte);
+  font-weight: var(--peso-medio);
 }
 
+/* Estado en pastilla + el monto usado en letra display */
 .tope-ia-titulo {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--e-1) var(--e-2);
+  gap: var(--e-2) var(--e-3);
   color: var(--texto);
-  font-size: var(--texto-base);
-  font-weight: var(--peso-fuerte);
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
 
-.tope-ia-barra {
-  background: var(--superficie);
-  border-color: var(--texto-3);
+.tope-ia-titulo__texto {
+  font-family: var(--fuente-display);
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-medio);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.tope-ia .tope-ia-estado {
+  min-height: 1.625rem;
+  padding: 0 0.625rem;
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--tope-tono) 12%, transparent);
+}
+
+/* Barra gruesa y redondeada: pista con el tinte del estado y borde en su tono */
+.tope-ia .tope-ia-barra {
+  height: 0.75rem;
+  border: 1px solid var(--tope-tono);
+  background: var(--tope-tinte);
 }
 
 /* Ancho completo escalado desde la izquierda: se anima transform, nunca width (emil-design-eng) */
-.tope-ia-relleno {
+.tope-ia .medidor .tope-ia-relleno {
   width: 100%;
+  background: var(--tope-tono);
   transform-origin: left center;
   transition: transform 200ms var(--ease-out);
 }
 
+/* Lo que queda y cuándo se repone, en una nota con el tinte del estado */
 .tope-ia-detalle {
+  padding: 0.7rem 0.875rem;
+  border-radius: 12px;
+  background: var(--superficie-2);
   color: var(--texto-2);
+  font-size: var(--texto-sm);
+  line-height: 1.45;
   font-variant-numeric: tabular-nums;
 }
 
+.tope-ia-cerca .tope-ia-detalle,
+.tope-ia-agotado .tope-ia-detalle {
+  background: var(--tope-tinte);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--tope-tono) 16%, transparent);
+}
+
+/* Dentro de una tarjeta que ya tiene su marco: sin la tarjeta propia, para no poner una caja dentro de otra */
+.aviso.tope-ia.tope-ia--plano {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (max-width: 480px) {
+  .aviso.tope-ia { padding: var(--e-4); gap: var(--e-3); }
+  .tope-ia-icono { width: 2rem; height: 2rem; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .tope-ia-relleno { transition: none; }
+  .tope-ia .medidor .tope-ia-relleno { transition: none; }
 }
 
 /* Alto contraste del sistema: los fondos se pierden, así que el relleno usa Highlight y los bordes CanvasText. */
 @media (forced-colors: active) {
   .tope-ia,
   .tope-ia .insignia,
-  .tope-ia-barra { border: 1px solid CanvasText; }
+  .tope-ia-icono,
+  .tope-ia .tope-ia-barra { border: 1px solid CanvasText; }
 
-  .tope-ia-barra { background: Canvas; }
+  .tope-ia .tope-ia-barra { background: Canvas; }
 
-  .tope-ia-relleno {
+  .tope-ia .medidor .tope-ia-relleno {
     forced-color-adjust: none;
     background: Highlight;
   }
-}
-
-/* Dentro de una tarjeta (Resumen): sin el recuadro del aviso; el estado lo dicen la insignia y la barra */
-.tope-ia.tope-ia--plano {
-  padding: 0;
-  border: 0;
-  background: transparent;
 }

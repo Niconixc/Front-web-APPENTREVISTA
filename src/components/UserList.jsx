@@ -9,7 +9,7 @@ import {
   mensajeDeError,
   usuarioActual,
 } from '../services/api';
-import { LIMITES, formatearFecha } from '../services/etiquetas';
+import { LIMITES, formatearFecha, iniciales, tonoAvatar } from '../services/etiquetas';
 import Icono from './Icono';
 import './UserList.css';
 
@@ -24,6 +24,9 @@ const ESTADOS = {
   activo: { texto: 'Activo', clase: 'insignia--exito' },
   inactivo: { texto: 'Inactivo', clase: '' },
 };
+
+/** «1 usuario» / «3 usuarios»: singular o plural según la cantidad. */
+const contar = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -162,6 +165,13 @@ const UserList = () => {
     </header>
   );
 
+  // Números clave calculados de la lista ya cargada (sin otra llamada a V2).
+  const total = users.length;
+  const activos = users.filter((u) => u.estado === 'activo').length;
+  const inactivos = users.filter((u) => u.estado === 'inactivo').length;
+  const admins = users.filter((u) => u.rol === 'admin').length;
+  const porcentajeActivos = total > 0 ? Math.round((activos / total) * 100) : 0;
+
   if (loading) {
     return (
       <div className="pagina">
@@ -175,7 +185,7 @@ const UserList = () => {
 
   return (
     <div className="pagina">
-      {encabezado(`${users.length} ${users.length === 1 ? 'usuario' : 'usuarios'} en total`)}
+      {encabezado('Cuentas de la app y del panel: sus roles, su acceso y sus contraseñas.')}
 
       {error && (
         <div className="aviso aviso--peligro" role="alert">
@@ -190,6 +200,44 @@ const UserList = () => {
         </div>
       )}
 
+      {total > 0 && (
+        <section aria-labelledby="usuarios-metricas-titulo">
+          <h2 id="usuarios-metricas-titulo" className="sr-only">Números clave</h2>
+          <div className="metricas usuarios-metricas">
+            <div className="metrica metrica--neutra usuarios-aparece" style={{ '--orden': 0 }}>
+              <span className="metrica__etiqueta">
+                <span className="metrica__icono" aria-hidden="true"><Icono nombre="usuarios" tamano={15} /></span>
+                Total
+              </span>
+              <span className="metrica__valor usuarios-metrica__valor">{total}</span>
+              <span className="metrica__pie">
+                {inactivos > 0 ? contar(inactivos, 'cuenta inactiva', 'cuentas inactivas') : 'Todas las cuentas están activas'}
+              </span>
+            </div>
+            <div className="metrica metrica--verde usuarios-aparece" style={{ '--orden': 1 }}>
+              <span className="metrica__etiqueta">
+                <span className="metrica__icono" aria-hidden="true"><Icono nombre="check-circulo" tamano={15} /></span>
+                Activos
+              </span>
+              <span className="metrica__valor usuarios-metrica__valor">{activos}</span>
+              <span className="metrica__pie">
+                <span className="metrica__destacado mono">{porcentajeActivos} %</span> del total puede iniciar sesión
+              </span>
+            </div>
+            <div className="metrica usuarios-aparece" style={{ '--orden': 2 }}>
+              <span className="metrica__etiqueta">
+                <span className="metrica__icono" aria-hidden="true"><Icono nombre="escudo" tamano={15} /></span>
+                Administradores
+              </span>
+              <span className="metrica__valor usuarios-metrica__valor">{admins}</span>
+              <span className="metrica__pie">
+                <span className="metrica__destacado">{contar(total - admins, 'usuario regular', 'usuarios regulares')}</span>
+              </span>
+            </div>
+          </div>
+        </section>
+      )}
+
       {users.length === 0 ? (
         <div className="tarjeta">
           <div className="vacio">
@@ -197,12 +245,20 @@ const UserList = () => {
           </div>
         </div>
       ) : (
-        <div className="tabla-contenedor">
+        <section className="tarjeta usuarios-tarjeta usuarios-aparece" style={{ '--orden': 3 }} aria-labelledby="usuarios-tabla-titulo">
+          <div className="usuarios-tarjeta__cabecera">
+            <div>
+              <h2 id="usuarios-tabla-titulo" className="usuarios-tarjeta__titulo">Todas las cuentas</h2>
+              <p className="usuarios-tarjeta__sub">
+                {contar(total, 'usuario', 'usuarios')} · {contar(admins, 'administrador', 'administradores')}
+              </p>
+            </div>
+          </div>
+        <div className="tabla-contenedor usuarios-tabla-contenedor">
           <table className="tabla usuarios-tabla">
             <thead>
               <tr>
-                <th scope="col">Correo</th>
-                <th scope="col">Nombre</th>
+                <th scope="col">Usuario</th>
                 <th scope="col">Rol</th>
                 <th scope="col">Estado</th>
                 <th scope="col">Idioma</th>
@@ -227,11 +283,23 @@ const UserList = () => {
 
                 return (
                   <tr key={user.usuarioId}>
-                    <td className="usuarios-tabla__correo">
-                      {user.correo}
-                      {esPropio && <span className="texto-3"> (tú)</span>}
+                    <td>
+                      <div className="usuarios-persona">
+                        <span
+                          className={`avatar usuarios-persona__avatar ${user.nombre ? `avatar--tono-${tonoAvatar(user.correo)}` : 'avatar--neutro'}`}
+                          aria-hidden="true"
+                        >
+                          {user.nombre ? iniciales(user.nombre) : <Icono nombre="usuarios" tamano={16} />}
+                        </span>
+                        <span className="usuarios-persona__textos">
+                          <span className={`usuarios-persona__nombre${user.nombre ? '' : ' texto-3'}`}>
+                            {user.nombre || 'Sin nombre'}
+                            {esPropio && <span className="usuarios-persona__propio"> (tú)</span>}
+                          </span>
+                          <span className="usuarios-persona__correo">{user.correo}</span>
+                        </span>
+                      </div>
                     </td>
-                    <td>{user.nombre ?? <span className="texto-3">-</span>}</td>
                     <td>
                       <span className={`insignia ${rol?.clase ?? ''}`.trim()}>{rol?.texto ?? user.rol}</span>
                     </td>
@@ -240,8 +308,8 @@ const UserList = () => {
                         {estado?.texto ?? user.estado}
                       </span>
                     </td>
-                    <td>{IDIOMAS[user.idioma] ?? user.idioma ?? '-'}</td>
-                    <td className="usuarios-tabla__fecha">{formatearFecha(user.fechaCreacion)}</td>
+                    <td className="usuarios-tabla__idioma">{IDIOMAS[user.idioma] ?? user.idioma ?? '-'}</td>
+                    <td className="usuarios-tabla__fecha mono">{formatearFecha(user.fechaCreacion)}</td>
                     <td className="celda-acciones">
                       <div className="grupo-botones">
                         <button
@@ -295,6 +363,7 @@ const UserList = () => {
             </tbody>
           </table>
         </div>
+        </section>
       )}
     </div>
   );
