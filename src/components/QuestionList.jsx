@@ -645,10 +645,13 @@ const QuestionList = () => {
 
       {(seleccionadas.size > 0 || masivo) && (
         <div className="lista-preguntas__masivo">
+          <span className="lista-preguntas__masivo-icono" aria-hidden="true">
+            <Icono nombre="check-circulo" tamano={15} />
+          </span>
           {seleccionadas.size > 0 && (
             <button
               type="button"
-              className="boton boton--chico"
+              className="boton boton--chico lista-preguntas__aprobar"
               onClick={handleApproveSelected}
               disabled={Boolean(masivo?.corriendo)}
             >
@@ -678,173 +681,193 @@ const QuestionList = () => {
         </div>
       )}
 
-      <div className="tabla-contenedor">
-        <table className="tabla tabla--compacta lista-preguntas__tabla">
-          <thead>
-            <tr>
-              <th className="lista-preguntas__col-check">
-                <input
-                  type="checkbox"
-                  checked={todasSeleccionadas}
-                  onChange={toggleTodas}
-                  disabled={aprobables.length === 0 || Boolean(masivo?.corriendo)}
-                  title="Seleccionar las no aprobadas de esta página"
-                  aria-label="Seleccionar todas"
-                />
-              </th>
-              <th className="lista-preguntas__col-enunciado">Enunciado</th>
-              <th>Categoría</th>
-              <th>Tipo</th>
-              <th>Contexto</th>
-              <th>Estado y origen</th>
-              <th>Creada y usos</th>
-              <th className="celda-acciones">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && questions.length === 0 ? (
-              <tr>
-                <td colSpan={COLUMNAS}>
-                  <div className="cargando cargando--bloque">Cargando preguntas...</div>
-                </td>
-              </tr>
-            ) : visibles.map((question) => {
-              const ocupada = Boolean(ocupadas[question.id]);
-              const abierta = expandidas.has(question.id);
-              const ctx = contexto(question);
-              const enUso = Number(question.vecesUsada) > 0;
-              const numOpciones = Array.isArray(question.opciones) ? question.opciones.length : 0;
-              return (
-                <Fragment key={question.id}>
-                <tr className={abierta ? 'lista-preguntas__fila--abierta' : ''}>
-                  <td className="lista-preguntas__col-check">
-                    {question.estado !== 'aprobada' && (
-                      <input
-                        type="checkbox"
-                        checked={seleccionadas.has(question.id)}
-                        onChange={() => toggleSeleccion(question.id)}
-                        disabled={Boolean(masivo?.corriendo)}
-                        aria-label="Seleccionar pregunta"
-                      />
-                    )}
-                  </td>
-                  <td className="lista-preguntas__col-enunciado">
-                    <div className="lista-preguntas__enunciado" title={question.enunciado}>
-                      {String(question.enunciado || '')}
-                    </div>
-                    <button
-                      type="button"
-                      className="boton-enlace"
-                      aria-expanded={abierta}
-                      onClick={() => toggleExpandida(question.id)}
-                    >
-                      {abierta ? 'Ocultar detalle' : 'Ver detalle'}
-                    </button>
-                  </td>
-                  <td>
-                    {etiqueta(CATEGORIAS, question.categoria)}
-                    <span className="lista-preguntas__sub">{etiqueta(NIVELES, question.nivel)}</span>
-                  </td>
-                  <td>
-                    {etiqueta(TIPOS, question.tipo)}
-                    {question.tipo === 'opcion_multiple' && (
-                      <span className="lista-preguntas__sub num">{numOpciones} opciones</span>
-                    )}
-                  </td>
-                  <td className="lista-preguntas__col-contexto" title={ctx.titulo}>
-                    <div className="lista-preguntas__contexto">{ctx.texto}</div>
-                  </td>
-                  <td>
-                    <span
-                      className={`insignia insignia--punto ${estadoClase(question.estado)}`.trim()}
-                      title={question.estado === 'rechazada' && question.motivoRechazo ? question.motivoRechazo : undefined}
-                    >
-                      {etiqueta(ESTADOS_PREGUNTA, question.estado)}
-                    </span>
-                    {question.estado === 'rechazada' && question.motivoRechazo && (
-                      <div className="lista-preguntas__motivo" title={question.motivoRechazo}>
-                        {recortar(question.motivoRechazo, 60)}
-                      </div>
-                    )}
-                    <span className="lista-preguntas__sub">{question.generadaPorIa ? 'Generada con IA' : 'Manual'}</span>
-                  </td>
-                  <td className="lista-preguntas__col-fecha">
-                    {formatearFecha(question.fechaCreacion)}
-                    <span className="lista-preguntas__sub">
-                      {question.vecesUsada ?? 0} {Number(question.vecesUsada) === 1 ? 'uso' : 'usos'}
-                    </span>
-                  </td>
-                  <td className="celda-acciones">
-                    <div className="grupo-botones">
-                      {question.estado !== 'aprobada' && (
-                        <button
-                          type="button"
-                          onClick={() => handleApprove(question)}
-                          className="boton boton--chico"
-                          title="Aprobar: quedará visible para los usuarios"
-                          disabled={ocupada}
-                        >
-                          Aprobar
-                        </button>
-                      )}
-                      {question.estado !== 'rechazada' && (
-                        <button
-                          type="button"
-                          onClick={() => abrirRechazo(question)}
-                          className="boton boton--chico"
-                          title="Rechazar con un motivo"
-                          disabled={ocupada}
-                        >
-                          Rechazar
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/editar-pregunta/${question.id}`)}
-                        className="boton boton--chico boton--icono"
-                        title="Editar pregunta"
-                        aria-label="Editar"
-                        disabled={ocupada}
-                      >
-                        <Icono nombre="editar" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteQuestion(question)}
-                        className="boton boton--chico boton--icono boton--peligro-suave"
-                        title={enUso ? 'Ya se usó en entrevistas; recházala en su lugar' : 'Eliminar pregunta'}
-                        aria-label="Eliminar"
-                        disabled={ocupada || enUso}
-                      >
-                        <Icono nombre="borrar" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                {abierta && renderDetalle(question)}
-                </Fragment>
-              );
-            })}
-          </tbody>
-        </table>
-
-        {!loading && visibles.length === 0 && !error && (
-          <div className="vacio">
-            <p>
-              {textoBusqueda && questions.length > 0
-                ? 'Ninguna pregunta de esta página coincide con la búsqueda'
-                : hayFiltros
-                  ? 'No se encontraron preguntas con los filtros aplicados'
-                  : 'No hay preguntas registradas'}
+      <section className="tarjeta lista-preguntas__tarjeta" aria-labelledby="lista-preguntas-tabla-titulo">
+        <div className="lista-preguntas__cabecera">
+          <div className="lista-preguntas__cabecera-textos">
+            <h2 id="lista-preguntas-tabla-titulo" className="lista-preguntas__cabecera-titulo">Banco de preguntas</h2>
+            <p className="lista-preguntas__cabecera-sub">
+              Abre «Ver detalle» para leer el enunciado completo, las opciones y la rúbrica.
             </p>
           </div>
-        )}
-        {loading && questions.length > 0 && (
-          <div className="lista-preguntas__actualizando">
-            <span className="cargando">Actualizando...</span>
-          </div>
-        )}
-      </div>
+          {!(loading && questions.length === 0) && (
+            <span className="lista-preguntas__conteo">
+              <span className="mono">{visibles.length}</span> en esta página
+            </span>
+          )}
+        </div>
+        <div className="tabla-contenedor">
+          <table className="tabla tabla--compacta lista-preguntas__tabla">
+            <thead>
+              <tr>
+                <th className="lista-preguntas__col-check">
+                  <input
+                    type="checkbox"
+                    checked={todasSeleccionadas}
+                    onChange={toggleTodas}
+                    disabled={aprobables.length === 0 || Boolean(masivo?.corriendo)}
+                    title="Seleccionar las no aprobadas de esta página"
+                    aria-label="Seleccionar todas"
+                  />
+                </th>
+                <th className="lista-preguntas__col-enunciado">Enunciado</th>
+                <th>Categoría</th>
+                <th>Tipo</th>
+                <th>Contexto</th>
+                <th>Estado y origen</th>
+                <th>Creada y usos</th>
+                <th className="celda-acciones">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && questions.length === 0 ? (
+                <tr>
+                  <td colSpan={COLUMNAS}>
+                    <div className="cargando cargando--bloque">Cargando preguntas...</div>
+                  </td>
+                </tr>
+              ) : visibles.map((question) => {
+                const ocupada = Boolean(ocupadas[question.id]);
+                const abierta = expandidas.has(question.id);
+                const ctx = contexto(question);
+                const enUso = Number(question.vecesUsada) > 0;
+                const numOpciones = Array.isArray(question.opciones) ? question.opciones.length : 0;
+                return (
+                  <Fragment key={question.id}>
+                  <tr className={abierta ? 'lista-preguntas__fila--abierta' : ''}>
+                    <td className="lista-preguntas__col-check">
+                      {question.estado !== 'aprobada' && (
+                        <input
+                          type="checkbox"
+                          checked={seleccionadas.has(question.id)}
+                          onChange={() => toggleSeleccion(question.id)}
+                          disabled={Boolean(masivo?.corriendo)}
+                          aria-label="Seleccionar pregunta"
+                        />
+                      )}
+                    </td>
+                    <td className="lista-preguntas__col-enunciado">
+                      <div className="lista-preguntas__enunciado" title={question.enunciado}>
+                        {String(question.enunciado || '')}
+                      </div>
+                      <button
+                        type="button"
+                        className="boton-enlace"
+                        aria-expanded={abierta}
+                        onClick={() => toggleExpandida(question.id)}
+                      >
+                        {abierta ? 'Ocultar detalle' : 'Ver detalle'}
+                      </button>
+                    </td>
+                    <td>
+                      <span className="lista-preguntas__etiquetas">
+                        <span className="lista-preguntas__etiqueta">{etiqueta(CATEGORIAS, question.categoria)}</span>
+                        <span className="lista-preguntas__etiqueta">{etiqueta(NIVELES, question.nivel)}</span>
+                      </span>
+                    </td>
+                    <td>
+                      {etiqueta(TIPOS, question.tipo)}
+                      {question.tipo === 'opcion_multiple' && (
+                        <span className="lista-preguntas__sub num">{numOpciones} opciones</span>
+                      )}
+                    </td>
+                    <td className="lista-preguntas__col-contexto" title={ctx.titulo}>
+                      <div className="lista-preguntas__contexto">{ctx.texto}</div>
+                    </td>
+                    <td>
+                      <span
+                        className={`insignia insignia--punto lista-preguntas__estado ${estadoClase(question.estado)}`.trim()}
+                        title={question.estado === 'rechazada' && question.motivoRechazo ? question.motivoRechazo : undefined}
+                      >
+                        {etiqueta(ESTADOS_PREGUNTA, question.estado)}
+                      </span>
+                      {question.estado === 'rechazada' && question.motivoRechazo && (
+                        <div className="lista-preguntas__motivo" title={question.motivoRechazo}>
+                          {recortar(question.motivoRechazo, 60)}
+                        </div>
+                      )}
+                      <span className={`lista-preguntas__sub lista-preguntas__origen${question.generadaPorIa ? ' lista-preguntas__origen--ia' : ''}`}>
+                        {question.generadaPorIa && <Icono nombre="generar" tamano={13} />}
+                        {question.generadaPorIa ? 'Generada con IA' : 'Manual'}
+                      </span>
+                    </td>
+                    <td className="lista-preguntas__col-fecha">
+                      <span className="mono">{formatearFecha(question.fechaCreacion)}</span>
+                      <span className="lista-preguntas__sub num">
+                        {question.vecesUsada ?? 0} {Number(question.vecesUsada) === 1 ? 'uso' : 'usos'}
+                      </span>
+                    </td>
+                    <td className="celda-acciones">
+                      <div className="grupo-botones">
+                        {question.estado !== 'aprobada' && (
+                          <button
+                            type="button"
+                            onClick={() => handleApprove(question)}
+                            className="boton boton--chico lista-preguntas__aprobar"
+                            title="Aprobar: quedará visible para los usuarios"
+                            disabled={ocupada}
+                          >
+                            Aprobar
+                          </button>
+                        )}
+                        {question.estado !== 'rechazada' && (
+                          <button
+                            type="button"
+                            onClick={() => abrirRechazo(question)}
+                            className="boton boton--chico"
+                            title="Rechazar con un motivo"
+                            disabled={ocupada}
+                          >
+                            Rechazar
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/editar-pregunta/${question.id}`)}
+                          className="boton boton--chico boton--icono"
+                          title="Editar pregunta"
+                          aria-label="Editar"
+                          disabled={ocupada}
+                        >
+                          <Icono nombre="editar" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteQuestion(question)}
+                          className="boton boton--chico boton--icono boton--peligro-suave"
+                          title={enUso ? 'Ya se usó en entrevistas; recházala en su lugar' : 'Eliminar pregunta'}
+                          aria-label="Eliminar"
+                          disabled={ocupada || enUso}
+                        >
+                          <Icono nombre="borrar" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  {abierta && renderDetalle(question)}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {!loading && visibles.length === 0 && !error && (
+            <div className="vacio">
+              <p>
+                {textoBusqueda && questions.length > 0
+                  ? 'Ninguna pregunta de esta página coincide con la búsqueda'
+                  : hayFiltros
+                    ? 'No se encontraron preguntas con los filtros aplicados'
+                    : 'No hay preguntas registradas'}
+              </p>
+            </div>
+          )}
+          {loading && questions.length > 0 && (
+            <div className="lista-preguntas__actualizando">
+              <span className="cargando">Actualizando...</span>
+            </div>
+          )}
+        </div>
+      </section>
 
       {totalPages > 1 && (
         <nav className="paginacion" aria-label="Paginación">

@@ -8,7 +8,7 @@
   width: 100%;
   max-width: var(--ancho-contenido);
   margin: 0;
-  padding: var(--e-6) var(--e-6) var(--e-12);
+  padding: var(--e-8) var(--e-8) var(--e-12);
   display: flex;
   flex-direction: column;
   gap: var(--e-6);
@@ -59,8 +59,9 @@
   border: 1px solid var(--borde-fuerte);
   border-radius: var(--radio);
   background: var(--superficie);
+  box-shadow: var(--sombra-sutil);
   color: var(--texto);
-  font-size: var(--texto-base);
+  font-size: var(--texto-sm);
   font-weight: var(--peso-medio);
   line-height: 1;
   white-space: nowrap;
@@ -69,10 +70,16 @@
     transform var(--m-out) var(--ease-out),
     background-color var(--m-out) var(--ease-out),
     border-color var(--m-out) var(--ease-out),
+    box-shadow var(--m-out) var(--ease-out),
     color var(--m-out) var(--ease-out);
 }
 
-.boton:hover:not(:disabled) { background: var(--superficie-hover); border-color: var(--borde-control); color: var(--texto); }
+.boton:hover:not(:disabled) {
+  background: var(--superficie);
+  border-color: var(--borde-control);
+  box-shadow: var(--sombra-boton-hover);
+  color: var(--texto);
+}
 
 /* Solo con mouse: el botón sube 1 px al pasar y se hunde al presionar (nunca en táctil) */
 @media (hover: hover) and (pointer: fine) {
@@ -89,25 +96,36 @@
 .boton[aria-disabled='true'] { opacity: 0.55; }
 
 .boton--primario {
-  background: var(--acento);
-  border-color: var(--acento);
+  background: linear-gradient(180deg, var(--primario-arriba), var(--primario-abajo));
+  border-color: var(--primario-abajo);
   color: var(--texto-invertido);
+  box-shadow: inset 0 1px 0 var(--brillo-interior), var(--primario-sombra);
 }
-.boton--primario:hover:not(:disabled) { background: var(--acento-hover); border-color: var(--acento-hover); color: var(--texto-invertido); }
+.boton--primario:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--primario-abajo), var(--acento-hover));
+  border-color: var(--acento-hover);
+  color: var(--texto-invertido);
+  box-shadow: inset 0 1px 0 var(--brillo-interior), var(--primario-sombra-hover);
+}
 
 .boton--peligro {
-  background: var(--peligro);
-  border-color: var(--peligro);
+  background: var(--peligro-boton);
+  border-color: var(--peligro-boton);
   color: var(--texto-invertido);
 }
-.boton--peligro:hover:not(:disabled) { background: var(--peligro-hover); border-color: var(--peligro-hover); color: var(--texto-invertido); }
+.boton--peligro:hover:not(:disabled) {
+  background: var(--peligro-boton);
+  border-color: var(--peligro-boton);
+  filter: brightness(0.92);
+  color: var(--texto-invertido);
+}
 
 /* Acción destructiva secundaria (en filas de tabla): no grita hasta el hover */
 .boton--peligro-suave { color: var(--peligro); }
 .boton--peligro-suave:hover:not(:disabled) { background: var(--peligro-suave); border-color: var(--peligro-borde); color: var(--peligro); }
 
-.boton--sutil { background: transparent; border-color: transparent; color: var(--texto-2); }
-.boton--sutil:hover:not(:disabled) { background: var(--superficie-hover); border-color: transparent; color: var(--texto); }
+.boton--sutil { background: transparent; border-color: transparent; box-shadow: none; color: var(--texto-2); }
+.boton--sutil:hover:not(:disabled) { background: var(--superficie-hover); border-color: transparent; box-shadow: none; color: var(--texto); }
 
 .boton--chico { min-height: var(--alto-control-sm); padding: 0 0.625rem; font-size: var(--texto-sm); gap: var(--e-1); }
 .boton--icono { padding: 0; width: var(--alto-control); }
@@ -128,7 +146,7 @@
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
-  text-decoration-color: color-mix(in srgb, currentColor 65%, transparent);
+  text-decoration-color: color-mix(in oklch, currentColor 65%, transparent);
   transition: color var(--m-in) var(--ease-out), text-decoration-color var(--m-in) var(--ease-out);
 }
 .boton-enlace:hover { color: var(--acento-hover); text-decoration-color: currentColor; }
@@ -161,7 +179,7 @@
   background: var(--superficie);
   border: 1px solid var(--borde);
   border-radius: var(--radio-lg);
-  box-shadow: var(--sombra-sutil);
+  box-shadow: var(--sombra-tarjeta);
 }
 
 .tarjeta__encabezado {
@@ -193,23 +211,71 @@
 }
 
 .metrica {
+  /* Tono de la tarjeta: azul por defecto; --verde, --ambar y --coral cambian solo estas variables */
+  --m-tono: var(--acento);
+  --m-texto: var(--acento-texto);
+  --m-tinte: var(--acento-tinte);
   padding: var(--e-4) var(--e-5);
   display: flex;
   flex-direction: column;
   gap: var(--e-1);
   min-width: 0;
-  background: var(--superficie);
-  border: 1px solid var(--borde);
+  background: linear-gradient(180deg, var(--m-tinte) 0%, var(--superficie) 135%);
+  border: 1px solid color-mix(in oklch, var(--m-tono) 22%, transparent);
   border-radius: var(--radio-lg);
-  box-shadow: var(--sombra-sutil);
+  box-shadow: inset 0 1px 0 var(--brillo-tarjeta), var(--sombra-sutil),
+    0 8px 22px -16px var(--m-tono);
+  color: var(--texto);
 }
+.metrica--verde { --m-tono: var(--verde); --m-texto: var(--verde-texto); --m-tinte: var(--verde-tinte); }
+.metrica--ambar { --m-tono: var(--ambar); --m-texto: var(--ambar-texto); --m-tinte: var(--ambar-tinte); }
+.metrica--coral { --m-tono: var(--coral); --m-texto: var(--coral-texto); --m-tinte: var(--coral-tinte); }
+.metrica--neutra { --m-tono: var(--texto-3); --m-texto: var(--texto-2); --m-tinte: var(--superficie); }
+
+/* Métrica que es un enlace: se levanta 2 px y su sombra de color crece (180 ms entra, 120 ms sale) */
+a.metrica { text-decoration: none; transition: transform var(--m-out) var(--ease-out), box-shadow var(--m-out) var(--ease-out); }
+a.metrica:hover { color: var(--texto); }
+@media (hover: hover) and (pointer: fine) {
+  a.metrica:hover {
+    transform: translateY(-2px);
+    transition-duration: 180ms;
+    box-shadow: inset 0 1px 0 var(--brillo-tarjeta), var(--sombra-sutil),
+      0 16px 30px -18px var(--m-tono);
+  }
+}
+a.metrica:active { transform: translateY(0) scale(0.99); transition-duration: var(--m-press); }
+
+/* Ícono de la métrica: cuadro blanco con el ícono en el tono de la tarjeta */
+.metrica__icono {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 8px;
+  background: var(--superficie);
+  color: var(--m-tono);
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--m-tono) 22%, transparent), var(--sombra-icono);
+}
+.metrica__pie {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--e-1) var(--e-3);
+  margin-top: auto;
+  padding-top: var(--e-3);
+  border-top: 1px solid color-mix(in oklch, var(--m-tono) 20%, transparent);
+  font-size: var(--texto-xs);
+  color: var(--texto-2);
+}
+.metrica__destacado { color: var(--m-texto); font-weight: var(--peso-medio); }
 .metrica__cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--e-2); margin-bottom: var(--e-1); }
-.metrica__etiqueta { font-size: var(--texto-sm); color: var(--texto-2); font-weight: var(--peso-medio); }
+.metrica__etiqueta { display: inline-flex; align-items: center; gap: var(--e-2); font-size: var(--texto-sm); color: var(--texto-2); font-weight: var(--peso-medio); }
 .metrica__valor {
   font-family: var(--fuente-display);
   font-size: var(--texto-2xl);
   font-weight: var(--peso-medio);
-  line-height: 1.1;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
   letter-spacing: var(--tracking-titulo);
 }
@@ -243,9 +309,10 @@
   font-weight: var(--peso-medio);
 }
 .avatar--chico { width: 1.75rem; height: 1.75rem; }
-.avatar--tono-1 { background: var(--exito-suave); color: var(--exito); }
-.avatar--tono-2 { background: var(--aviso-suave); color: var(--aviso); }
-.avatar--tono-3 { background: var(--neutro-suave); color: var(--neutro); }
+.avatar--tono-1 { background: var(--verde-suave); color: var(--verde-texto); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--verde) 18%, transparent); }
+.avatar--tono-2 { background: var(--ambar-suave); color: var(--ambar-texto); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--ambar) 18%, transparent); }
+.avatar--tono-3 { background: var(--coral-suave); color: var(--coral-texto); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--coral) 22%, transparent); }
+.avatar--neutro { background: var(--neutro-suave); color: var(--texto-3); box-shadow: inset 0 0 0 1px var(--borde); }
 
 /* ============ Barra apilada (partes de un total) con su leyenda ============ */
 .barra-apilada {
@@ -302,6 +369,7 @@
   background: var(--superficie);
   border: 1px solid var(--borde);
   border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-tarjeta);
 }
 
 .tabla {
@@ -414,10 +482,11 @@
   flex-wrap: wrap;
   gap: var(--e-3);
   align-items: flex-end;
-  padding: var(--e-3) var(--e-4);
+  padding: var(--e-4);
   background: var(--superficie);
   border: 1px solid var(--borde);
   border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-tarjeta);
 }
 .filtros .campo { flex: 1 1 160px; max-width: 240px; }
 .filtros .campo--busqueda { flex: 2 1 260px; max-width: none; }

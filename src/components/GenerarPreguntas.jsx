@@ -539,15 +539,15 @@ const GenerarPreguntas = () => {
         </div>
       )}
 
-      <div className="aviso aviso--aviso" role="note">
-        <Icono nombre="dinero" className="aviso__icono" />
+      <div className="aviso aviso--aviso gp-costo" role="note">
+        <span className="gp-costo__icono" aria-hidden="true"><Icono nombre="dinero" /></span>
         <div className="aviso__contenido">
           <p className="aviso__titulo">Cada generación tiene un costo real.</p>
           <p>
             Se cobra aunque después rechaces las preguntas, y también si la IA responde algo que no pasa la validación.
             {costoPromedio !== null && (
               <>
-                {' '}Referencia del último mes: <span className="num">{formatearPesos(costoPromedio)}</span> por pregunta generada.
+                {' '}Referencia del último mes: <span className="num mono">{formatearPesos(costoPromedio)}</span> por pregunta generada.
               </>
             )}
           </p>
@@ -561,113 +561,133 @@ const GenerarPreguntas = () => {
         encabezado="Tope mensual de gasto en generar preguntas con IA (todos los administradores)"
       />
 
-      <form onSubmit={abrirConfirmacion} className="tarjeta" noValidate>
+      <form onSubmit={abrirConfirmacion} className="tarjeta gp-tarjeta" noValidate>
+        <div className="gp-cabecera">
+          <span className="gp-cabecera__icono" aria-hidden="true"><Icono nombre="generar" tamano={18} /></span>
+          <div className="gp-cabecera__textos">
+            <h2 className="gp-cabecera__titulo">Qué quieres generar</h2>
+            <p className="gp-cabecera__sub">Antes de llamar a la IA se te pide confirmar el costo.</p>
+          </div>
+        </div>
         <div className="tarjeta__cuerpo">
           <fieldset disabled={generando} className="gp-fieldset">
-            <div className="rejilla-campos">
-              <div className="campo">
-                <label htmlFor="gp-area" className="campo__etiqueta">
-                  Área <span className="campo__opcional">(opcional)</span>
-                </label>
-                <select id="gp-area" value={form.area} onChange={cambiar('area')} disabled={cargandoCargos || !!errorCargos}>
-                  <option value="">Todas las áreas</option>
-                  {areas.map((area) => <option key={area} value={area}>{area}</option>)}
-                </select>
-              </div>
+            <div className="gp-seccion">
+              <h3 className="gp-seccion__titulo">Cargo y skill</h3>
+              <div className="rejilla-campos">
+                <div className="campo">
+                  <label htmlFor="gp-area" className="campo__etiqueta">
+                    Área <span className="campo__opcional">(opcional)</span>
+                  </label>
+                  <select id="gp-area" value={form.area} onChange={cambiar('area')} disabled={cargandoCargos || !!errorCargos}>
+                    <option value="">Todas las áreas</option>
+                    {areas.map((area) => <option key={area} value={area}>{area}</option>)}
+                  </select>
+                </div>
 
-              <div className="campo">
-                <label htmlFor="gp-cargo" className="campo__etiqueta">Cargo</label>
-                <select id="gp-cargo" value={form.cargoId} onChange={cambiar('cargoId')} disabled={cargandoCargos || !!errorCargos}>
-                  <option value="">{cargandoCargos ? 'Cargando cargos...' : 'Selecciona un cargo'}</option>
-                  {cargoFueraDeLista && <option value={form.cargoId}>{nombreCargo || 'Cargo elegido en Cobertura'}</option>}
-                  {cargosDelArea.map((c) => (
-                    <option key={c.cargoId} value={c.cargoId}>
-                      {form.area ? c.nombre : `${c.nombre} (${c.area})`}
+                <div className="campo">
+                  <label htmlFor="gp-cargo" className="campo__etiqueta">Cargo</label>
+                  <select id="gp-cargo" value={form.cargoId} onChange={cambiar('cargoId')} disabled={cargandoCargos || !!errorCargos}>
+                    <option value="">{cargandoCargos ? 'Cargando cargos...' : 'Selecciona un cargo'}</option>
+                    {cargoFueraDeLista && <option value={form.cargoId}>{nombreCargo || 'Cargo elegido en Cobertura'}</option>}
+                    {cargosDelArea.map((c) => (
+                      <option key={c.cargoId} value={c.cargoId}>
+                        {form.area ? c.nombre : `${c.nombre} (${c.area})`}
+                      </option>
+                    ))}
+                  </select>
+                  {errorCargos && (
+                    <div className="campo__error">
+                      {errorCargos}{' '}
+                      <button type="button" className="boton-enlace" onClick={cargarCargos}>Reintentar</button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="campo campo--ancho">
+                  <label htmlFor="gp-skill" className="campo__etiqueta">
+                    Skill <span className="campo__opcional">(opcional)</span>
+                  </label>
+                  <select id="gp-skill" value={form.skillId} onChange={cambiar('skillId')} disabled={!form.cargoId || cargandoSkills}>
+                    <option value="">
+                      {!form.cargoId ? 'Primero elige un cargo' : cargandoSkills ? 'Cargando skills...' : 'Todo el cargo (sin una skill concreta)'}
                     </option>
-                  ))}
-                </select>
-                {errorCargos && (
-                  <div className="campo__error">
-                    {errorCargos}{' '}
-                    <button type="button" className="boton-enlace" onClick={cargarCargos}>Reintentar</button>
-                  </div>
-                )}
+                    {skillFueraDeLista && <option value={form.skillId}>{nombreSkill || 'Skill elegida en Cobertura'}</option>}
+                    {skills.map((s) => (
+                      <option key={s.skillId} value={s.skillId}>
+                        {s.nombre} · {etiqueta(CATEGORIAS, s.categoria)}{s.obligatoria ? ' · obligatoria' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {errorSkills && <div className="campo__error">{errorSkills}</div>}
+                  {form.cargoId && !form.skillId && !cargandoSkills && !errorSkills && skills.length === 0 && (
+                    <small className="campo__ayuda">Este cargo no tiene skills asociadas: se generará para el cargo completo.</small>
+                  )}
+                </div>
               </div>
+            </div>
 
-              <div className="campo campo--ancho">
-                <label htmlFor="gp-skill" className="campo__etiqueta">
-                  Skill <span className="campo__opcional">(opcional)</span>
-                </label>
-                <select id="gp-skill" value={form.skillId} onChange={cambiar('skillId')} disabled={!form.cargoId || cargandoSkills}>
-                  <option value="">
-                    {!form.cargoId ? 'Primero elige un cargo' : cargandoSkills ? 'Cargando skills...' : 'Todo el cargo (sin una skill concreta)'}
-                  </option>
-                  {skillFueraDeLista && <option value={form.skillId}>{nombreSkill || 'Skill elegida en Cobertura'}</option>}
-                  {skills.map((s) => (
-                    <option key={s.skillId} value={s.skillId}>
-                      {s.nombre} · {etiqueta(CATEGORIAS, s.categoria)}{s.obligatoria ? ' · obligatoria' : ''}
-                    </option>
-                  ))}
-                </select>
-                {errorSkills && <div className="campo__error">{errorSkills}</div>}
-                {form.cargoId && !form.skillId && !cargandoSkills && !errorSkills && skills.length === 0 && (
-                  <small className="campo__ayuda">Este cargo no tiene skills asociadas: se generará para el cargo completo.</small>
-                )}
+            <div className="gp-seccion">
+              <h3 className="gp-seccion__titulo">Preguntas</h3>
+              <div className="rejilla-campos gp-rejilla-preguntas">
+                <div className="campo">
+                  <label htmlFor="gp-nivel" className="campo__etiqueta">Nivel</label>
+                  <select id="gp-nivel" value={form.nivel} onChange={cambiar('nivel')}>
+                    {NIVELES.map((n) => <option key={n.value} value={n.value}>{n.label}</option>)}
+                  </select>
+                </div>
+
+                <div className="campo">
+                  <label htmlFor="gp-categoria" className="campo__etiqueta">Categoría</label>
+                  <select id="gp-categoria" value={form.categoria} onChange={cambiar('categoria')}>
+                    {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                </div>
+
+                <div className="campo">
+                  <label htmlFor="gp-tipo" className="campo__etiqueta">Tipo de pregunta</label>
+                  <select id="gp-tipo" value={form.tipo} onChange={cambiar('tipo')}>
+                    {TIPOS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
+
+                <div className="campo">
+                  <label htmlFor="gp-cantidad" className="campo__etiqueta">Cantidad</label>
+                  <input
+                    id="gp-cantidad"
+                    type="number"
+                    min="1"
+                    max={LIMITES.preguntasPorGeneracion}
+                    step="1"
+                    value={form.cantidad}
+                    onChange={cambiar('cantidad')}
+                  />
+                  <small className="campo__ayuda">Entre 1 y {LIMITES.preguntasPorGeneracion} preguntas por generación.</small>
+                </div>
               </div>
+            </div>
 
-              <div className="campo">
-                <label htmlFor="gp-nivel" className="campo__etiqueta">Nivel</label>
-                <select id="gp-nivel" value={form.nivel} onChange={cambiar('nivel')}>
-                  {NIVELES.map((n) => <option key={n.value} value={n.value}>{n.label}</option>)}
-                </select>
-              </div>
+            <div className="gp-seccion">
+              <h3 className="gp-seccion__titulo">Modelo y ofertas de empleo</h3>
+              <div className="rejilla-campos">
+                <div className="campo campo--ancho">
+                  <label htmlFor="gp-modelo" className="campo__etiqueta">Modelo de IA</label>
+                  <select id="gp-modelo" value={form.modelo} onChange={cambiar('modelo')}>
+                    {MODELOS_IA.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                  </select>
+                </div>
 
-              <div className="campo">
-                <label htmlFor="gp-categoria" className="campo__etiqueta">Categoría</label>
-                <select id="gp-categoria" value={form.categoria} onChange={cambiar('categoria')}>
-                  {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                </select>
-              </div>
-
-              <div className="campo">
-                <label htmlFor="gp-tipo" className="campo__etiqueta">Tipo de pregunta</label>
-                <select id="gp-tipo" value={form.tipo} onChange={cambiar('tipo')}>
-                  {TIPOS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
-              </div>
-
-              <div className="campo">
-                <label htmlFor="gp-cantidad" className="campo__etiqueta">Cantidad</label>
-                <input
-                  id="gp-cantidad"
-                  type="number"
-                  min="1"
-                  max={LIMITES.preguntasPorGeneracion}
-                  step="1"
-                  value={form.cantidad}
-                  onChange={cambiar('cantidad')}
-                />
-                <small className="campo__ayuda">Entre 1 y {LIMITES.preguntasPorGeneracion} preguntas por generación.</small>
-              </div>
-
-              <div className="campo campo--ancho">
-                <label htmlFor="gp-modelo" className="campo__etiqueta">Modelo de IA</label>
-                <select id="gp-modelo" value={form.modelo} onChange={cambiar('modelo')}>
-                  {MODELOS_IA.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-                </select>
-              </div>
-
-              <div className="campo campo--ancho gp-campo-mercado">
-                <label className="casilla" htmlFor="gp-mercado">
-                  <input id="gp-mercado" type="checkbox" checked={form.usarMercado} onChange={cambiar('usarMercado')} />
-                  Usar lo que piden las ofertas de empleo de este cargo (recomendado)
-                </label>
-                <small className="campo__ayuda gp-ayuda-casilla">
-                  Se intenta darle a la IA las skills más pedidas y frases cortas de ofertas de empleo de este cargo, para que
-                  las preguntas se parezcan a las entrevistas de hoy. Si no hay ofertas que sirvan o las APIs de empleo no
-                  responden, se genera sin ellas (o con ofertas de referencia), y el resultado lo dice. Usar ofertas alarga el
-                  pedido a la IA y puede subir un poco el costo por pregunta.
-                </small>
+                <div className="campo campo--ancho gp-campo-mercado">
+                  <label className="casilla" htmlFor="gp-mercado">
+                    <input id="gp-mercado" type="checkbox" checked={form.usarMercado} onChange={cambiar('usarMercado')} />
+                    Usar lo que piden las ofertas de empleo de este cargo (recomendado)
+                  </label>
+                  <small className="campo__ayuda gp-ayuda-casilla">
+                    Se intenta darle a la IA las skills más pedidas y frases cortas de ofertas de empleo de este cargo, para que
+                    las preguntas se parezcan a las entrevistas de hoy. Si no hay ofertas que sirvan o las APIs de empleo no
+                    responden, se genera sin ellas (o con ofertas de referencia), y el resultado lo dice. Usar ofertas alarga el
+                    pedido a la IA y puede subir un poco el costo por pregunta.
+                  </small>
+                </div>
               </div>
             </div>
           </fieldset>
@@ -690,7 +710,7 @@ const GenerarPreguntas = () => {
                 </div>
               ) : (
                 <div className="gp-progress__texto">
-                  <strong>Generando {cantidad ?? ''} preguntas con {etiquetaModelo}... (<span className="num">{segundos}</span> s)</strong>
+                  <strong>Generando {cantidad ?? ''} preguntas con {etiquetaModelo}... (<span className="num mono">{segundos}</span> s)</strong>
                   <p className="nota">Puede tardar hasta 1 minuto; no cierres ni recargues la página ni cambies de sección.</p>
                 </div>
               )}
@@ -735,34 +755,53 @@ const GenerarPreguntas = () => {
           </div>
 
           <dl className="metricas gp-metricas">
-            <div className="metrica">
-              <dt className="metrica__etiqueta">Generadas</dt>
+            <div className="metrica metrica--ambar">
+              <dt className="metrica__etiqueta">
+                <span className="metrica__icono" aria-hidden="true"><Icono nombre="generar" tamano={15} /></span>
+                Generadas
+              </dt>
               <dd className="metrica__valor">{resultado.generadas}</dd>
             </div>
             {resultado.conError > 0 && (
-              <div className="metrica">
-                <dt className="metrica__etiqueta">Con error</dt>
+              <div className="metrica metrica--neutra">
+                <dt className="metrica__etiqueta">
+                  <span className="metrica__icono" aria-hidden="true"><Icono nombre="alerta" tamano={15} /></span>
+                  Con error
+                </dt>
                 <dd className="metrica__valor">{resultado.conError}</dd>
               </div>
             )}
-            <div className="metrica">
-              <dt className="metrica__etiqueta">Modelo</dt>
+            <div className="metrica metrica--neutra">
+              <dt className="metrica__etiqueta">
+                <span className="metrica__icono" aria-hidden="true"><Icono nombre="info" tamano={15} /></span>
+                Modelo
+              </dt>
               <dd className="metrica__valor gp-metrica-texto">{etiqueta(MODELOS_IA, resultado.modelo)}</dd>
             </div>
             <div className="metrica">
-              <dt className="metrica__etiqueta">Tokens (entrada / salida)</dt>
+              <dt className="metrica__etiqueta">
+                <span className="metrica__icono" aria-hidden="true"><Icono nombre="informes" tamano={15} /></span>
+                Tokens (entrada / salida)
+              </dt>
               <dd className="metrica__valor">{tokensEntrada ?? '—'} / {tokensSalida ?? '—'}</dd>
             </div>
-            <div className="metrica">
-              <dt className="metrica__etiqueta">Costo total</dt>
+            <div className="metrica metrica--coral">
+              <dt className="metrica__etiqueta">
+                <span className="metrica__icono" aria-hidden="true"><Icono nombre="dinero" tamano={15} /></span>
+                Costo total
+              </dt>
               <dd className="metrica__valor">{costoTotal === null ? '—' : formatearPesos(costoTotal)}</dd>
             </div>
           </dl>
 
           {resultado.mercado && (
             <div className="tarjeta">
-              <div className="tarjeta__encabezado">
-                <h2 className="tarjeta__titulo">Ofertas de empleo</h2>
+              <div className="gp-cabecera">
+                <span className="gp-cabecera__icono gp-cabecera__icono--verde" aria-hidden="true"><Icono nombre="cobertura" tamano={18} /></span>
+                <div className="gp-cabecera__textos">
+                  <h2 className="gp-cabecera__titulo">Ofertas de empleo</h2>
+                  <p className="gp-cabecera__sub">Lo que recibió la IA sobre el mercado para este cargo.</p>
+                </div>
               </div>
               <div className="tarjeta__cuerpo gp-mercado__cuerpo">
                 <p className="texto-fuerte">{resultado.mercado.titulo}</p>
@@ -795,48 +834,51 @@ const GenerarPreguntas = () => {
           )}
 
           {preguntasResultado.length > 0 && (
-            <div className="tabla-contenedor">
-              <table className="tabla tabla--compacta gp-tabla">
-                <thead>
-                  <tr>
-                    <th className="num">#</th>
-                    <th>Enunciado</th>
-                    <th>Estado</th>
-                    <th className="num">Tokens entrada</th>
-                    <th className="num">Tokens salida</th>
-                    <th className="num">Costo</th>
-                    <th><span className="sr-only">Acción</span></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {preguntasResultado.map((p, i) => (
-                    <tr key={p.pregunta_id || i}>
-                      <td className="num texto-3">{i + 1}</td>
-                      <td className="gp-enunciado">{p.enunciado}</td>
-                      <td>
+            <div className="tarjeta gp-lista">
+              <div className="gp-cabecera">
+                <div className="gp-cabecera__textos">
+                  <h2 className="gp-cabecera__titulo">
+                    Preguntas generadas
+                    <span className="gp-contador mono">{preguntasResultado.length}</span>
+                  </h2>
+                  <p className="gp-cabecera__sub">Quedan pendientes: revísalas antes de aprobarlas.</p>
+                </div>
+              </div>
+              <ul className="gp-filas">
+                {preguntasResultado.map((p, i) => (
+                  <li key={p.pregunta_id || i} className="gp-fila">
+                    <span className="gp-fila__numero mono">{i + 1}</span>
+                    <div className="gp-fila__textos">
+                      <p className="gp-fila__enunciado">{p.enunciado}</p>
+                      <p className="gp-fila__datos">
                         <span className={`insignia ${INSIGNIA_ESTADO[p.estado] || ''}`.trim()}>{etiqueta(ESTADOS_PREGUNTA, p.estado)}</span>
-                      </td>
-                      <td className="num">{p.tokens_input ?? '—'}</td>
-                      <td className="num">{p.tokens_output ?? '—'}</td>
-                      <td className="num">{typeof p.costo_usd === 'number' ? formatearPesos(p.costo_usd) : '—'}</td>
-                      <td className="celda-acciones">
-                        {p.pregunta_id
-                          ? <Link to={`/editar-pregunta/${p.pregunta_id}`}>Revisar / editar</Link>
-                          : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan={3}>Total</td>
-                    <td className="num">{tokensEntrada ?? '—'}</td>
-                    <td className="num">{tokensSalida ?? '—'}</td>
-                    <td className="num">{costoTotal === null ? '—' : formatearPesos(costoTotal)}</td>
-                    <td />
-                  </tr>
-                </tfoot>
-              </table>
+                        <span className="gp-dato">Tokens entrada <span className="mono">{p.tokens_input ?? '—'}</span></span>
+                        <span className="gp-dato">Tokens salida <span className="mono">{p.tokens_output ?? '—'}</span></span>
+                        <span className="gp-dato">
+                          Costo <span className="mono">{typeof p.costo_usd === 'number' ? formatearPesos(p.costo_usd) : '—'}</span>
+                        </span>
+                      </p>
+                    </div>
+                    <div className="gp-fila__lado">
+                      {p.pregunta_id
+                        ? (
+                          <Link to={`/editar-pregunta/${p.pregunta_id}`} className="boton boton--chico gp-revisar">
+                            Revisar / editar <Icono nombre="flecha-derecha" tamano={14} />
+                          </Link>
+                        )
+                        : <span className="texto-3">—</span>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="tarjeta__pie gp-totales">
+                <span className="gp-totales__etiqueta">Total</span>
+                <span className="gp-dato">Tokens entrada <span className="mono">{tokensEntrada ?? '—'}</span></span>
+                <span className="gp-dato">Tokens salida <span className="mono">{tokensSalida ?? '—'}</span></span>
+                <span className="gp-dato">
+                  Costo <span className="mono gp-totales__costo">{costoTotal === null ? '—' : formatearPesos(costoTotal)}</span>
+                </span>
+              </div>
             </div>
           )}
 
@@ -884,7 +926,8 @@ const GenerarPreguntas = () => {
                 <li>Ofertas de empleo: {form.usarMercado ? 'se intentan usar las del cargo (alargan el pedido y pueden subir un poco el costo)' : 'no se usan'}</li>
                 {costoEstimado !== null && (
                   <li>
-                    Referencia (promedio del último mes): unos {formatearPesos(costoEstimado)}. El costo real puede ser distinto.
+                    Referencia (promedio del último mes): unos <span className="mono">{formatearPesos(costoEstimado)}</span>. El costo
+                    real puede ser distinto.
                   </li>
                 )}
                 {lineaTope && (

@@ -59,14 +59,21 @@ const QuestionForm = () => {
         </div>
       </header>
 
-      <div className="aviso aviso--info">
-        <Icono nombre="info" className="aviso__icono" />
+      <div className="aviso aviso--exito qform-aviso-aprobada">
+        <Icono nombre="check-circulo" className="aviso__icono" />
         <div className="aviso__contenido">
           Las preguntas creadas por un administrador quedan aprobadas y disponibles de inmediato.
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="tarjeta" noValidate>
+      <form onSubmit={handleSubmit} className="tarjeta qform-tarjeta" noValidate>
+        <div className="qform-cabecera">
+          <span className="qform-cabecera__icono" aria-hidden="true"><Icono nombre="pregunta-mas" tamano={18} /></span>
+          <div className="qform-cabecera__textos">
+            <h2 className="qform-cabecera__titulo">Datos de la pregunta</h2>
+            <p className="qform-cabecera__sub">Los campos marcados con * son obligatorios.</p>
+          </div>
+        </div>
         <div className="tarjeta__cuerpo">
           <fieldset className="qform-bloqueo" disabled={bloqueado}>
             <QuestionFields form={form} setForm={setForm} />

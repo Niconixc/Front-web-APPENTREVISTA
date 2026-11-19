@@ -1,87 +1,397 @@
-/* Resumen (Dashboard): solo el layout propio. Las piezas (.metricas, .tarjeta, .filas, .chip-icono…) están en componentes.css. */
+/* Resumen (Dashboard), dirección «Claro con color». Las piezas (.metrica, .tarjeta, .insignia…) están en componentes.css. */
 
-.resumen-fecha {
-  font-size: var(--texto-sm);
-  font-weight: var(--peso-medio);
-  color: var(--acento-texto);
+/* ---------- Cabecera: saludo, título con la pastilla de pendientes y acciones ---------- */
+.resumen-cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e-6);
+  flex-wrap: wrap;
 }
+.resumen-cabecera__textos { display: flex; flex-direction: column; gap: var(--e-1); min-width: 0; }
+.resumen-saludo { display: flex; align-items: center; gap: var(--e-2); flex-wrap: wrap; font-size: var(--texto-sm); color: var(--texto-3); }
+.resumen-saludo .texto-fuerte { color: var(--texto); }
+.resumen-saludo__punto { width: 3px; height: 3px; border-radius: 50%; background: var(--borde-control); }
+.resumen-cabecera__titulo { display: flex; align-items: center; gap: 0.875rem; flex-wrap: wrap; }
 
-/* Enlace al pie de cada métrica: texto con una flecha de línea, sin ocupar todo el ancho */
-.resumen-enlace {
+/* Pastilla «N preguntas esperan tu revisión» */
+.resumen-pastilla {
   display: inline-flex;
   align-items: center;
-  gap: var(--e-1);
-  align-self: flex-start;
-}
-
-/* Error de un bloque: el texto lo dice; el ícono y el color solo lo acompañan */
-.resumen-error {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--e-1);
-  color: var(--peligro);
-  font-size: var(--texto-xs);
+  gap: var(--e-2);
+  min-height: 1.875rem;
+  padding: 0 0.75rem 0 0.7rem;
+  border-radius: 999px;
+  background: var(--ambar-tinte);
+  border: 1px solid color-mix(in oklch, var(--ambar) 22%, transparent);
+  color: var(--ambar-texto);
+  font-size: var(--texto-sm);
   font-weight: var(--peso-medio);
+  text-decoration: none;
+  transition: background-color var(--m-out) var(--ease-out), transform var(--m-out) var(--ease-out),
+    box-shadow var(--m-out) var(--ease-out);
 }
-.resumen-error .icono { margin-top: 0.1rem; }
+.resumen-pastilla .icono { transition: transform 160ms var(--ease-out); }
+.resumen-pastilla:hover { background: var(--ambar-suave); color: var(--ambar-texto); }
+@media (hover: hover) and (pointer: fine) {
+  .resumen-pastilla:hover { transform: translateY(-1px); box-shadow: 0 4px 12px -6px color-mix(in oklch, var(--ambar) 45%, transparent); transition-duration: var(--m-in); }
+  .resumen-pastilla:hover .icono { transform: translateX(2px); }
+}
+.resumen-pastilla:active { transform: translateY(0) scale(0.97); transition-duration: var(--m-press); }
+
+/* Punto que late suave (tres veces) para lo que espera revisión; quieto con reduced-motion */
+.resumen-pulso { position: relative; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ambar); }
+.resumen-pulso::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--ambar);
+  animation: resumen-pulso 2.4s var(--ease-out) 3;
+}
+@keyframes resumen-pulso { 0% { transform: scale(1); opacity: 0.55; } 80%, 100% { transform: scale(2.6); opacity: 0; } }
+
+.resumen-icono-ia { color: var(--verde); }
 
 /* ---------- Métricas ---------- */
-/* Línea del tope de generación del mes (D23) bajo el gasto */
-.resumen-tope { color: var(--texto-2); }
+.resumen-metricas { grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
+.resumen-metricas .metrica { gap: 0; padding: var(--e-4) 1.125rem 0.875rem; }
+.resumen-metricas .metrica__etiqueta { flex-wrap: nowrap; }
+
+/* Flecha que aparece al pasar el mouse: la tarjeta lleva a su pantalla */
+.resumen-ir {
+  margin-left: auto;
+  color: var(--m-texto);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 160ms var(--ease-out), transform 180ms var(--ease-out);
+}
+.metrica:focus-visible .resumen-ir { opacity: 1; transform: none; }
+@media (hover: hover) and (pointer: fine) {
+  .metrica:hover .resumen-ir { opacity: 1; transform: none; }
+}
+
+.resumen-cuerpo {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e-3);
+  margin-top: 0.875rem;
+  min-height: 4.25rem;
+}
+.resumen-cuerpo__cifras { display: flex; flex-direction: column; min-width: 0; }
+.resumen-de {
+  margin-left: var(--e-1);
+  font-family: var(--fuente-display);
+  font-size: var(--texto-lg);
+  color: var(--texto-3);
+  letter-spacing: -0.01em;
+}
+.resumen-sub { margin-top: 0.45rem; font-size: var(--texto-xs); color: var(--texto-3); }
+
+.resumen-metricas .metrica__pie { margin-top: 0.875rem; min-height: 2.25rem; }
+.resumen-clave { display: inline-flex; align-items: center; gap: 0.375rem; white-space: nowrap; }
+.resumen-muestra { width: 8px; height: 8px; border-radius: 3px; flex: none; background: var(--m-tono); opacity: 0.6; }
+.resumen-muestra--admin { opacity: 1; background: var(--acento-hover); }
+.resumen-muestra--pendiente { opacity: 1; background: var(--grafico-4); }
+.resumen-muestra--rechazada { opacity: 1; background: var(--peligro); }
+
+/* Usuarios: un punto por cuenta (admin marcado, inactiva hueca) */
+.resumen-puntos { display: grid; grid-template-columns: repeat(6, 10px); gap: 4px; margin-bottom: 4px; flex: none; }
+.resumen-punto { width: 10px; height: 10px; border-radius: 3.5px; background: var(--acento); opacity: 0.8; }
+.resumen-punto--admin { background: var(--acento-hover); opacity: 1; box-shadow: 0 0 0 2px var(--superficie), 0 0 0 3px var(--acento); }
+.resumen-punto--inactivo { background: transparent; opacity: 1; box-shadow: inset 0 0 0 1.5px color-mix(in oklch, var(--acento) 50%, transparent); }
+
+/* Banco: dona */
+.resumen-dona { position: relative; flex: none; width: 4rem; height: 4rem; }
+.resumen-dona__svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.resumen-dona__pista { fill: none; stroke: var(--verde-suave); stroke-width: 8; }
+.resumen-dona__arco { fill: none; stroke-width: 8; }
+.resumen-dona__centro {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--fuente-mono);
+  font-size: var(--texto-xs);
+  color: var(--verde-texto);
+}
+
+/* Pendientes: pila de íconos de IA */
+.resumen-pila-ia { display: flex; flex: none; margin-bottom: 4px; }
+.resumen-pila-ia > span {
+  display: grid;
+  place-items: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  margin-left: -8px;
+  border-radius: 50%;
+  background: var(--superficie);
+  color: var(--ambar);
+  box-shadow: 0 0 0 2px var(--ambar-tinte), 0 0 0 3px color-mix(in oklch, var(--ambar) 28%, transparent),
+    0 2px 6px -2px color-mix(in oklch, var(--ambar) 35%, transparent);
+}
+.resumen-pila-ia > span:first-child { margin-left: 0; }
+
+/* Gasto: mini gráfico y barra del tope */
+.resumen-chispa { display: block; flex: none; width: 6.5rem; height: 2.75rem; margin-bottom: 2px; }
+.resumen-tope { color: var(--texto-2); white-space: normal; }
 .resumen-tope--cerca { color: var(--aviso); font-weight: var(--peso-medio); }
 .resumen-tope--agotado { color: var(--peligro); font-weight: var(--peso-medio); }
+.resumen-mini-barra {
+  flex: 1 1 2rem;
+  min-width: 2rem;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--coral-suave);
+  overflow: hidden;
+}
+.resumen-mini-barra > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--coral);
+  transform-origin: left center;
+}
 
-.resumen-metricas { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
-.resumen-metricas .metrica { gap: var(--e-2); }
-.resumen-metricas .metrica__valor { margin-top: calc(-1 * var(--e-1)); }
-.resumen-de { font-size: var(--texto-md); font-weight: var(--peso-medio); color: var(--texto-3); }
-.resumen-insignia { align-self: flex-start; }
-
-/* Mini gráfico del gasto (sin ejes): solo la forma de los últimos 30 días */
-.resumen-chispa { height: 2.5rem; margin: 0 calc(-1 * var(--e-1)); }
-
-/* Pie de las listas: enlaces de texto a la izquierda, el botón a la derecha */
-.resumen-pie { align-items: center; justify-content: space-between; }
-
-/* ---------- Filas de tarjetas ---------- */
+/* ---------- Tarjetas grandes ---------- */
 .resumen-fila {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
   gap: var(--e-4);
   align-items: stretch;
 }
-
 @media (min-width: 1100px) {
-  .resumen-fila--grafico { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .resumen-fila--grafico { grid-template-columns: minmax(0, 1fr) 332px; }
+  .resumen-fila--listas { grid-template-columns: minmax(0, 1.38fr) minmax(0, 1fr); }
 }
-
 .resumen-fila > .tarjeta { display: flex; flex-direction: column; min-width: 0; }
-.resumen-fila > .tarjeta > .tarjeta__cuerpo { flex: 1; }
 
-.resumen-grafico { height: 220px; }
+.resumen-tarjeta__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e-4);
+  padding: 1.125rem 1.25rem 0;
+}
+.resumen-tarjeta__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  font-family: var(--fuente-display);
+  font-size: var(--texto-lg);
+  letter-spacing: -0.01em;
+}
+.resumen-tarjeta__sub { margin-top: 3px; font-size: var(--texto-xs); color: var(--texto-3); }
 
-/* Listas de pendientes y usuarios: el pie queda abajo aunque la lista sea corta */
-.resumen-lista .filas,
-.resumen-lista .vacio { flex: 1; }
-.resumen-pie { flex-wrap: wrap; margin-top: auto; }
+.resumen-total { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+.resumen-total__cifra { font-family: var(--fuente-display); font-size: var(--texto-xl); line-height: 1; letter-spacing: -0.02em; }
 
-/* Enunciado en una sola línea (el completo está en el title y al abrir la pregunta) */
-.resumen-enunciado {
-  overflow: hidden;
-  text-overflow: ellipsis;
+.resumen-leyenda { padding: var(--e-3) 1.25rem 0; gap: var(--e-1) 1.125rem; font-size: var(--texto-xs); }
+.resumen-grafico { height: 240px; padding: var(--e-2) var(--e-4) var(--e-3) var(--e-2); }
+
+/* Globo del gráfico: oscuro y compacto */
+.resumen-globo {
+  min-width: 11rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 12px;
+  background: var(--texto);
+  color: var(--fondo);
+  font-size: var(--texto-xs);
+  box-shadow: var(--sombra-flotante);
+}
+.resumen-globo__dia { color: color-mix(in oklch, var(--fondo) 75%, transparent); margin-bottom: 6px; }
+.resumen-globo__total { font-family: var(--fuente-display); font-size: var(--texto-lg); line-height: 1; margin-bottom: 8px; }
+.resumen-globo__fila { display: flex; align-items: center; justify-content: space-between; gap: var(--e-3); color: color-mix(in oklch, var(--fondo) 90%, transparent); }
+.resumen-globo__fila + .resumen-globo__fila { margin-top: 3px; }
+.resumen-globo__fila > span { display: inline-flex; align-items: center; gap: 7px; }
+.resumen-globo__fila b { font-weight: var(--peso-normal); }
+.resumen-globo__marca { width: 8px; height: 8px; border-radius: 2.5px; background: var(--grafico-1); }
+.resumen-globo__marca--2 { background: var(--grafico-2); }
+
+/* ---------- Tope del mes ---------- */
+.resumen-tope-tarjeta { padding-bottom: 1.125rem; }
+.resumen-medidor { position: relative; width: 236px; max-width: 100%; margin: var(--e-4) auto 0; }
+.resumen-medidor__svg { display: block; width: 100%; height: auto; overflow: visible; }
+.resumen-medidor__pista { fill: none; stroke: var(--ambar-tinte); stroke-width: 16; stroke-linecap: round; }
+.resumen-medidor__relleno { fill: none; stroke: var(--ambar); stroke-width: 16; stroke-linecap: round; }
+.resumen-medidor--ok .resumen-medidor__pista { stroke: var(--verde-tinte); }
+.resumen-medidor--ok .resumen-medidor__relleno { stroke: var(--verde); }
+.resumen-medidor--agotado .resumen-medidor__pista { stroke: var(--peligro-suave); }
+.resumen-medidor--agotado .resumen-medidor__relleno { stroke: var(--peligro); }
+.resumen-medidor__valor { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; }
+.resumen-medidor__cifra { display: block; font-family: var(--fuente-display); font-size: 2rem; line-height: 1; letter-spacing: -0.03em; }
+.resumen-medidor__de { display: block; margin-top: 5px; font-size: var(--texto-xs); color: var(--texto-3); }
+.resumen-medidor__de .mono { color: var(--texto-2); }
+.resumen-medidor--cerca .resumen-medidor__de .mono { color: var(--ambar-texto); }
+.resumen-medidor--ok .resumen-medidor__de .mono { color: var(--verde-texto); }
+.resumen-medidor--agotado .resumen-medidor__de .mono { color: var(--peligro); }
+
+.resumen-tope-nota {
+  margin: var(--e-4) 1.25rem 0;
+  padding: 0.7rem 0.875rem;
+  border-radius: 12px;
+  background: var(--superficie-2);
+  color: var(--texto-2);
+  font-size: var(--texto-sm);
+  line-height: 1.45;
+}
+.resumen-tope-nota > p + p { margin-top: var(--e-1); }
+.resumen-tope-nota--cerca { background: var(--ambar-tinte); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--ambar) 14%, transparent); }
+.resumen-tope-nota--agotado { background: var(--peligro-suave); box-shadow: inset 0 0 0 1px var(--peligro-borde); }
+
+.resumen-tope-datos { display: grid; grid-template-columns: 1fr 1fr; margin: auto 1.25rem 0; padding-top: var(--e-4); }
+.resumen-tope-datos > div + div { padding-left: var(--e-4); border-left: 1px solid var(--borde); }
+.resumen-tope-datos dt { font-size: var(--texto-xs); color: var(--texto-3); }
+.resumen-tope-datos dd { margin: 2px 0 0; font-family: var(--fuente-display); font-size: var(--texto-lg); letter-spacing: -0.01em; }
+.resumen-tope-datos dd .texto-3 { font-size: var(--texto-xs); font-family: var(--fuente); letter-spacing: 0; }
+
+/* ---------- Listas ---------- */
+.resumen-contador {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.375rem;
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  border-radius: 999px;
+  background: var(--ambar-suave);
+  color: var(--ambar-texto);
+  font-size: var(--texto-xs);
+  letter-spacing: 0;
+}
+.resumen-ver {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  min-height: 1.75rem;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  color: var(--acento-texto);
+  text-decoration: none;
   white-space: nowrap;
 }
+.resumen-ver .icono { transition: transform 160ms var(--ease-out); }
+.resumen-accesos { display: inline-flex; align-items: center; gap: var(--e-4); flex-wrap: wrap; justify-content: flex-end; }
+.resumen-ver--suave { color: var(--texto-2); font-weight: var(--peso-normal); }
+.resumen-ver:hover { color: var(--acento-hover); }
+@media (hover: hover) and (pointer: fine) {
+  .resumen-ver:hover .icono { transform: translateX(3px); }
+  }
+.resumen-ver:active { transform: scale(0.97); }
+
+.resumen-filas { list-style: none; margin: var(--e-3) 0 0; padding: 0 var(--e-2) var(--e-2); }
+.resumen-filas > li { position: relative; }
+.resumen-filas > li + li::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--e-3);
+  right: var(--e-3);
+  height: 1px;
+  background: var(--borde);
+}
+
+.resumen-pregunta,
+.resumen-usuario {
+  display: grid;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.8rem var(--e-3);
+  border-radius: 12px;
+  transition: background-color var(--m-in) var(--ease-out);
+}
+.resumen-pregunta { grid-template-columns: 2.125rem minmax(0, 1fr) auto; }
+.resumen-usuario { grid-template-columns: 2.25rem minmax(0, 1fr) auto; gap: var(--e-3); padding-block: 0.625rem; }
+.resumen-pregunta:hover,
+.resumen-usuario:hover { background: var(--superficie-2); }
+
+.resumen-pregunta__icono {
+  display: grid;
+  place-items: center;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: var(--radio);
+  background: var(--superficie-2);
+  color: var(--texto-3);
+  box-shadow: inset 0 0 0 1px var(--borde);
+}
+.resumen-pregunta__icono--ia { background: var(--verde-tinte); color: var(--verde); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--verde) 18%, transparent); }
+.resumen-pregunta__textos { display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; }
+.resumen-pregunta__enunciado {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  font-size: var(--texto-base);
+  line-height: 1.4;
+  color: var(--texto);
+}
+.resumen-etiquetas { display: flex; flex-wrap: wrap; gap: 6px; }
+.resumen-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.375rem;
+  padding: 0 0.5rem;
+  border-radius: 7px;
+  background: var(--superficie-2);
+  color: var(--texto-2);
+  font-size: var(--texto-xs);
+  box-shadow: inset 0 0 0 1px var(--borde);
+}
+.resumen-etiqueta--ia { background: var(--verde-tinte); color: var(--verde-texto); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--verde) 18%, transparent); }
+.resumen-revisar .icono { transition: transform 160ms var(--ease-out); }
+.resumen-pregunta:hover .resumen-revisar { border-color: color-mix(in oklch, var(--acento) 35%, transparent); color: var(--acento-texto); }
+.resumen-revisar:hover .icono { transform: translateX(2px); }
+
+.resumen-usuario__avatar.avatar { width: 2.25rem; height: 2.25rem; font-family: var(--fuente-display); font-size: var(--texto-sm); }
+.resumen-usuario__textos { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
+.resumen-usuario__nombre { font-weight: var(--peso-medio); font-size: var(--texto-base); }
+.resumen-usuario__correo { font-size: var(--texto-xs); color: var(--texto-3); }
+.resumen-usuario__lado { display: flex; align-items: center; gap: var(--e-2); }
+.resumen-usuario__fecha { font-size: var(--texto-xs); color: var(--texto-3); white-space: nowrap; }
 
 .resumen-vacio { padding: var(--e-8) var(--e-4); }
+
+/* Error de un bloque: el texto lo dice; el ícono y el color solo lo acompañan */
+.resumen-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-1);
+  margin-top: var(--e-3);
+  color: var(--peligro);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+}
+.resumen-error .icono { margin-top: 0.1rem; }
+
+/* ---------- Entrada: cada bloque sube 8 px y aparece, en cascada corta (solo al cargar) ---------- */
+.resumen-aparece {
+  animation: resumen-aparece 420ms var(--ease-out) both;
+  animation-delay: calc(var(--orden, 0) * 40ms);
+}
+@keyframes resumen-aparece { from { opacity: 0; transform: translateY(8px); } }
 
 /* ---------- Esqueleto mientras carga ---------- */
 .resumen-esq { display: block; }
 .resumen-esq--etiqueta { width: 45%; height: 0.75rem; }
-.resumen-esq--valor { width: 35%; height: 1.75rem; margin: var(--e-2) 0; }
+.resumen-esq--valor { width: 35%; height: 2rem; margin: var(--e-3) 0; }
 .resumen-esq--detalle { width: 70%; height: 0.625rem; }
-.resumen-esq--grafico { height: 240px; margin: var(--e-5); }
+.resumen-esq--grafico { height: 260px; margin: var(--e-5); }
 
 @media (max-width: 720px) {
-  .resumen-grafico { height: 180px; }
-  .resumen-esq--grafico { height: 180px; }
+  .resumen-grafico { height: 200px; }
+  .resumen-esq--grafico { height: 200px; }
+  .resumen-usuario__fecha { display: none; }
+  .resumen-sub { white-space: normal; }
+}
+
+/* Alto contraste: los gráficos decorativos se ocultan (el texto ya dice lo mismo); el medidor queda en Highlight */
+@media (forced-colors: active) {
+  .resumen-dona,
+  .resumen-puntos,
+  .resumen-pila-ia,
+  .resumen-mini-barra { display: none; }
+  .resumen-medidor__relleno { stroke: Highlight; }
 }

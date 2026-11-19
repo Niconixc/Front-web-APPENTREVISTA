@@ -1,6 +1,6 @@
 /*
- * Crear y editar pregunta (QuestionForm, QuestionEdit y QuestionFields).
- * Solo el layout propio: las piezas (campos, avisos, botones, diálogo) vienen de componentes.css.
+ * Crear y editar pregunta (QuestionForm, QuestionEdit y QuestionFields), dirección «Claro con color».
+ * Solo el layout propio: las piezas (campos, avisos, botones, diálogo) vienen de componentes.css. Prefijo qform-.
  */
 
 /* fieldset que solo sirve para deshabilitar todos los campos mientras se guarda */
@@ -9,6 +9,30 @@
   padding: 0;
   min-width: 0;
 }
+
+/* ---------- Cabecera de la tarjeta del formulario (como las del Resumen) ---------- */
+.qform-cabecera {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-3);
+  padding: 1.125rem var(--e-5) 0;
+}
+
+.qform-cabecera__icono {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radio);
+  background: var(--acento-tinte);
+  color: var(--acento);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--acento) 16%, transparent);
+}
+
+.qform-cabecera__textos { display: flex; flex-direction: column; min-width: 0; }
+.qform-cabecera__titulo { font-size: var(--texto-lg); }
+.qform-cabecera__sub { margin-top: 3px; font-size: var(--texto-xs); color: var(--texto-3); }
 
 /* Categoría, tipo y nivel caben en una fila dentro del formulario angosto */
 .qform-rejilla {
@@ -31,37 +55,83 @@
   gap: var(--e-2) var(--e-3);
 }
 
-/* ---------- Opciones de opción múltiple ---------- */
+/* ---------- Secciones del formulario: una línea fina arriba y un título en la letra de display ---------- */
+.conjunto.qform-seccion {
+  margin: 0;
+  padding: var(--e-5) 0 0;
+  border: 0;
+  border-top: 1px solid var(--borde);
+  border-radius: 0;
+  gap: var(--e-3);
+}
+
+/* La leyenda flota para quedar dentro del bloque (no encima de la línea) y se comporta como un título */
+.qform-seccion > .qform-seccion__titulo {
+  float: left;
+  width: 100%;
+  padding: 0;
+  font-family: var(--fuente-display);
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-medio);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.qform-seccion__sub { margin-top: calc(-1 * var(--e-2)); }
+
+/* La respuesta ideal abre su propia sección, igual que las demás */
+.qform-respuesta {
+  padding-top: var(--e-5);
+  border-top: 1px solid var(--borde);
+}
+
+/* ---------- Opciones de opción múltiple: filas que se iluminan; la correcta en verde azulado ---------- */
 .qform-opciones {
   list-style: none;
+  margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
+  gap: var(--e-2);
 }
 
 .qform-opcion {
   display: grid;
-  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  grid-template-columns: 2.125rem minmax(0, 1fr) auto;
   gap: var(--e-2) var(--e-3);
   align-items: start;
-  padding: var(--e-3) 0;
+  padding: var(--e-3);
+  border-radius: 12px;
+  background: var(--superficie);
+  box-shadow: inset 0 0 0 1px var(--borde);
+  transition: background-color var(--m-in) var(--ease-out), box-shadow var(--m-in) var(--ease-out);
 }
-.qform-opcion + .qform-opcion { border-top: 1px solid var(--borde); }
+.qform-opcion:not(.qform-opcion--correcta):hover { background: var(--superficie-2); }
 
-/* La correcta se marca con una barra de acento a la izquierda (además del radio «Correcta») */
+/* La correcta: tinte verde azulado y anillo (además del radio «Correcta» marcado, que lo dice en palabras) */
 .qform-opcion--correcta {
-  box-shadow: inset 3px 0 0 var(--acento);
-  padding-left: var(--e-3);
-  margin-left: calc(-1 * var(--e-3));
+  background: var(--verde-tinte);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--verde) 38%, transparent),
+    0 6px 18px -14px var(--verde);
 }
 
 .qform-opcion__letra {
-  min-height: var(--alto-control);
-  display: flex;
-  align-items: center;
-  font-weight: var(--peso-fuerte);
+  display: grid;
+  place-items: center;
+  width: 2.125rem;
+  height: var(--alto-control);
+  border-radius: var(--radio);
+  background: var(--superficie-2);
   color: var(--texto-2);
-  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 0 0 1px var(--borde);
+  font-size: var(--texto-sm);
+  transition: background-color var(--m-in) var(--ease-out), color var(--m-in) var(--ease-out),
+    box-shadow var(--m-in) var(--ease-out);
+}
+.qform-opcion--correcta .qform-opcion__letra {
+  background: var(--superficie);
+  color: var(--verde-texto);
+  box-shadow: inset 0 0 0 1.5px var(--verde);
 }
 
 .qform-opcion__textos {
@@ -82,15 +152,41 @@
   gap: var(--e-2);
 }
 
-/* ---------- Edición ---------- */
+.qform-opcion__correcta { color: var(--texto-2); }
+.qform-opcion__correcta input { accent-color: var(--verde); }
+.qform-opcion--correcta .qform-opcion__correcta { color: var(--verde-texto); font-weight: var(--peso-medio); }
+
+.qform-agregar { display: flex; }
+
+/* ---------- Edición: estado, origen y uso bajo el título ---------- */
 .qform-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--e-2) var(--e-4);
-  margin-top: var(--e-2);
+  gap: var(--e-2) var(--e-3);
+  margin-top: var(--e-3);
   font-size: var(--texto-sm);
-  color: var(--texto-2);
+  color: var(--texto-3);
+}
+
+/* Un punto separa los datos de texto (las insignias ya son pastillas) */
+.qform-meta__dato + .qform-meta__dato::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  margin-right: var(--e-3);
+  border-radius: 50%;
+  background: var(--borde-control);
+  vertical-align: middle;
+}
+
+.qform-meta__dato .mono { color: var(--texto-2); }
+
+.insignia.qform-insignia-ia {
+  background: var(--verde-tinte);
+  color: var(--verde-texto);
+  border-color: color-mix(in oklch, var(--verde) 22%, transparent);
 }
 
 .qform-pie {
@@ -101,6 +197,20 @@
   margin-right: auto;
 }
 
+/* ---------- Error al cargar ---------- */
+.qform-vacio { padding-block: var(--e-8); }
+.qform-vacio__icono {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-bottom: var(--e-1);
+  border-radius: 50%;
+  background: var(--peligro-suave);
+  color: var(--peligro);
+  box-shadow: inset 0 0 0 1px var(--peligro-borde);
+}
+
 .qform-vacio-acciones {
   justify-content: center;
   margin-top: var(--e-2);
@@ -108,9 +218,11 @@
 
 /* ---------- Celular ---------- */
 @media (max-width: 520px) {
+  .qform-cabecera { padding: var(--e-4) var(--e-4) 0; }
+
   /* La casilla «Correcta» y el botón quitar bajan a su propia fila, alineados con los textos */
   .qform-opcion {
-    grid-template-columns: 1.5rem minmax(0, 1fr);
+    grid-template-columns: 2.125rem minmax(0, 1fr);
   }
 
   .qform-opcion__acciones {
@@ -126,4 +238,12 @@
   .qform-pie__volver {
     margin-right: 0;
   }
+}
+
+@media (forced-colors: active) {
+  .qform-opcion { border: 1px solid CanvasText; }
+  .qform-opcion--correcta { border-width: 3px; }
+  .qform-cabecera__icono,
+  .qform-opcion__letra,
+  .qform-vacio__icono { border: 1px solid CanvasText; }
 }

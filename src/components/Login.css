@@ -1,45 +1,83 @@
-/* Inicio de sesión: tarjeta centrada sobre el fondo, con la marca encima. */
+/* Inicio de sesión, dirección «Claro con color»: la hoja clara sobre el lienzo cálido, con el mismo brillo suave
+   de marca que el contenido del panel (App.css .marco__contenido), y la tarjeta centrada encima. */
 .acceso {
-  min-height: 100vh;
+  min-height: calc(100vh - 16px);
+  margin: 8px;
   display: grid;
   place-items: center;
-  padding: var(--e-6) var(--e-4);
-  background: var(--fondo);
+  padding: var(--e-10) var(--e-4);
+  background:
+    radial-gradient(760px 320px at 82% -120px, color-mix(in oklch, var(--acento) 9%, transparent), transparent 70%),
+    radial-gradient(620px 280px at 14% -140px, color-mix(in oklch, var(--coral) 7%, transparent), transparent 72%),
+    var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-hoja);
+  box-shadow: var(--sombra-hoja);
 }
 
-.acceso__contenido {
-  width: 100%;
-  max-width: 380px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--e-5);
-}
+.acceso__contenido { width: 100%; max-width: 400px; }
 
-.acceso__cuerpo { padding: var(--e-6); gap: var(--e-5); }
-.acceso__textos { display: flex; flex-direction: column; gap: var(--e-1); }
-.acceso__titulo { font-size: var(--texto-lg); }
+/* La tarjeta entra subiendo 8 px (una sola vez, al cargar; quieta con reduced-motion) */
+.acceso__tarjeta {
+  border-radius: 20px;
+  animation: acceso-aparece 420ms var(--ease-out) both;
+}
+@keyframes acceso-aparece { from { opacity: 0; transform: translateY(8px); } }
+
+.acceso__cuerpo { padding: var(--e-8); gap: var(--e-6); }
+.acceso__textos { display: flex; flex-direction: column; gap: var(--e-2); }
+.acceso__titulo { font-size: var(--texto-xl); line-height: 1.15; }
+.acceso__descripcion { color: var(--texto-2); font-size: var(--texto-base); }
 .acceso__formulario { gap: var(--e-4); }
+.acceso__formulario .boton--bloque { min-height: 2.625rem; margin-top: var(--e-1); }
 
 /* Misma marca que el menú lateral (Navbar.css .marca__logo), con prefijo propio para no depender de esa hoja. */
 .acceso-marca {
   display: inline-flex;
   align-items: center;
-  gap: var(--e-2);
+  gap: 0.625rem;
   color: var(--texto);
-  font-weight: var(--peso-fuerte);
 }
-.acceso-marca__texto { line-height: 1.2; }
+.acceso-marca__texto {
+  font-family: var(--fuente-display);
+  font-weight: var(--peso-medio);
+  font-size: var(--texto-md);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
 .acceso-marca__logo {
   display: inline-grid;
   place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: var(--radio);
-  background: var(--acento);
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--acento) 85%, var(--texto-invertido)) 0%,
+    var(--acento) 55%,
+    var(--acento-hover) 100%
+  );
   color: var(--texto-invertido);
-  font-size: var(--texto-sm);
+  font-family: var(--fuente-display);
+  font-weight: var(--peso-medio);
+  font-size: 1.25rem;
+  line-height: 1;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklch, var(--texto-invertido) 28%, transparent),
+    0 1px 2px color-mix(in oklch, var(--acento-hover) 45%, transparent),
+    0 4px 10px -4px color-mix(in oklch, var(--acento) 55%, transparent);
+}
+
+@media (max-width: 900px) {
+  .acceso { margin: 0; min-height: 100vh; border: 0; border-radius: 0; }
 }
 
 @media (max-width: 420px) {
-  .acceso__cuerpo { padding: var(--e-5) var(--e-4); }
+  .acceso { padding: var(--e-6) var(--e-4); }
+  .acceso__cuerpo { padding: var(--e-6) var(--e-5); }
+}
+
+@media (forced-colors: active) {
+  .acceso-marca__logo { border: 1px solid CanvasText; }
 }

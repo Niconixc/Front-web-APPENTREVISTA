@@ -14,6 +14,7 @@ export const leerPaleta = () => {
     borde: token('--borde'),
     cursor: token('--superficie-hover'),
     peligro: token('--peligro'),
+    coral: token('--grafico-5'),
   };
 };
 

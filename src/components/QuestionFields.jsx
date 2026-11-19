@@ -192,11 +192,11 @@ const QuestionFields = ({ form, setForm }) => {
       </div>
 
       {/* Contexto: Área → Cargo → Skill */}
-      <fieldset className="conjunto">
-        <legend>
+      <fieldset className="conjunto qform-seccion">
+        <legend className="qform-seccion__titulo">
           Contexto <span className="qform-obligatorio">*</span>
         </legend>
-        <p className="campo__ayuda">Indica el cargo o la skill que evalúa la pregunta (al menos uno de los dos).</p>
+        <p className="campo__ayuda qform-seccion__sub">Indica el cargo o la skill que evalúa la pregunta (al menos uno de los dos).</p>
         {errorCargos && (
           <div className="aviso aviso--peligro">
             <Icono nombre="alerta" className="aviso__icono" />
@@ -273,18 +273,18 @@ const QuestionFields = ({ form, setForm }) => {
 
       {/* Opción múltiple: opciones */}
       {esMultiple && (
-        <fieldset className="conjunto">
-          <legend>
+        <fieldset className="conjunto qform-seccion">
+          <legend className="qform-seccion__titulo">
             Opciones de respuesta <span className="qform-obligatorio">*</span>
           </legend>
-          <p className="campo__ayuda">
+          <p className="campo__ayuda qform-seccion__sub">
             Entre {LIMITES.opcionesMinimas} y {LIMITES.opcionesMaximas} opciones, sin repetir, con exactamente una correcta.
             La explicación es opcional.
           </p>
           <ol className="qform-opciones">
             {form.opciones.map((opcion, i) => (
               <li key={i} className={`qform-opcion${opcion.esCorrecta ? ' qform-opcion--correcta' : ''}`}>
-                <span className="qform-opcion__letra">{letra(i)}.</span>
+                <span className="qform-opcion__letra mono">{letra(i)}</span>
                 <div className="qform-opcion__textos">
                   <input
                     type="text"
@@ -304,7 +304,7 @@ const QuestionFields = ({ form, setForm }) => {
                   />
                 </div>
                 <div className="qform-opcion__acciones">
-                  <label className="casilla texto-chico">
+                  <label className="casilla texto-chico qform-opcion__correcta">
                     <input
                       type="radio"
                       name={radioName}
@@ -329,7 +329,7 @@ const QuestionFields = ({ form, setForm }) => {
               </li>
             ))}
           </ol>
-          <div>
+          <div className="qform-agregar">
             <button
               type="button"
               onClick={agregarOpcion}
@@ -346,7 +346,7 @@ const QuestionFields = ({ form, setForm }) => {
       {/* Abierta / simulación: respuesta ideal + rúbrica */}
       {!esMultiple && (
         <>
-          <div className="campo">
+          <div className="campo qform-respuesta">
             <label htmlFor="respuestaIdeal" className="campo__etiqueta">Respuesta ideal</label>
             <textarea
               id="respuestaIdeal"
@@ -362,8 +362,8 @@ const QuestionFields = ({ form, setForm }) => {
             </small>
           </div>
 
-          <fieldset className="conjunto">
-            <legend>
+          <fieldset className="conjunto qform-seccion">
+            <legend className="qform-seccion__titulo">
               Rúbrica <span className="campo__opcional">(opcional)</span>
             </legend>
             <div className="rejilla-campos">

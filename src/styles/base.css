@@ -54,7 +54,7 @@ a {
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
-  text-decoration-color: color-mix(in srgb, currentColor 65%, transparent); /* 3:1 sobre los fondos */
+  text-decoration-color: color-mix(in oklch, currentColor 65%, transparent); /* 3:1 sobre los fondos */
   transition: color var(--m-in) var(--ease-out), text-decoration-color var(--m-in) var(--ease-out);
 }
 
@@ -193,6 +193,7 @@ textarea:focus-visible { outline: 2px solid transparent; outline-offset: 1px; }
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;

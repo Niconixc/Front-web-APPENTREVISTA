@@ -1,14 +1,74 @@
-/* Lista de usuarios: solo lo propio de la tabla; el resto viene de componentes.css.
-   Las reglas cuelgan del bloque .usuarios-tabla para que solo apliquen dentro de esta tabla. */
-.usuarios-tabla .usuarios-tabla__correo {
-  font-weight: var(--peso-medio);
-  white-space: nowrap;
+/* Lista de usuarios, dirección «Claro con color». Las piezas (.metrica, .tarjeta, .tabla, .insignia, .avatar)
+   vienen de componentes.css; aquí solo lo propio de esta pantalla, con prefijo usuarios-. */
+
+/* ---------- Números clave: tres tarjetas en una fila ---------- */
+.usuarios-metricas { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.usuarios-metricas .metrica { gap: 0; padding: var(--e-4) 1.125rem 0.875rem; }
+.usuarios-metrica__valor { margin: 0.875rem 0 0; }
+.usuarios-metricas .metrica__pie { margin-top: 0.875rem; }
+
+/* ---------- Tarjeta de la tabla: cabecera con título display y la tabla adentro ---------- */
+.usuarios-tarjeta { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+.usuarios-tarjeta__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e-4);
+  padding: 1.125rem 1.25rem var(--e-4);
+}
+.usuarios-tarjeta__titulo {
+  font-family: var(--fuente-display);
+  font-size: var(--texto-lg);
+  letter-spacing: -0.01em;
+}
+.usuarios-tarjeta__sub { margin-top: 3px; font-size: var(--texto-xs); color: var(--texto-3); }
+
+/* La tabla ya está dentro de la tarjeta: sin segundo borde ni segunda sombra */
+.usuarios-tabla-contenedor {
+  border: 0;
+  border-top: 1px solid var(--borde);
+  border-radius: 0;
+  box-shadow: none;
 }
 
+.usuarios-tabla td { padding-block: 0.625rem; }
+.usuarios-tabla th:first-child,
+.usuarios-tabla td:first-child { padding-left: 1.25rem; }
+.usuarios-tabla th:last-child,
+.usuarios-tabla td:last-child { padding-right: 1.25rem; }
+.usuarios-tabla tbody td { transition: background-color var(--m-in) var(--ease-out); }
+
+/* Persona: avatar con tono + nombre y correo */
+.usuarios-persona { display: flex; align-items: center; gap: var(--e-3); min-width: 14rem; }
+.usuarios-persona__avatar.avatar { width: 2.25rem; height: 2.25rem; font-family: var(--fuente-display); font-size: var(--texto-sm); }
+.usuarios-persona__textos { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
+.usuarios-persona__nombre { font-weight: var(--peso-medio); font-size: var(--texto-base); white-space: nowrap; }
+.usuarios-persona__propio { font-weight: var(--peso-normal); color: var(--texto-3); }
+.usuarios-persona__correo { font-size: var(--texto-xs); color: var(--texto-3); white-space: nowrap; }
+
+.usuarios-tabla .usuarios-tabla__idioma { color: var(--texto-2); white-space: nowrap; }
 .usuarios-tabla .usuarios-tabla__fecha {
   white-space: nowrap;
+  font-size: var(--texto-xs);
+  color: var(--texto-3);
   font-variant-numeric: tabular-nums;
 }
 
 /* «Activar» y «Desactivar» ocupan el mismo ancho para que la columna no baile entre filas. */
 .usuarios-tabla .usuarios-tabla__estado-accion { min-width: 6.5rem; }
+
+/* ---------- Entrada: cada bloque sube 8 px y aparece, en cascada corta (solo al cargar) ---------- */
+.usuarios-aparece {
+  animation: usuarios-aparece 420ms var(--ease-out) both;
+  animation-delay: calc(var(--orden, 0) * 40ms);
+}
+@keyframes usuarios-aparece { from { opacity: 0; transform: translateY(8px); } }
+
+@media (max-width: 720px) {
+  .usuarios-tarjeta__cabecera { padding: var(--e-4) var(--e-4) var(--e-3); }
+  .usuarios-tabla th:first-child,
+  .usuarios-tabla td:first-child { padding-left: var(--e-4); }
+  .usuarios-tabla th:last-child,
+  .usuarios-tabla td:last-child { padding-right: var(--e-4); }
+}

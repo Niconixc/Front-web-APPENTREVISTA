@@ -32,18 +32,18 @@ const Login = ({ setIsAuthenticated }) => {
   return (
     <main className="acceso">
       <div className="acceso__contenido">
-        <div className="acceso-marca">
-          <span className="acceso-marca__logo" aria-hidden="true">
-            E
-          </span>
-          <span className="acceso-marca__texto">EntrevistaApp</span>
-        </div>
-
-        <div className="tarjeta">
+        <div className="tarjeta acceso__tarjeta">
           <div className="tarjeta__cuerpo acceso__cuerpo">
+            <div className="acceso-marca">
+              <span className="acceso-marca__logo" aria-hidden="true">
+                E
+              </span>
+              <span className="acceso-marca__texto">EntrevistaApp</span>
+            </div>
+
             <div className="acceso__textos">
               <h1 className="acceso__titulo">Panel de administración</h1>
-              <p className="texto-2 texto-chico">Ingresa con tu cuenta de administrador.</p>
+              <p className="acceso__descripcion">Ingresa con tu cuenta de administrador.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="formulario acceso__formulario">

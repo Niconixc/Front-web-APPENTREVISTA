@@ -1,10 +1,19 @@
 /* Marco de la aplicación: menú lateral fijo + contenido. Los estilos globales están en src/styles/. */
 .app { min-height: 100vh; }
 
+body { background: var(--lienzo); }
+
 .marco__contenido {
-  min-height: 100vh;
-  margin-left: var(--ancho-lateral);
+  min-height: calc(100vh - 16px);
+  margin: 8px 8px 8px calc(var(--ancho-lateral) + 0px);
   outline: none;
+  background:
+    radial-gradient(760px 300px at 88% -120px, color-mix(in oklch, var(--acento) 7.5%, transparent), transparent 70%),
+    radial-gradient(620px 260px at 18% -140px, color-mix(in oklch, var(--coral) 6%, transparent), transparent 72%),
+    var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-hoja);
+  box-shadow: var(--sombra-hoja);
 }
 
 .saltar-al-contenido {
@@ -21,5 +30,5 @@
 .saltar-al-contenido:focus { top: var(--e-2); }
 
 @media (max-width: 900px) {
-  .marco__contenido { margin-left: 0; min-height: calc(100vh - 3rem); }
+  .marco__contenido { margin: 0; border-radius: 0; border: 0; min-height: calc(100vh - 3rem); }
 }

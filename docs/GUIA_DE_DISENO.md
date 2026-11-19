@@ -5,15 +5,17 @@ sobrio y confiable, como un panel de un producto real. No tiene que parecer una 
 
 ## Principios
 
-1. **Neutro, cálido y con una sola marca.** Se aplican las skills *taste* (Leonxlnx/taste-skill) y *emil-design-eng* (emilkowalski/skills), instaladas en `~/.claude/skills`.
-   - La interfaz es 90-95 % neutra: fondo gris cálido, tarjetas blancas y bordes finos.
-   - La tinta es casi negra y cálida (`--texto`).
-   - Hay un solo acento, el azul de la app Android (`#3451D1`, `--acento`). Se usa en el botón principal, el foco, los enlaces y lo seleccionado.
-   - Nada violeta ni lavanda: el tono OKLCH queda bajo 270°, también en el tema oscuro.
-   - El menú lateral es claro y la sección actual se marca con una barra de acento.
-   - Tipografía: Funnel Display para títulos y cifras, y Funnel Sans para el texto (Google Fonts), solo en pesos 400 y 500.
-   - Nada baja de 13 px.
-   - El tema oscuro se activa solo si el sistema lo pide (`prefers-color-scheme`).
+1. **Claro con color** (dirección elegida por el equipo entre tres maquetas). Se aplican las skills *taste* y *emil-design-eng* (`~/.claude/skills`).
+   - Un lienzo cálido (`--lienzo`) con el menú. El contenido va en una «hoja» clara y redondeada (`--fondo`), con un brillo de marca muy suave.
+   - Tarjetas blancas con sombras en capas (`--sombra-tarjeta`).
+   - Cada número clave tiene su color de identidad, con los colores de la app:
+     - azul `--acento` (#3451D1): lo general;
+     - verde azulado `--verde`: lo aprobado o al día;
+     - ámbar `--ambar`: lo pendiente o lo que pide atención;
+     - coral `--coral`: el gasto.
+   - Nada violeta: las mezclas se hacen con `color-mix(in oklch, …)` para no correr el tono.
+   - Tipografía: Funnel Display para títulos y cifras, Funnel Sans para el texto y Geist Mono para fechas y cifras chicas. Solo pesos 400 y 500, y nada bajo 13 px.
+   - El tema oscuro se activa solo si el sistema lo pide.
 2. **Los datos primero.** Las tablas son compactas, los números se alinean a la derecha con `tabular-nums`, los títulos
    son cortos y las explicaciones largas van en texto secundario o dentro de un `<details>`.
 3. **Nada decorativo que no informe.** No se usan:
@@ -71,7 +73,9 @@ sobrio y confiable, como un panel de un producto real. No tiene que parecer una 
 
 **Contenedores**
 - `.tarjeta` lleva `__encabezado`, `__titulo`, `__cuerpo` y `__pie`.
-- `.metricas` es una rejilla de números clave. Cada `.metrica` es una tarjeta con `__cabecera` (etiqueta y chip), `__etiqueta`, `__valor`, `__detalle` y `__enlace`.
+- `.metricas` es una rejilla de números clave. Cada `.metrica` lleva `__etiqueta` (con `__icono`), `__valor`, `__destacado` y `__pie`.
+  - Su color sale de las variantes `--verde`, `--ambar`, `--coral` y `--neutra`; sin variante es azul.
+  - Si es un enlace (`a.metrica`), la tarjeta entera lleva a su pantalla y se levanta 2 px al pasar el mouse.
 - `.chip-icono` es un cuadro neutro con el ícono en tinta secundaria; con `--chico` es más pequeño.
 - `.avatar` es un círculo con iniciales (`iniciales()` y `tonoAvatar()` de `services/etiquetas.js`). Tiene las variantes `--chico` y `--tono-1…3` (verde, ámbar y neutro; por defecto, azul).
 - `.barra-apilada` con sus `__parte` (`--2`, `--3`, `--4`, `--peligro`) muestra las partes de un total. Va siempre con una `.leyenda` en texto, porque el color solo no basta.

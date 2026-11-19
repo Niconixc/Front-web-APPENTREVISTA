@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUser, mensajeDeError } from '../services/api';
-import { LIMITES } from '../services/etiquetas';
+import { LIMITES, iniciales, tonoAvatar } from '../services/etiquetas';
 import Icono from './Icono';
 import './CreateUser.css';
 
@@ -75,6 +75,10 @@ const CreateUser = () => {
     }
   };
 
+  // Vista previa de cómo aparecerá en la lista de usuarios (mismo avatar que UserList y el Resumen).
+  const nombrePrevio = formData.nombre.trim();
+  const correoPrevio = formData.correo.trim();
+
   return (
     <div className="pagina pagina--angosta">
       <header className="encabezado-pagina">
@@ -87,82 +91,110 @@ const CreateUser = () => {
         </div>
       </header>
 
-      <form onSubmit={handleSubmit} className="tarjeta">
-        <div className="tarjeta__cuerpo formulario">
-          <div className="rejilla-campos">
-            <div className="campo">
-              <label htmlFor="correo" className="campo__etiqueta">
-                Correo electrónico
-              </label>
-              <input
-                type="email"
-                id="correo"
-                name="correo"
-                value={formData.correo}
-                onChange={handleChange}
-                required
-                autoComplete="off"
-                placeholder="usuario@example.com"
-              />
-            </div>
+      <form onSubmit={handleSubmit} className="tarjeta crear-usuario-tarjeta">
+        <div className="crear-usuario-cabecera">
+          <div>
+            <h2 id="crear-usuario-titulo" className="crear-usuario-cabecera__titulo">Nueva cuenta</h2>
+            <p className="crear-usuario-cabecera__sub">Con el correo y la contraseña la persona inicia sesión.</p>
+          </div>
+          <div className="crear-usuario-previa" aria-hidden="true">
+            <span
+              className={`avatar crear-usuario-previa__avatar ${nombrePrevio ? `avatar--tono-${tonoAvatar(correoPrevio)}` : 'avatar--neutro'}`}
+            >
+              {nombrePrevio ? iniciales(nombrePrevio) : <Icono nombre="usuarios" tamano={16} />}
+            </span>
+            <span className="crear-usuario-previa__textos">
+              <span className={`crear-usuario-previa__nombre truncar${nombrePrevio ? '' : ' texto-3'}`}>
+                {nombrePrevio || 'Sin nombre'}
+              </span>
+              <span className="crear-usuario-previa__correo truncar">{correoPrevio || 'correo pendiente'}</span>
+            </span>
+          </div>
+        </div>
 
-            <div className="campo">
-              <label htmlFor="contrasena" className="campo__etiqueta">
-                Contraseña
-              </label>
-              <input
-                type="password"
-                id="contrasena"
-                name="contrasena"
-                value={formData.contrasena}
-                onChange={handleChange}
-                required
-                autoComplete="new-password"
-                minLength={LIMITES.contrasenaMinima}
-                maxLength={LIMITES.contrasenaMaxima}
-                aria-describedby="contrasena-ayuda"
-              />
-              <p id="contrasena-ayuda" className="campo__ayuda">
-                Entre {LIMITES.contrasenaMinima} y {LIMITES.contrasenaMaxima} caracteres.
-              </p>
-            </div>
+        <div className="tarjeta__cuerpo formulario crear-usuario-cuerpo">
+          <div className="crear-usuario-grupo">
+            <h3 className="crear-usuario-grupo__titulo">Acceso</h3>
+            <div className="rejilla-campos">
+              <div className="campo">
+                <label htmlFor="correo" className="campo__etiqueta">
+                  Correo electrónico
+                </label>
+                <input
+                  type="email"
+                  id="correo"
+                  name="correo"
+                  value={formData.correo}
+                  onChange={handleChange}
+                  required
+                  autoComplete="off"
+                  placeholder="usuario@example.com"
+                />
+              </div>
 
-            <div className="campo campo--ancho">
-              <label htmlFor="nombre" className="campo__etiqueta">
-                Nombre completo <span className="campo__opcional">(opcional)</span>
-              </label>
-              <input
-                type="text"
-                id="nombre"
-                name="nombre"
-                value={formData.nombre}
-                onChange={handleChange}
-                placeholder="Juan Pérez"
-                maxLength={LARGO_MAXIMO_NOMBRE}
-              />
+              <div className="campo">
+                <label htmlFor="contrasena" className="campo__etiqueta">
+                  Contraseña
+                </label>
+                <input
+                  type="password"
+                  id="contrasena"
+                  name="contrasena"
+                  value={formData.contrasena}
+                  onChange={handleChange}
+                  required
+                  autoComplete="new-password"
+                  minLength={LIMITES.contrasenaMinima}
+                  maxLength={LIMITES.contrasenaMaxima}
+                  aria-describedby="contrasena-ayuda"
+                />
+                <p id="contrasena-ayuda" className="campo__ayuda">
+                  Entre {LIMITES.contrasenaMinima} y {LIMITES.contrasenaMaxima} caracteres.
+                </p>
+              </div>
             </div>
+          </div>
 
-            <div className="campo">
-              <label htmlFor="rol" className="campo__etiqueta">
-                Rol
-              </label>
-              <select id="rol" name="rol" value={formData.rol} onChange={handleChange} required>
-                <option value="user">Usuario</option>
-                <option value="admin">Administrador</option>
-              </select>
-            </div>
+          <div className="crear-usuario-grupo">
+            <h3 className="crear-usuario-grupo__titulo">Perfil y permisos</h3>
+            <div className="rejilla-campos">
+              <div className="campo campo--ancho">
+                <label htmlFor="nombre" className="campo__etiqueta">
+                  Nombre completo <span className="campo__opcional">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  id="nombre"
+                  name="nombre"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                  placeholder="Juan Pérez"
+                  maxLength={LARGO_MAXIMO_NOMBRE}
+                />
+              </div>
 
-            <div className="campo">
-              <label htmlFor="idioma" className="campo__etiqueta">
-                Idioma
-              </label>
-              <select id="idioma" name="idioma" value={formData.idioma} onChange={handleChange} required>
-                {IDIOMAS.map((idioma) => (
-                  <option key={idioma.value} value={idioma.value}>
-                    {idioma.label}
-                  </option>
-                ))}
-              </select>
+              <div className="campo">
+                <label htmlFor="rol" className="campo__etiqueta">
+                  Rol
+                </label>
+                <select id="rol" name="rol" value={formData.rol} onChange={handleChange} required>
+                  <option value="user">Usuario</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              </div>
+
+              <div className="campo">
+                <label htmlFor="idioma" className="campo__etiqueta">
+                  Idioma
+                </label>
+                <select id="idioma" name="idioma" value={formData.idioma} onChange={handleChange} required>
+                  {IDIOMAS.map((idioma) => (
+                    <option key={idioma.value} value={idioma.value}>
+                      {idioma.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 

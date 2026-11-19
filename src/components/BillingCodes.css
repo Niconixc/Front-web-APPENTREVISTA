@@ -1,6 +1,55 @@
-/* Códigos de suscripción: solo el layout propio. Tarjeta, campos, avisos, tabla e insignias vienen de componentes.css. */
+/*
+ * Códigos de suscripción, dirección «Claro con color». Tarjeta, campos, avisos e insignias vienen de componentes.css;
+ * aquí va la cabecera de las tarjetas, la lista de códigos de la sesión y el botón copiar con su check.
+ */
 
-/* Rejilla del formulario: tipo, duración y usos en una fila; etiqueta (doble) y fecha en la siguiente. */
+/* ---------- Tarjetas con cabecera (título display + subtítulo) ---------- */
+.codigos-tarjeta { min-width: 0; overflow: hidden; }
+
+.codigos-cabecera {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-3);
+  padding: 1.125rem 1.25rem 0;
+}
+.codigos-cabecera__icono {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radio);
+  background: var(--acento-tinte);
+  color: var(--acento);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--acento) 16%, transparent);
+}
+.codigos-cabecera__textos { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.codigos-cabecera__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  font-family: var(--fuente-display);
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-medio);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+.codigos-cabecera__sub { font-size: var(--texto-xs); color: var(--texto-3); max-width: 72ch; }
+
+.codigos-contador {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.375rem;
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  border-radius: 999px;
+  background: var(--acento-suave);
+  color: var(--acento-texto);
+  font-size: var(--texto-xs);
+  letter-spacing: 0;
+}
+
+/* ---------- Formulario: tipo, duración y usos en una fila; etiqueta (doble) y fecha en la siguiente ---------- */
 .codigos-campos {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -9,7 +58,7 @@
 
 .codigos-campo-etiqueta { grid-column: span 2; }
 
-/* Aviso de éxito: el código y el botón copiar en la misma línea. */
+/* Aviso de éxito: el código grande en mono y el botón copiar en la misma línea. */
 .codigos-exito {
   flex: 1;
   flex-direction: row;
@@ -18,17 +67,99 @@
   gap: var(--e-3);
   flex-wrap: wrap;
 }
+.codigos-exito__texto { display: inline-flex; align-items: baseline; gap: var(--e-2); flex-wrap: wrap; }
+.codigos-exito__codigo {
+  font-size: var(--texto-md);
+  font-weight: var(--peso-medio);
+  letter-spacing: 0.02em;
+  color: var(--texto);
+}
+
+/* ---------- Botón copiar: el ícono se cruza con un check verde (escala + desenfoque, 200 ms) ---------- */
+.codigos-copiar__iconos { position: relative; display: grid; place-items: center; width: 16px; height: 16px; }
+.codigos-copiar__icono {
+  grid-area: 1 / 1;
+  transition: opacity 150ms var(--ease-out), transform 200ms var(--ease-out), filter 150ms var(--ease-out);
+}
+.codigos-copiar__icono--check { color: var(--verde); opacity: 0; transform: scale(0.25); filter: blur(4px); }
+.codigos-copiar__iconos--hecho .codigos-copiar__icono--copiar { opacity: 0; transform: scale(0.25); filter: blur(4px); }
+.codigos-copiar__iconos--hecho .codigos-copiar__icono--check { opacity: 1; transform: none; filter: none; }
+
+.boton.codigos-copiar--hecho,
+.boton.codigos-copiar--hecho:hover:not(:disabled) {
+  background: var(--verde-tinte);
+  border-color: color-mix(in oklch, var(--verde) 30%, transparent);
+}
 
 /* ---------- Lista de la sesión ---------- */
-.codigos-tabla td { white-space: nowrap; }
-.codigos-tabla .codigos-etiqueta { white-space: normal; min-width: 10rem; }
+.codigos-filas { list-style: none; margin: var(--e-3) 0 0; padding: 0 var(--e-2) var(--e-2); }
+.codigos-filas > li { position: relative; }
+.codigos-filas > li + li::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--e-3);
+  right: var(--e-3);
+  height: 1px;
+  background: var(--borde);
+}
 
-.codigos-codigo { font-weight: var(--peso-medio); }
+.codigos-fila {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem var(--e-3);
+  border-radius: 12px;
+  transition: background-color var(--m-in) var(--ease-out);
+}
+.codigos-fila:hover { background: var(--superficie-2); }
+
+/* Un código recién creado entra arriba: sube 6 px y aparece */
+.codigos-fila { animation: codigos-entra 320ms var(--ease-out) both; }
+@keyframes codigos-entra { from { opacity: 0; transform: translateY(-6px); } }
+
+/* Color por tipo de licencia: promocional azul, institucional verde, Google ámbar */
+.codigos-fila__icono {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radio);
+  background: var(--superficie-2);
+  color: var(--texto-3);
+  box-shadow: inset 0 0 0 1px var(--borde);
+}
+.codigos-fila__icono--PROM { background: var(--acento-tinte); color: var(--acento); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--acento) 16%, transparent); }
+.codigos-fila__icono--INST { background: var(--verde-tinte); color: var(--verde); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--verde) 18%, transparent); }
+.codigos-fila__icono--GOOG { background: var(--ambar-tinte); color: var(--ambar); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--ambar) 20%, transparent); }
+
+.codigos-fila__principal { display: flex; flex-direction: column; gap: var(--e-2); min-width: 0; }
+.codigos-fila__linea { display: flex; align-items: center; gap: var(--e-2); flex-wrap: wrap; }
+
+.codigos-codigo {
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-medio);
+  letter-spacing: 0.02em;
+  color: var(--texto);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.codigos-datos { display: flex; flex-wrap: wrap; gap: var(--e-1) var(--e-5); margin: 0; font-size: var(--texto-xs); }
+.codigos-dato { display: flex; align-items: baseline; gap: 0.375rem; min-width: 0; }
+.codigos-dato dt { color: var(--texto-3); }
+.codigos-dato dd { margin: 0; color: var(--texto-2); white-space: nowrap; }
+.codigos-dato--etiqueta dd { white-space: normal; overflow-wrap: anywhere; color: var(--texto); }
 
 /* El contador real de usos no está disponible en V2. */
 .codigos-usos { color: var(--texto-3); cursor: help; }
 
-.codigos-fila-expirada td { color: var(--texto-3); }
+.codigos-fila--expirada .codigos-codigo,
+.codigos-fila--expirada .codigos-dato dd { color: var(--texto-3); }
+.codigos-fila--expirada .codigos-fila__icono { background: var(--superficie-2); color: var(--texto-3); box-shadow: inset 0 0 0 1px var(--borde); }
+
+.codigos-vacio { padding: var(--e-8) var(--e-4) var(--e-10); }
 
 @media (max-width: 960px) {
   .codigos-campos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -37,4 +168,13 @@
 
 @media (max-width: 600px) {
   .codigos-campos { grid-template-columns: minmax(0, 1fr); }
+  .codigos-cabecera { flex-wrap: wrap; padding: var(--e-4) var(--e-4) 0; }
+  .codigos-fila { grid-template-columns: minmax(0, 1fr) auto; }
+  .codigos-fila__icono { display: none; }
+}
+
+@media (forced-colors: active) {
+  .codigos-cabecera__icono,
+  .codigos-fila__icono,
+  .codigos-contador { border: 1px solid CanvasText; }
 }

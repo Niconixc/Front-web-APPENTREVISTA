@@ -30,13 +30,15 @@ const TopeGeneracionIa = ({ tope, encabezado = '', desactualizado = false, plano
   const estilo = ESTILO_POR_NIVEL[tope.nivel] ?? ESTILO_POR_NIVEL.ok;
   return (
     <div className={`aviso tope-ia tope-ia-${tope.nivel} ${estilo.aviso}${plano ? ' tope-ia--plano' : ''}`.trim()}>
-      <Icono nombre={estilo.icono} className="aviso__icono" />
+      <span className="tope-ia-icono" aria-hidden="true">
+        <Icono nombre={estilo.icono} className="aviso__icono" />
+      </span>
       <div className="aviso__contenido tope-ia-contenido">
         {encabezado && <p className="tope-ia-encabezado">{encabezado}</p>}
         {nota && <p className="tope-ia-nota">{nota}</p>}
         <p className="tope-ia-titulo">
-          <span className={`insignia insignia--punto ${estilo.insignia}`.trim()}>{textos.estado}</span>
-          <span>{textos.titulo}</span>
+          <span className={`insignia insignia--punto tope-ia-estado ${estilo.insignia}`.trim()}>{textos.estado}</span>
+          <span className="tope-ia-titulo__texto">{textos.titulo}</span>
         </p>
         {!tope.desactivado && (
           <div

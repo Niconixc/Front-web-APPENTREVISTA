@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
-  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Rectangle, ResponsiveContainer,
 } from 'recharts';
 import {
   getUsers, contarPreguntas, getCostosIa, getCargos, getSkillsTrending, mensajeDeError,
 } from '../services/api';
 import {
   CATEGORIAS, ESTADOS_PREGUNTA, LIMITES, etiqueta, formatearDiaUtc, diaUtc, diasEntre, formatearPesos, NOTA_TIPO_CAMBIO, formatearDiaSinZona, TIPO_CAMBIO_CLP,
+  iniciales, tonoAvatar,
 } from '../services/etiquetas';
 import { leerTopeGeneracion } from '../services/topeGeneracion';
 import TopeGeneracionIa from './TopeGeneracionIa';
@@ -87,13 +88,31 @@ const descargarCsv = (nombreArchivo, encabezados, filas) => {
 // Componentes pequeños
 // ============================================
 
-/** Celda de la fila de números clave (.metricas). */
-const TarjetaResumen = ({ valor, texto, detalle }) => (
-  <div className="metrica">
-    <span className="metrica__etiqueta">{texto}</span>
+/** Porcentaje entero de una parte sobre el total (0 si no hay total). */
+const porcentaje = (parte, total) => (total > 0 ? Math.round(((Number(parte) || 0) / total) * 100) : 0);
+
+/**
+ * Celda de la fila de números clave (.metricas). tono: color de identidad de .metrica (verde, ambar, coral, neutra;
+ * sin tono, azul). icono: nombre de Icono para el cuadro de la etiqueta.
+ */
+const TarjetaResumen = ({ valor, texto, detalle, tono = '', icono = '' }) => (
+  <div className={`metrica${tono ? ` metrica--${tono}` : ''}`}>
+    <span className="metrica__etiqueta">
+      {icono && (
+        <span className="metrica__icono" aria-hidden="true"><Icono nombre={icono} tamano={15} /></span>
+      )}
+      {texto}
+    </span>
     <span className="metrica__valor">{valor}</span>
-    {detalle && <span className="metrica__detalle">{detalle}</span>}
+    {detalle && <span className="metrica__pie">{detalle}</span>}
   </div>
+);
+
+/** Ícono de color junto al título de cada sección (solo identidad: el título ya lo dice en palabras). */
+const IconoSeccion = ({ nombre, tono }) => (
+  <span className={`informes-seccion__icono informes-seccion__icono--${tono}`} aria-hidden="true">
+    <Icono nombre={nombre} tamano={16} />
+  </span>
 );
 
 const ErrorSeccion = ({ mensaje, onReintentar }) => (
@@ -114,19 +133,79 @@ const SinDatos = ({ texto }) => (
   </div>
 );
 
-/** Tarjeta de un gráfico o tabla: título, control opcional a la derecha y contenido. */
-const TarjetaGrafico = ({ titulo, control, children, sinRelleno = false }) => (
+/** Tarjeta de un gráfico o tabla: título display con subtítulo, control opcional a la derecha y contenido. */
+const TarjetaGrafico = ({ titulo, subtitulo, control, children, sinRelleno = false }) => (
   <div className="tarjeta informes-tarjeta">
-    <div className="tarjeta__encabezado">
-      <h3 className="tarjeta__titulo">{titulo}</h3>
+    <div className="informes-tarjeta__cabecera">
+      <div className="informes-tarjeta__textos">
+        <h3 className="informes-tarjeta__titulo">{titulo}</h3>
+        {subtitulo && <p className="informes-tarjeta__sub">{subtitulo}</p>}
+      </div>
       {control}
     </div>
-    <div className={sinRelleno ? 'informes-tarjeta__tabla' : 'tarjeta__cuerpo'}>{children}</div>
+    <div className={sinRelleno ? 'informes-tarjeta__tabla' : 'informes-tarjeta__cuerpo'}>{children}</div>
   </div>
 );
 
 /** Etiqueta "Nombre: valor (x%)" para los PieChart de conteos. */
 const etiquetaTorta = ({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`;
+
+/** La misma etiqueta dibujada en tinta secundaria (no del color del sector, que en los tonos claros no se lee). */
+const etiquetaTortaEn = (color) => {
+  const EtiquetaTorta = (props) => (
+    <text x={props.x} y={props.y} fill={color} fontSize={13} textAnchor={props.textAnchor} dominantBaseline="central">
+      {etiquetaTorta(props)}
+    </text>
+  );
+  return EtiquetaTorta;
+};
+
+/** Barra de abajo del gasto diario: si el día no tiene generación, ella es la cima y lleva las esquinas redondeadas. */
+const BarraReportes = (props) => (
+  <Rectangle {...props} radius={props.payload?.generacion > 0 ? 0 : [5, 5, 0, 0]} />
+);
+
+/** Globo del gasto diario (el del Resumen): oscuro, con el día, el total y cada serie. */
+const GloboGastoDia = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  const fila = payload[0].payload;
+  return (
+    <div className="informes-globo">
+      <p className="informes-globo__titulo mono">{formatearDiaUtc(label)} (UTC)</p>
+      <p className="informes-globo__total">{formatearPesos(fila.total, 1)}</p>
+      <p className="informes-globo__fila">
+        <span><i className="informes-globo__marca" />Reportes de entrevista</span>
+        <b className="mono">{formatearPesos(fila.reportes, 1)}</b>
+      </p>
+      <p className="informes-globo__fila">
+        <span><i className="informes-globo__marca informes-globo__marca--2" />Generación de preguntas</span>
+        <b className="mono">{formatearPesos(fila.generacion, 1)}</b>
+      </p>
+    </div>
+  );
+};
+
+/**
+ * Globo oscuro para los demás gráficos: el nombre de la barra (si lo hay) y una fila por serie con su color.
+ * Recharts le pasa active, payload y label; formatoValor da el texto de cada valor.
+ */
+const GloboInformes = ({ active, payload, label, formatoValor = numero, conEtiqueta = true }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="informes-globo">
+      {conEtiqueta && label != null && label !== '' && <p className="informes-globo__titulo">{label}</p>}
+      {payload.map((item) => (
+        <p key={`${item.dataKey}-${item.name}`} className="informes-globo__fila">
+          <span>
+            <i className="informes-globo__marca" style={{ background: item.payload?.fill || item.color }} />
+            {item.name}
+          </span>
+          <b className="mono">{formatoValor(item.value)}</b>
+        </p>
+      ))}
+    </div>
+  );
+};
 
 // ============================================
 // Pantalla
@@ -154,35 +233,28 @@ const Informes = () => {
   // ---------- Estilo de los gráficos (desde los tokens) ----------
   const paleta = usePaletaGrafico();
   const grafico = useMemo(() => {
-    const [serie1, serie2, serie3] = paleta.series;
+    const [serie1, serie2, serie3, serie4] = paleta.series;
+    // Ejes sin línea ni marcas: las cifras y fechas en mono 13 px; los nombres (categorías, áreas, skills) en la letra
+    // del texto, que se lee mejor.
+    const ejeBase = { stroke: paleta.rejilla, tickLine: false, axisLine: false };
     return {
       series: paleta.series,
       reportes: serie1,
       generacion: serie2,
       barra: serie1,
+      // Mismo significado que en el Resumen: verde = activo o aprobado, ámbar = pendiente.
       tonos: { activo: serie3, inactivo: paleta.ejes },
-      estados: { pendiente: serie2, aprobada: serie3, rechazada: paleta.peligro },
+      estados: { pendiente: serie4, aprobada: serie3, rechazada: paleta.peligro },
       neutro: paleta.ejes,
       separador: paleta.superficie,
-      rejilla: { stroke: paleta.rejilla },
-      eje: { stroke: paleta.rejilla, tick: { fill: paleta.ejes, fontSize: 13 }, tickLine: false },
-      tooltip: {
-        contentStyle: {
-          backgroundColor: paleta.superficie,
-          border: `1px solid ${paleta.borde}`,
-          borderRadius: 8,
-          fontSize: 13,
-        },
-        labelStyle: { color: paleta.texto, fontWeight: 500 },
-        itemStyle: { color: paleta.texto2 },
-        cursor: { fill: paleta.cursor },
-      },
-      leyenda: {
-        iconType: 'square',
-        iconSize: 10,
-        wrapperStyle: { fontSize: 13 },
-        formatter: (valor) => <span style={{ color: paleta.texto2 }}>{valor}</span>,
-      },
+      textoEtiqueta: paleta.texto2,
+      rejilla: { stroke: paleta.rejilla, strokeDasharray: '2 4' },
+      eje: { ...ejeBase, tick: { fill: paleta.ejes, fontSize: 13, fontFamily: 'Geist Mono, ui-monospace, monospace' } },
+      ejeTexto: { ...ejeBase, tick: { fill: paleta.ejes, fontSize: 13 } },
+      cursor: { fill: paleta.cursor },
+      // Esquinas redondeadas arriba (o a la derecha en las barras horizontales).
+      radioArriba: [6, 6, 0, 0],
+      radioDerecha: [0, 6, 6, 0],
     };
   }, [paleta]);
 
@@ -416,8 +488,13 @@ const Informes = () => {
     ? resumenUsuarios.ordenados
     : resumenUsuarios.ordenados.slice(0, USUARIOS_VISIBLES);
 
+  // Solo para mostrar: participación de cada parte en el gasto del rango.
+  const costoTotal = Number(totalCostos?.costoUsd) || 0;
+  const totalModelos = costosPorModelo.reduce((s, m) => s + m.value, 0);
+  const fallidasCostos = Number(totalCostos?.fallidas) || 0;
+
   return (
-    <div className="pagina">
+    <div className="pagina informes">
       <header className="encabezado-pagina">
         <div className="encabezado-pagina__textos">
           <h1 className="encabezado-pagina__titulo">Informes y costos IA</h1>
@@ -451,30 +528,45 @@ const Informes = () => {
       {/* ============ Sección 1: Costos de IA ============ */}
       <section className="seccion informes-seccion" aria-labelledby="informes-costos">
         <div className="seccion__encabezado">
-          <h2 className="seccion__titulo" id="informes-costos">Costos de IA</h2>
+          <h2 className="seccion__titulo informes-seccion__titulo" id="informes-costos">
+            <IconoSeccion nombre="dinero" tono="coral" />
+            Costos de IA
+          </h2>
         </div>
 
         {topeGeneracion && (
-          <div className={`informes-bloque${costos.cargando ? ' informes-actualizando' : ''}`}>
-            <h3 className="informes-subtitulo">Tope mensual de generación de preguntas (mes en curso, UTC)</h3>
-            <TopeGeneracionIa tope={topeGeneracion} />
-            <details className="desplegable">
-              <summary>Cómo se calcula el tope</summary>
-              <div className="desplegable__cuerpo">
-                <p>
-                  Este bloque no depende del rango de abajo: siempre muestra el mes en curso (UTC). Es el mismo cálculo
-                  que hace el servidor antes de cada generación: suma lo que gastaron todos los administradores,
-                  incluidas las llamadas fallidas con su costo estimado. Una llamada que se cortó por tiempo
-                  (provider_timeout) no suma, porque el proveedor no informó tokens, así que lo cobrado de verdad
-                  puede ser algo mayor.
-                </p>
+          <div className={`tarjeta informes-tope${costos.cargando ? ' informes-actualizando' : ''}`}>
+            <div className="informes-tarjeta__cabecera">
+              <div className="informes-tarjeta__textos">
+                <h3 className="informes-tarjeta__titulo">Tope mensual de generación de preguntas</h3>
+                <p className="informes-tarjeta__sub">Mes en curso (UTC) · no depende del rango de fechas</p>
               </div>
-            </details>
+            </div>
+            <div className="informes-tope__cuerpo">
+              <TopeGeneracionIa tope={topeGeneracion} plano />
+              <details className="desplegable">
+                <summary>Cómo se calcula el tope</summary>
+                <div className="desplegable__cuerpo">
+                  <p>
+                    Este bloque no depende del rango de abajo: siempre muestra el mes en curso (UTC). Es el mismo cálculo
+                    que hace el servidor antes de cada generación: suma lo que gastaron todos los administradores,
+                    incluidas las llamadas fallidas con su costo estimado. Una llamada que se cortó por tiempo
+                    (provider_timeout) no suma, porque el proveedor no informó tokens, así que lo cobrado de verdad
+                    puede ser algo mayor.
+                  </p>
+                </div>
+              </details>
+            </div>
           </div>
         )}
 
         <div className="informes-bloque">
-          <h3 className="informes-subtitulo">Gasto por rango de fechas (UTC)</h3>
+          <div className="informes-bloque__cabecera">
+            <h3 className="informes-bloque__titulo">Gasto por rango de fechas</h3>
+            <p className="informes-bloque__sub">
+              Días en UTC · hasta <span className="mono">{LIMITES.diasCostosMaximo}</span> días por consulta
+            </p>
+          </div>
           <form className="filtros informes-rango" onSubmit={handleAplicar}>
             <label className="campo">
               <span className="campo__etiqueta">Desde</span>
@@ -521,24 +613,45 @@ const Informes = () => {
 
         {datosCostos && totalCostos && (
           <div className={`informes-bloque${costos.cargando ? ' informes-actualizando' : ''}`}>
-            <p className="nota">
-              Rango consultado: <strong>{formatearDiaUtc(datosCostos.desde)}</strong> a{' '}
-              <strong>{formatearDiaUtc(datosCostos.hasta)}</strong> ({costosPorDia.length} días). Los días se
+            <p className="nota informes-nota-rango">
+              Rango consultado: <strong className="mono">{formatearDiaUtc(datosCostos.desde)}</strong> a{' '}
+              <strong className="mono">{formatearDiaUtc(datosCostos.hasta)}</strong> ({costosPorDia.length} días). Los días se
               cuentan en UTC, por lo que el gasto de la noche en Chile puede aparecer en el día siguiente.{' '}
               {NOTA_TIPO_CAMBIO} El CSV trae los montos exactos en dólares.
             </p>
 
             <div className="metricas informes-metricas informes-metricas--costos">
               <TarjetaResumen
+                tono="coral"
+                icono="dinero"
                 valor={formatearPesos(totalCostos.costoUsd)}
                 texto="Gasto total"
                 detalle={`Incluye ${formatearPesos(totalCostos.costoEstimadoUsd)} estimado`}
               />
-              <TarjetaResumen valor={formatearPesos(datosCostos.reportes?.costoUsd)} texto="Reportes de entrevista" />
-              <TarjetaResumen valor={formatearPesos(datosCostos.generacionPreguntas?.costoUsd)} texto="Generación de preguntas" />
-              <TarjetaResumen valor={numero(totalCostos.usos)} texto="Usos con IA" detalle="Reportes + preguntas generadas" />
-              <TarjetaResumen valor={numero(totalCostos.fallidas)} texto="Fallidas" />
               <TarjetaResumen
+                tono="coral"
+                icono="informes"
+                valor={formatearPesos(datosCostos.reportes?.costoUsd)}
+                texto="Reportes de entrevista"
+                detalle={`${porcentaje(datosCostos.reportes?.costoUsd, costoTotal)} % del gasto`}
+              />
+              <TarjetaResumen
+                tono="coral"
+                icono="generar"
+                valor={formatearPesos(datosCostos.generacionPreguntas?.costoUsd)}
+                texto="Generación de preguntas"
+                detalle={`${porcentaje(datosCostos.generacionPreguntas?.costoUsd, costoTotal)} % del gasto`}
+              />
+              <TarjetaResumen icono="check-circulo" valor={numero(totalCostos.usos)} texto="Usos con IA" detalle="Reportes + preguntas generadas" />
+              <TarjetaResumen
+                tono={fallidasCostos > 0 ? 'ambar' : 'neutra'}
+                icono="alerta"
+                valor={numero(totalCostos.fallidas)}
+                texto="Fallidas"
+              />
+              <TarjetaResumen
+                tono="neutra"
+                icono="codigos"
                 valor={numero((Number(totalCostos.tokensEntrada) || 0) + (Number(totalCostos.tokensSalida) || 0))}
                 texto="Tokens"
                 detalle="Entrada + salida"
@@ -563,52 +676,109 @@ const Informes = () => {
               </div>
             ) : (
               <>
-                <TarjetaGrafico titulo="Gasto por día">
-                  <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={gastoDiarioPesos}>
+                <TarjetaGrafico
+                  titulo="Gasto por día"
+                  subtitulo={(
+                    <>
+                      <span className="mono">{formatearDiaUtc(datosCostos.desde)} al {formatearDiaUtc(datosCostos.hasta)}</span>
+                      {' · '}{costosPorDia.length} días (UTC)
+                    </>
+                  )}
+                  control={(
+                    <div className="informes-total">
+                      <span className="informes-total__cifra num">{formatearPesos(totalCostos.costoUsd)}</span>
+                      <span className="informes-tarjeta__sub">Total del rango</span>
+                    </div>
+                  )}
+                >
+                  <ul className="leyenda informes-leyenda">
+                    <li>
+                      <span className="leyenda__marca" />Reportes de entrevista{' '}
+                      <span className="mono texto-3">{formatearPesos(datosCostos.reportes?.costoUsd)}</span>
+                    </li>
+                    <li>
+                      <span className="leyenda__marca leyenda__marca--2" />Generación de preguntas{' '}
+                      <span className="mono texto-3">{formatearPesos(datosCostos.generacionPreguntas?.costoUsd)}</span>
+                    </li>
+                  </ul>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={gastoDiarioPesos} margin={{ top: 8, right: 4, bottom: 0, left: 0 }} barCategoryGap="24%">
                       <CartesianGrid {...grafico.rejilla} vertical={false} />
-                      <XAxis dataKey="fecha" {...grafico.eje} tickFormatter={formatearDiaUtc} minTickGap={16} />
-                      <YAxis {...grafico.eje} tickFormatter={pesosEje} width={80} />
-                      <Tooltip
-                        {...grafico.tooltip}
-                        labelFormatter={(fecha) => `${formatearDiaUtc(fecha)} (UTC)`}
-                        formatter={(valor, nombre) => [formatearPesos(valor, 1), nombre]}
+                      <XAxis dataKey="fecha" {...grafico.eje} tickFormatter={(f) => formatearDiaUtc(f).slice(0, 5)} minTickGap={24} />
+                      <YAxis {...grafico.eje} tickFormatter={pesosEje} width={72} />
+                      <Tooltip content={<GloboGastoDia />} cursor={grafico.cursor} />
+                      <Bar
+                        dataKey="reportes"
+                        stackId="a"
+                        fill={grafico.reportes}
+                        name="Reportes de entrevista"
+                        maxBarSize={28}
+                        shape={BarraReportes}
                       />
-                      <Legend {...grafico.leyenda} />
-                      <Bar dataKey="reportes" stackId="a" fill={grafico.reportes} name="Reportes de entrevista" />
-                      <Bar dataKey="generacion" stackId="a" fill={grafico.generacion} name="Generación de preguntas" />
+                      <Bar
+                        dataKey="generacion"
+                        stackId="a"
+                        fill={grafico.generacion}
+                        name="Generación de preguntas"
+                        maxBarSize={28}
+                        radius={[5, 5, 0, 0]}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </TarjetaGrafico>
 
                 <div className="informes-rejilla informes-rejilla--modelos">
-                  <TarjetaGrafico titulo="Gasto por modelo">
+                  <TarjetaGrafico titulo="Gasto por modelo" subtitulo="Qué parte del gasto se llevó cada modelo">
                     {costosPorModelo.length === 0 ? (
                       <SinDatos texto="Ningún modelo registra costo en este rango" />
                     ) : (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={costosPorModelo}
-                            cx="50%"
-                            cy="45%"
-                            outerRadius={90}
-                            dataKey="value"
-                            nameKey="name"
-                            stroke={grafico.separador}
-                          >
-                            {costosPorModelo.map((m, i) => (
-                              <Cell key={m.name} fill={grafico.series[i % grafico.series.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip {...grafico.tooltip} formatter={(valor, nombre) => [formatearPesos(valor), nombre]} />
-                          <Legend {...grafico.leyenda} />
-                        </PieChart>
-                      </ResponsiveContainer>
+                      <>
+                        <ResponsiveContainer width="100%" height={220}>
+                          <PieChart>
+                            <Pie
+                              data={costosPorModelo}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={58}
+                              outerRadius={92}
+                              paddingAngle={costosPorModelo.length > 1 ? 2 : 0}
+                              cornerRadius={4}
+                              dataKey="value"
+                              nameKey="name"
+                              stroke={grafico.separador}
+                              strokeWidth={2}
+                            >
+                              {costosPorModelo.map((m, i) => (
+                                <Cell key={m.name} fill={grafico.series[i % grafico.series.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              content={<GloboInformes conEtiqueta={false} formatoValor={(valor) => formatearPesos(valor)} />}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <ul className="informes-modelos">
+                          {costosPorModelo.map((m, i) => (
+                            <li key={m.name} className="informes-modelos__fila">
+                              <span className="informes-modelos__nombre">
+                                <i
+                                  className="informes-modelos__marca"
+                                  style={{ background: grafico.series[i % grafico.series.length] }}
+                                />
+                                <span className="mono truncar">{m.name}</span>
+                              </span>
+                              <span className="informes-modelos__cifras">
+                                <span className="num">{formatearPesos(m.value)}</span>
+                                <span className="mono texto-3">{porcentaje(m.value, totalModelos)} %</span>
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
                     )}
                   </TarjetaGrafico>
 
-                  <TarjetaGrafico titulo="Detalle por modelo" sinRelleno>
+                  <TarjetaGrafico titulo="Detalle por modelo" subtitulo="Usos, tokens y costo de cada modelo en el rango" sinRelleno>
                     <div className="tabla-contenedor informes-tabla-contenedor">
                       <table className="tabla tabla--compacta informes-tabla">
                         <thead>
@@ -630,7 +800,7 @@ const Informes = () => {
                               <td className="num">{numero(m.gasto?.fallidas)}</td>
                               <td className="num">{numero(m.gasto?.tokensEntrada)}</td>
                               <td className="num">{numero(m.gasto?.tokensSalida)}</td>
-                              <td className="num">{formatearPesos(m.gasto?.costoUsd)}</td>
+                              <td className="num informes-tabla__monto">{formatearPesos(m.gasto?.costoUsd)}</td>
                               <td className="num">{formatearPesos(m.gasto?.costoEstimadoUsd)}</td>
                             </tr>
                           ))}
@@ -648,7 +818,10 @@ const Informes = () => {
       {/* ============ Sección 2: Usuarios ============ */}
       <section className="seccion informes-seccion" aria-labelledby="informes-usuarios">
         <div className="seccion__encabezado">
-          <h2 className="seccion__titulo" id="informes-usuarios">Usuarios</h2>
+          <h2 className="seccion__titulo informes-seccion__titulo" id="informes-usuarios">
+            <IconoSeccion nombre="usuarios" tono="azul" />
+            Usuarios
+          </h2>
         </div>
         {usuarios.error && <ErrorSeccion mensaje={usuarios.error} onReintentar={cargarUsuarios} />}
         {usuarios.cargando && <Cargando texto="Cargando usuarios..." />}
@@ -656,14 +829,20 @@ const Informes = () => {
         {!usuarios.cargando && !usuarios.error && (
           <>
             <div className="metricas informes-metricas informes-metricas--usuarios">
-              <TarjetaResumen valor={numero(resumenUsuarios.total)} texto="Total usuarios" />
-              <TarjetaResumen valor={numero(resumenUsuarios.activos)} texto="Activos" />
-              <TarjetaResumen valor={numero(resumenUsuarios.inactivos)} texto="Inactivos" />
-              <TarjetaResumen valor={numero(resumenUsuarios.admins)} texto="Administradores" />
+              <TarjetaResumen icono="usuarios" valor={numero(resumenUsuarios.total)} texto="Total usuarios" />
+              <TarjetaResumen
+                tono="verde"
+                icono="check-circulo"
+                valor={numero(resumenUsuarios.activos)}
+                texto="Activos"
+                detalle={`${porcentaje(resumenUsuarios.activos, resumenUsuarios.total)} % del total`}
+              />
+              <TarjetaResumen tono="neutra" icono="reloj" valor={numero(resumenUsuarios.inactivos)} texto="Inactivos" />
+              <TarjetaResumen icono="escudo" valor={numero(resumenUsuarios.admins)} texto="Administradores" />
             </div>
 
             <div className="informes-rejilla">
-              <TarjetaGrafico titulo="Estado de usuarios">
+              <TarjetaGrafico titulo="Estado de usuarios" subtitulo="Cuentas activas e inactivas">
                 {resumenUsuarios.porEstado.length === 0 ? (
                   <SinDatos texto="No hay usuarios registrados" />
                 ) : (
@@ -674,72 +853,96 @@ const Informes = () => {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={etiquetaTorta}
+                        label={etiquetaTortaEn(grafico.textoEtiqueta)}
+                        innerRadius={50}
                         outerRadius={80}
+                        paddingAngle={resumenUsuarios.porEstado.length > 1 ? 2 : 0}
+                        cornerRadius={4}
                         dataKey="value"
                         stroke={grafico.separador}
+                        strokeWidth={2}
                       >
                         {resumenUsuarios.porEstado.map((item) => (
                           <Cell key={item.name} fill={grafico.tonos[item.tono]} />
                         ))}
                       </Pie>
-                      <Tooltip {...grafico.tooltip} />
+                      <Tooltip content={<GloboInformes conEtiqueta={false} />} />
                     </PieChart>
                   </ResponsiveContainer>
                 )}
               </TarjetaGrafico>
 
-              <TarjetaGrafico titulo="Altas por mes (últimos 12 meses)">
+              <TarjetaGrafico titulo="Altas por mes (últimos 12 meses)" subtitulo="Cuentas nuevas según su fecha de registro">
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={resumenUsuarios.altasPorMes}>
+                  <BarChart data={resumenUsuarios.altasPorMes} margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
                     <CartesianGrid {...grafico.rejilla} vertical={false} />
                     <XAxis dataKey="mes" {...grafico.eje} minTickGap={8} />
-                    <YAxis {...grafico.eje} allowDecimals={false} />
-                    <Tooltip {...grafico.tooltip} />
-                    <Bar dataKey="altas" fill={grafico.barra} name="Usuarios nuevos" />
+                    <YAxis {...grafico.eje} allowDecimals={false} width={40} />
+                    <Tooltip content={<GloboInformes />} cursor={grafico.cursor} />
+                    <Bar dataKey="altas" fill={grafico.barra} name="Usuarios nuevos" maxBarSize={32} radius={grafico.radioArriba} />
                   </BarChart>
                 </ResponsiveContainer>
               </TarjetaGrafico>
             </div>
 
-            <div className="informes-bloque">
-              <h3 className="informes-subtitulo">Lista de usuarios</h3>
-              <div className="tabla-contenedor">
-                <table className="tabla tabla--compacta informes-tabla">
-                  <thead>
-                    <tr>
-                      <th>Nombre</th>
-                      <th>Correo</th>
-                      <th>Rol</th>
-                      <th>Estado</th>
-                      <th>Idioma</th>
-                      <th className="num">Fecha registro</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {usuariosVisibles.map((usuario) => (
-                      <tr key={usuario.usuarioId}>
-                        <td>{usuario.nombre ?? '-'}</td>
-                        <td>{usuario.correo}</td>
-                        <td>
-                          <span className={`insignia${usuario.rol === 'admin' ? ' insignia--info' : ''}`}>
-                            {ROLES[usuario.rol] ?? usuario.rol}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`insignia insignia--punto${usuario.estado === 'activo' ? ' insignia--exito' : ''}`}>
-                            {usuario.estado === 'activo' ? 'Activo' : 'Inactivo'}
-                          </span>
-                        </td>
-                        <td>{usuario.idioma || '-'}</td>
-                        <td className="num">{formatearFechaLocal(usuario.fechaCreacion)}</td>
+            <div className="tarjeta informes-tarjeta informes-usuarios">
+              <div className="informes-tarjeta__cabecera">
+                <div className="informes-tarjeta__textos">
+                  <h3 className="informes-tarjeta__titulo">Lista de usuarios</h3>
+                  <p className="informes-tarjeta__sub">
+                    Del más reciente al más antiguo · {numero(resumenUsuarios.total)}{' '}
+                    {resumenUsuarios.total === 1 ? 'usuario' : 'usuarios'}
+                  </p>
+                </div>
+              </div>
+              <div className="informes-tarjeta__tabla">
+                <div className="tabla-contenedor informes-tabla-contenedor">
+                  <table className="tabla tabla--compacta informes-tabla">
+                    <thead>
+                      <tr>
+                        <th>Nombre</th>
+                        <th>Correo</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Idioma</th>
+                        <th className="num">Fecha registro</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {usuariosVisibles.map((usuario) => (
+                        <tr key={usuario.usuarioId}>
+                          <td>
+                            <span className="informes-persona">
+                              <span
+                                className={`avatar avatar--chico informes-persona__avatar ${usuario.nombre ? `avatar--tono-${tonoAvatar(usuario.correo)}` : 'avatar--neutro'}`}
+                                aria-hidden="true"
+                              >
+                                {usuario.nombre ? iniciales(usuario.nombre) : <Icono nombre="usuarios" tamano={14} />}
+                              </span>
+                              <span className={usuario.nombre ? 'informes-persona__nombre' : 'texto-3'}>{usuario.nombre ?? '-'}</span>
+                            </span>
+                          </td>
+                          <td className="texto-2">{usuario.correo}</td>
+                          <td>
+                            <span className={`insignia${usuario.rol === 'admin' ? ' insignia--info' : ''}`}>
+                              {ROLES[usuario.rol] ?? usuario.rol}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`insignia insignia--punto${usuario.estado === 'activo' ? ' insignia--exito' : ''}`}>
+                              {usuario.estado === 'activo' ? 'Activo' : 'Inactivo'}
+                            </span>
+                          </td>
+                          <td className="mono texto-2">{usuario.idioma || '-'}</td>
+                          <td className="num mono texto-2">{formatearFechaLocal(usuario.fechaCreacion)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
               {resumenUsuarios.ordenados.length > USUARIOS_VISIBLES && (
-                <div>
+                <div className="informes-tarjeta__pie">
                   <button
                     type="button"
                     className="boton boton--sutil boton--chico"
@@ -759,7 +962,10 @@ const Informes = () => {
       {/* ============ Sección 3: Banco de preguntas ============ */}
       <section className="seccion informes-seccion" aria-labelledby="informes-banco">
         <div className="seccion__encabezado">
-          <h2 className="seccion__titulo" id="informes-banco">Banco de preguntas</h2>
+          <h2 className="seccion__titulo informes-seccion__titulo" id="informes-banco">
+            <IconoSeccion nombre="preguntas" tono="verde" />
+            Banco de preguntas
+          </h2>
           {!banco.cargando && totalBanco !== null && (
             <p className="seccion__descripcion">Total en el banco: <strong>{numero(totalBanco)}</strong> preguntas.</p>
           )}
@@ -768,7 +974,7 @@ const Informes = () => {
 
         {!banco.cargando && (
           <div className="informes-rejilla">
-            <TarjetaGrafico titulo="Por estado">
+            <TarjetaGrafico titulo="Por estado" subtitulo="Aprobadas, pendientes y rechazadas">
               {banco.errorEstado ? (
                 <ErrorSeccion mensaje={banco.errorEstado} onReintentar={cargarBanco} />
               ) : totalBanco === 0 ? (
@@ -781,32 +987,36 @@ const Informes = () => {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={etiquetaTorta}
+                      label={etiquetaTortaEn(grafico.textoEtiqueta)}
+                      innerRadius={50}
                       outerRadius={80}
+                      paddingAngle={banco.porEstado.filter((e) => e.value > 0).length > 1 ? 2 : 0}
+                      cornerRadius={4}
                       dataKey="value"
                       stroke={grafico.separador}
+                      strokeWidth={2}
                     >
                       {banco.porEstado.filter((e) => e.value > 0).map((e) => (
                         <Cell key={e.estado} fill={grafico.estados[e.estado] || grafico.neutro} />
                       ))}
                     </Pie>
-                    <Tooltip {...grafico.tooltip} />
+                    <Tooltip content={<GloboInformes conEtiqueta={false} />} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
             </TarjetaGrafico>
 
-            <TarjetaGrafico titulo="Por categoría">
+            <TarjetaGrafico titulo="Por categoría" subtitulo="Preguntas del banco en cada categoría">
               {banco.errorCategoria ? (
                 <ErrorSeccion mensaje={banco.errorCategoria} onReintentar={cargarBanco} />
               ) : (
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={banco.porCategoria}>
+                  <BarChart data={banco.porCategoria} margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
                     <CartesianGrid {...grafico.rejilla} vertical={false} />
-                    <XAxis dataKey="categoria" {...grafico.eje} />
-                    <YAxis {...grafico.eje} allowDecimals={false} />
-                    <Tooltip {...grafico.tooltip} />
-                    <Bar dataKey="cantidad" name="Preguntas" fill={grafico.barra} />
+                    <XAxis dataKey="categoria" {...grafico.ejeTexto} />
+                    <YAxis {...grafico.eje} allowDecimals={false} width={40} />
+                    <Tooltip content={<GloboInformes />} cursor={grafico.cursor} />
+                    <Bar dataKey="cantidad" name="Preguntas" fill={grafico.barra} maxBarSize={48} radius={grafico.radioArriba} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -818,11 +1028,14 @@ const Informes = () => {
       {/* ============ Sección 4: Mercado ============ */}
       <section className="seccion informes-seccion" aria-labelledby="informes-mercado">
         <div className="seccion__encabezado">
-          <h2 className="seccion__titulo" id="informes-mercado">Mercado</h2>
+          <h2 className="seccion__titulo informes-seccion__titulo" id="informes-mercado">
+            <IconoSeccion nombre="informes" tono="ambar" />
+            Mercado
+          </h2>
         </div>
 
         <div className="informes-rejilla">
-          <TarjetaGrafico titulo="Cargos por área">
+          <TarjetaGrafico titulo="Cargos por área" subtitulo="Cargos activos del catálogo en cada área">
             {mercado.errorCargos ? (
               <ErrorSeccion mensaje={mercado.errorCargos} onReintentar={() => cargarMercado(categoriaSkills)} />
             ) : !mercado.cargosPorArea ? (
@@ -831,12 +1044,12 @@ const Informes = () => {
               <SinDatos texto="No hay cargos activos en el catálogo" />
             ) : (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={mercado.cargosPorArea}>
+                <BarChart data={mercado.cargosPorArea} margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
                   <CartesianGrid {...grafico.rejilla} vertical={false} />
-                  <XAxis dataKey="area" {...grafico.eje} interval={0} angle={-20} textAnchor="end" height={70} />
-                  <YAxis {...grafico.eje} allowDecimals={false} />
-                  <Tooltip {...grafico.tooltip} />
-                  <Bar dataKey="cantidadCargos" fill={grafico.barra} name="Cargos" />
+                  <XAxis dataKey="area" {...grafico.ejeTexto} interval={0} angle={-20} textAnchor="end" height={70} />
+                  <YAxis {...grafico.eje} allowDecimals={false} width={40} />
+                  <Tooltip content={<GloboInformes />} cursor={grafico.cursor} />
+                  <Bar dataKey="cantidadCargos" fill={grafico.barra} name="Cargos" maxBarSize={40} radius={grafico.radioArriba} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -844,6 +1057,7 @@ const Informes = () => {
 
           <TarjetaGrafico
             titulo="Skills en tendencia"
+            subtitulo="Las 15 con más demanda"
             control={(
               <select
                 className="informes-selector"
@@ -870,9 +1084,9 @@ const Informes = () => {
                   <BarChart data={mercado.skills} layout="vertical" margin={{ left: 8, right: 16 }}>
                     <CartesianGrid {...grafico.rejilla} horizontal={false} />
                     <XAxis type="number" {...grafico.eje} allowDecimals={false} />
-                    <YAxis type="category" dataKey="nombre" {...grafico.eje} width={140} interval={0} />
-                    <Tooltip {...grafico.tooltip} />
-                    <Bar dataKey="demandaScore" fill={grafico.barra} name="Demanda" />
+                    <YAxis type="category" dataKey="nombre" {...grafico.ejeTexto} width={140} interval={0} />
+                    <Tooltip content={<GloboInformes />} cursor={grafico.cursor} />
+                    <Bar dataKey="demandaScore" fill={grafico.barra} name="Demanda" maxBarSize={18} radius={grafico.radioDerecha} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
