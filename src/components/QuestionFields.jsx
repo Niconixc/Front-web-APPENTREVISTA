@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { getCargos, getSkillsDeCargo, mensajeDeError } from '../services/api';
 import { CATEGORIAS, LIMITES, NIVELES, TIPOS, etiqueta, opcionVacia } from '../services/etiquetas';
+import Icono from './Icono';
 import './QuestionForm.css';
 
 // Campos compartidos por "Crear pregunta" (QuestionForm) y "Editar pregunta" (QuestionEdit).
@@ -131,155 +132,179 @@ const QuestionFields = ({ form, setForm }) => {
   const clavesExtraRubrica = form.rubricaOriginal && typeof form.rubricaOriginal === 'object'
     ? Object.keys(form.rubricaOriginal).filter((k) => !CLAVES_RUBRICA_EDITABLES.includes(k))
     : [];
+  const enMinimoDeOpciones = form.opciones.length <= LIMITES.opcionesMinimas;
+  const enMaximoDeOpciones = form.opciones.length >= LIMITES.opcionesMaximas;
 
   return (
-    <div className="form-grid">
-      {/* Enunciado */}
-      <div className="form-group full-width">
-        <label htmlFor="enunciado">
-          Enunciado <span className="required">*</span>
-        </label>
-        <textarea
-          id="enunciado"
-          name="enunciado"
-          value={form.enunciado}
-          onChange={handleChange}
-          required
-          maxLength={LIMITES.enunciado}
-          placeholder="Escribe el enunciado de la pregunta..."
-          rows={4}
-        />
-        <small className={`form-help qf-contador${form.enunciado.length >= LIMITES.enunciado ? ' qf-contador-limite' : ''}`}>
-          {form.enunciado.length}/{LIMITES.enunciado}
-        </small>
-      </div>
+    <div className="formulario">
+      <div className="rejilla-campos qform-rejilla">
+        {/* Enunciado */}
+        <div className="campo campo--ancho">
+          <label htmlFor="enunciado" className="campo__etiqueta">
+            Enunciado <span className="qform-obligatorio">*</span>
+          </label>
+          <textarea
+            id="enunciado"
+            name="enunciado"
+            value={form.enunciado}
+            onChange={handleChange}
+            required
+            maxLength={LIMITES.enunciado}
+            placeholder="Escribe el enunciado de la pregunta..."
+            rows={4}
+          />
+          <small
+            className={`campo__contador${form.enunciado.length >= LIMITES.enunciado ? ' qform-contador--limite' : ''}`}
+          >
+            {form.enunciado.length}/{LIMITES.enunciado}
+          </small>
+        </div>
 
-      {/* Categoría */}
-      <div className="form-group">
-        <label htmlFor="categoria">
-          Categoría <span className="required">*</span>
-        </label>
-        <select id="categoria" name="categoria" value={form.categoria} onChange={handleChange} required>
-          {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-        </select>
-      </div>
+        {/* Categoría */}
+        <div className="campo">
+          <label htmlFor="categoria" className="campo__etiqueta">
+            Categoría <span className="qform-obligatorio">*</span>
+          </label>
+          <select id="categoria" name="categoria" value={form.categoria} onChange={handleChange} required>
+            {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+        </div>
 
-      {/* Tipo */}
-      <div className="form-group">
-        <label htmlFor="tipo">
-          Tipo <span className="required">*</span>
-        </label>
-        <select id="tipo" name="tipo" value={form.tipo} onChange={handleTipo} required>
-          {TIPOS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-        </select>
-      </div>
+        {/* Tipo */}
+        <div className="campo">
+          <label htmlFor="tipo" className="campo__etiqueta">
+            Tipo <span className="qform-obligatorio">*</span>
+          </label>
+          <select id="tipo" name="tipo" value={form.tipo} onChange={handleTipo} required>
+            {TIPOS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+        </div>
 
-      {/* Nivel */}
-      <div className="form-group">
-        <label htmlFor="nivel">
-          Nivel <span className="required">*</span>
-        </label>
-        <select id="nivel" name="nivel" value={form.nivel} onChange={handleChange} required>
-          {NIVELES.map((n) => <option key={n.value} value={n.value}>{n.label}</option>)}
-        </select>
+        {/* Nivel */}
+        <div className="campo">
+          <label htmlFor="nivel" className="campo__etiqueta">
+            Nivel <span className="qform-obligatorio">*</span>
+          </label>
+          <select id="nivel" name="nivel" value={form.nivel} onChange={handleChange} required>
+            {NIVELES.map((n) => <option key={n.value} value={n.value}>{n.label}</option>)}
+          </select>
+        </div>
       </div>
 
       {/* Contexto: Área → Cargo → Skill */}
-      <div className="form-group full-width">
-        <label>
-          Contexto <span className="required">*</span>
-        </label>
-        <small className="form-help qf-ayuda-arriba">
-          Indica el cargo o la skill que evalúa la pregunta (al menos uno de los dos).
-        </small>
+      <fieldset className="conjunto">
+        <legend>
+          Contexto <span className="qform-obligatorio">*</span>
+        </legend>
+        <p className="campo__ayuda">Indica el cargo o la skill que evalúa la pregunta (al menos uno de los dos).</p>
         {errorCargos && (
-          <div className="error-message qf-error-inline">
-            {errorCargos}{' '}
-            <button type="button" className="qf-link" onClick={() => setIntentoCargos((n) => n + 1)}>
-              Reintentar
-            </button>
+          <div className="aviso aviso--peligro">
+            <Icono nombre="alerta" className="aviso__icono" />
+            <div className="aviso__contenido qform-error-cargos">
+              <span>{errorCargos}</span>
+              <button
+                type="button"
+                className="boton boton--chico"
+                onClick={() => setIntentoCargos((n) => n + 1)}
+              >
+                Reintentar
+              </button>
+            </div>
           </div>
         )}
-      </div>
 
-      <div className="form-group">
-        <label htmlFor="area">Área</label>
-        <select id="area" value={area} onChange={handleArea} disabled={cargandoCargos || areas.length === 0}>
-          <option value="">{cargandoCargos ? 'Cargando áreas...' : 'Selecciona un área'}</option>
-          {areas.map((a) => <option key={a} value={a}>{a}</option>)}
-        </select>
-      </div>
+        <div className="rejilla-campos qform-rejilla">
+          <div className="campo">
+            <label htmlFor="area" className="campo__etiqueta">Área</label>
+            <select id="area" value={area} onChange={handleArea} disabled={cargandoCargos || areas.length === 0}>
+              <option value="">{cargandoCargos ? 'Cargando áreas...' : 'Selecciona un área'}</option>
+              {areas.map((a) => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
 
-      <div className="form-group">
-        <label htmlFor="cargoId">Cargo</label>
-        <select
-          id="cargoId"
-          name="cargoId"
-          value={form.cargoId}
-          onChange={handleCargo}
-          disabled={cargandoCargos || (!area && !form.cargoId)}
-        >
-          <option value="">{area ? 'Sin cargo' : 'Primero selecciona un área'}</option>
-          {/* Cargo guardado que ya no está en el catálogo activo: se muestra para no perderlo al guardar. */}
-          {form.cargoId && !cargoActual && !cargandoCargos && (
-            <option value={form.cargoId}>Cargo actual (no está en el catálogo activo · {idCorto(form.cargoId)})</option>
-          )}
-          {cargosDelArea.map((c) => <option key={c.cargoId} value={c.cargoId}>{c.nombre}</option>)}
-        </select>
-      </div>
+          <div className="campo">
+            <label htmlFor="cargoId" className="campo__etiqueta">Cargo</label>
+            <select
+              id="cargoId"
+              name="cargoId"
+              value={form.cargoId}
+              onChange={handleCargo}
+              disabled={cargandoCargos || (!area && !form.cargoId)}
+            >
+              <option value="">{area ? 'Sin cargo' : 'Primero selecciona un área'}</option>
+              {/* Cargo guardado que ya no está en el catálogo activo: se muestra para no perderlo al guardar. */}
+              {form.cargoId && !cargoActual && !cargandoCargos && (
+                <option value={form.cargoId}>Cargo actual (no está en el catálogo activo · {idCorto(form.cargoId)})</option>
+              )}
+              {cargosDelArea.map((c) => <option key={c.cargoId} value={c.cargoId}>{c.nombre}</option>)}
+            </select>
+          </div>
 
-      <div className="form-group">
-        <label htmlFor="skillId">Skill (opcional)</label>
-        <select
-          id="skillId"
-          name="skillId"
-          value={form.skillId}
-          onChange={handleChange}
-          disabled={cargandoSkills || (!form.cargoId && !form.skillId)}
-        >
-          <option value="">
-            {cargandoSkills ? 'Cargando skills...' : (form.cargoId ? 'Sin skill específica' : 'Primero selecciona un cargo')}
-          </option>
-          {form.skillId && !skillEnLista && !cargandoSkills && (
-            <option value={form.skillId}>Skill actual ({idCorto(form.skillId)})</option>
-          )}
-          {skills.map((s) => (
-            <option key={s.skillId} value={s.skillId}>
-              {s.categoria ? `${s.nombre} (${s.categoria})` : s.nombre}
-            </option>
-          ))}
-        </select>
-        {errorSkills && <small className="form-help qf-texto-error">{errorSkills}</small>}
-        {form.cargoId && !cargandoSkills && !errorSkills && skills.length === 0 && (
-          <small className="form-help">Este cargo no tiene skills cargadas.</small>
-        )}
-      </div>
+          <div className="campo">
+            <label htmlFor="skillId" className="campo__etiqueta">
+              Skill <span className="campo__opcional">(opcional)</span>
+            </label>
+            <select
+              id="skillId"
+              name="skillId"
+              value={form.skillId}
+              onChange={handleChange}
+              disabled={cargandoSkills || (!form.cargoId && !form.skillId)}
+            >
+              <option value="">
+                {cargandoSkills ? 'Cargando skills...' : (form.cargoId ? 'Sin skill específica' : 'Primero selecciona un cargo')}
+              </option>
+              {form.skillId && !skillEnLista && !cargandoSkills && (
+                <option value={form.skillId}>Skill actual ({idCorto(form.skillId)})</option>
+              )}
+              {skills.map((s) => (
+                <option key={s.skillId} value={s.skillId}>
+                  {s.categoria ? `${s.nombre} (${s.categoria})` : s.nombre}
+                </option>
+              ))}
+            </select>
+            {errorSkills && <small className="campo__error">{errorSkills}</small>}
+            {form.cargoId && !cargandoSkills && !errorSkills && skills.length === 0 && (
+              <small className="campo__ayuda">Este cargo no tiene skills cargadas.</small>
+            )}
+          </div>
+        </div>
+      </fieldset>
 
       {/* Opción múltiple: opciones */}
       {esMultiple && (
-        <div className="form-group full-width">
-          <label>
-            Opciones de respuesta <span className="required">*</span>
-          </label>
-          <small className="form-help qf-ayuda-arriba">
+        <fieldset className="conjunto">
+          <legend>
+            Opciones de respuesta <span className="qform-obligatorio">*</span>
+          </legend>
+          <p className="campo__ayuda">
             Entre {LIMITES.opcionesMinimas} y {LIMITES.opcionesMaximas} opciones, sin repetir, con exactamente una correcta.
             La explicación es opcional.
-          </small>
-          <div className="opciones-container">
+          </p>
+          <ol className="qform-opciones">
             {form.opciones.map((opcion, i) => (
-              <div key={i} className={`qf-opcion${opcion.esCorrecta ? ' qf-opcion-correcta' : ''}`}>
-                <div className="opcion-row qf-opcion-fila">
-                  <span className="opcion-label">{letra(i)}.</span>
+              <li key={i} className={`qform-opcion${opcion.esCorrecta ? ' qform-opcion--correcta' : ''}`}>
+                <span className="qform-opcion__letra">{letra(i)}.</span>
+                <div className="qform-opcion__textos">
                   <input
                     type="text"
-                    className="opcion-input"
                     value={opcion.texto}
                     onChange={(e) => cambiarOpcion(i, { texto: e.target.value })}
                     placeholder={`Opción ${letra(i)}`}
                     aria-label={`Texto de la opción ${letra(i)}`}
                     required
                   />
-                  <label className="opcion-correcta">
+                  <input
+                    type="text"
+                    className="qform-opcion__explicacion"
+                    value={opcion.explicacion}
+                    onChange={(e) => cambiarOpcion(i, { explicacion: e.target.value })}
+                    placeholder={`Explicación de la opción ${letra(i)} (opcional)`}
+                    aria-label={`Explicación de la opción ${letra(i)}`}
+                  />
+                </div>
+                <div className="qform-opcion__acciones">
+                  <label className="casilla texto-chico">
                     <input
                       type="radio"
                       name={radioName}
@@ -291,44 +316,38 @@ const QuestionFields = ({ form, setForm }) => {
                   <button
                     type="button"
                     onClick={() => quitarOpcion(i)}
-                    className="btn-remove-opcion"
-                    title={form.opciones.length <= LIMITES.opcionesMinimas
+                    className="boton boton--sutil boton--icono boton--chico"
+                    aria-label={`Quitar la opción ${letra(i)}`}
+                    title={enMinimoDeOpciones
                       ? `Debe haber al menos ${LIMITES.opcionesMinimas} opciones`
                       : 'Quitar opción'}
-                    disabled={form.opciones.length <= LIMITES.opcionesMinimas}
+                    disabled={enMinimoDeOpciones}
                   >
-                    ✕
+                    <Icono nombre="cerrar" />
                   </button>
                 </div>
-                <input
-                  type="text"
-                  className="opcion-input qf-explicacion"
-                  value={opcion.explicacion}
-                  onChange={(e) => cambiarOpcion(i, { explicacion: e.target.value })}
-                  placeholder={`Explicación de la opción ${letra(i)} (opcional)`}
-                  aria-label={`Explicación de la opción ${letra(i)}`}
-                />
-              </div>
+              </li>
             ))}
+          </ol>
+          <div>
             <button
               type="button"
               onClick={agregarOpcion}
-              className="btn-add-opcion"
-              disabled={form.opciones.length >= LIMITES.opcionesMaximas}
+              className="boton boton--chico"
+              disabled={enMaximoDeOpciones}
             >
-              {form.opciones.length >= LIMITES.opcionesMaximas
-                ? `Máximo ${LIMITES.opcionesMaximas} opciones`
-                : '+ Agregar opción'}
+              {!enMaximoDeOpciones && <Icono nombre="mas" />}
+              {enMaximoDeOpciones ? `Máximo ${LIMITES.opcionesMaximas} opciones` : 'Agregar opción'}
             </button>
           </div>
-        </div>
+        </fieldset>
       )}
 
       {/* Abierta / simulación: respuesta ideal + rúbrica */}
       {!esMultiple && (
         <>
-          <div className="form-group full-width">
-            <label htmlFor="respuestaIdeal">Respuesta ideal</label>
+          <div className="campo">
+            <label htmlFor="respuestaIdeal" className="campo__etiqueta">Respuesta ideal</label>
             <textarea
               id="respuestaIdeal"
               name="respuestaIdeal"
@@ -337,17 +356,19 @@ const QuestionFields = ({ form, setForm }) => {
               placeholder="Describe cómo sería una buena respuesta..."
               rows={4}
             />
-            <small className="form-help">
+            <small className="campo__ayuda">
               Para una pregunta {etiqueta(TIPOS, form.tipo).toLowerCase()} se exige una respuesta ideal o una rúbrica con
               al menos un criterio o una palabra clave.
             </small>
           </div>
 
-          <div className="form-group full-width qf-rubrica">
-            <span className="qf-rubrica-titulo">Rúbrica (opcional)</span>
-            <div className="form-grid">
-              <div className="form-group full-width">
-                <label htmlFor="rubricaCriterios">Criterios (uno por línea)</label>
+          <fieldset className="conjunto">
+            <legend>
+              Rúbrica <span className="campo__opcional">(opcional)</span>
+            </legend>
+            <div className="rejilla-campos">
+              <div className="campo campo--ancho">
+                <label htmlFor="rubricaCriterios" className="campo__etiqueta">Criterios (uno por línea)</label>
                 <textarea
                   id="rubricaCriterios"
                   name="rubricaCriterios"
@@ -357,8 +378,8 @@ const QuestionFields = ({ form, setForm }) => {
                   rows={4}
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="rubricaPalabrasClave">Palabras clave (separadas por coma)</label>
+              <div className="campo">
+                <label htmlFor="rubricaPalabrasClave" className="campo__etiqueta">Palabras clave (separadas por coma)</label>
                 <input
                   type="text"
                   id="rubricaPalabrasClave"
@@ -367,10 +388,10 @@ const QuestionFields = ({ form, setForm }) => {
                   onChange={handleChange}
                   placeholder="ej: liderazgo, prioridades, comunicación"
                 />
-                <small className="form-help">Las usa la evaluación automática del plan gratuito.</small>
+                <small className="campo__ayuda">Las usa la evaluación automática del plan gratuito.</small>
               </div>
-              <div className="form-group">
-                <label htmlFor="rubricaTiempoSeg">Tiempo esperado (segundos)</label>
+              <div className="campo">
+                <label htmlFor="rubricaTiempoSeg" className="campo__etiqueta">Tiempo esperado (segundos)</label>
                 <input
                   type="number"
                   id="rubricaTiempoSeg"
@@ -384,11 +405,11 @@ const QuestionFields = ({ form, setForm }) => {
               </div>
             </div>
             {clavesExtraRubrica.length > 0 && (
-              <small className="form-help">
+              <small className="campo__ayuda">
                 La rúbrica guardada tiene otros datos que se conservan al guardar: {clavesExtraRubrica.join(', ')}.
               </small>
             )}
-          </div>
+          </fieldset>
         </>
       )}
     </div>

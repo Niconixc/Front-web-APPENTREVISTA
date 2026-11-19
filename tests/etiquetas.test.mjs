@@ -8,6 +8,11 @@ import {
   diasEntre,
   formatearDiaUtc,
   formatearUsd,
+  formatearPesos,
+  TIPO_CAMBIO_CLP,
+  iniciales,
+  tonoAvatar,
+  formatearDiaSinZona,
   formularioVacio,
   limpiarVacios,
   validarFormularioPregunta,
@@ -122,6 +127,38 @@ test('días UTC sin correrse por la zona horaria', () => {
   assert.equal(formatearDiaUtc('2026-11-01'), '01-11-2026');
   assert.deepEqual(diasEntre('2026-10-30', '2026-11-02'), ['2026-10-30', '2026-10-31', '2026-11-01', '2026-11-02']);
   assert.deepEqual(diasEntre('2026-11-05', '2026-11-04'), []);
+});
+
+test('fecha sin zona: el día tal cual, sin correrse', () => {
+  assert.equal(formatearDiaSinZona('2026-11-01T23:30:00'), '01-11-2026');
+  assert.equal(formatearDiaSinZona('2026-11-01'), '01-11-2026');
+  assert.equal(formatearDiaSinZona(null), '—');
+});
+
+test('iniciales y tono del avatar', () => {
+  assert.equal(iniciales('Camila Rojas'), 'CR');
+  assert.equal(iniciales('diego.fuentes@correo.test'), 'DF');
+  assert.equal(iniciales('admin@entrevistaapp.test'), 'AD');
+  assert.equal(iniciales('Ángela'), 'AN');
+  assert.equal(iniciales(''), '?');
+  assert.equal(iniciales(null), '?');
+  assert.equal(tonoAvatar('Camila Rojas'), tonoAvatar('Camila Rojas'));
+  assert.ok([0, 1, 2, 3].includes(tonoAvatar('x')));
+});
+
+test('montos en pesos chilenos: simples y con punto de miles', () => {
+  assert.equal(formatearPesos(4.25, 950), '$4.038');
+  assert.equal(formatearPesos(5, 950), '$4.750');
+  assert.equal(formatearPesos(1234.5, 950), '$1.172.775');
+  assert.equal(formatearPesos(0.0044, 950), '$4,2');
+  assert.equal(formatearPesos(0.004, 950), '$3,8');
+  assert.equal(formatearPesos(0.002, 1000), '$2');
+  assert.equal(formatearPesos(0.00002, 950), 'menos de $0,1');
+  assert.equal(formatearPesos(0, 950), '$0');
+  assert.equal(formatearPesos(null, 950), '$0');
+  // Sin VITE_DOLAR_CLP (como en Node) se usa 950.
+  assert.equal(TIPO_CAMBIO_CLP, 950);
+  assert.equal(formatearPesos(1), '$950');
 });
 
 test('montos en USD: 6 decimales si son fracciones de centavo', () => {

@@ -61,14 +61,14 @@ test('las confirmaciones usan FondoModal: ningún fondo cierra con un onClick di
   const usos = {
     'GenerarPreguntas.jsx': /<FondoModal onCerrar=\{cerrarModal\}>/,
     'QuestionList.jsx': /<FondoModal onCerrar=\{cerrarRechazo\}>/,
-    'QuestionEdit.jsx': /<FondoModal className="qf-modal-fondo" onCerrar=\{cerrarRechazo\}>/,
+    'QuestionEdit.jsx': /<FondoModal onCerrar=\{cerrarRechazo\}>/,
   };
   for (const [archivo, uso] of Object.entries(usos)) {
     const codigo = leer(archivo);
     assert.match(codigo, uso, `${archivo} debe usar FondoModal`);
     assert.doesNotMatch(
       codigo,
-      /className="(modal-backdrop|qf-modal-fondo)"[^>]*onClick=/,
+      /className="(dialogo-fondo|modal-backdrop|qf-modal-fondo)"[^>]*onClick=/,
       `${archivo}: el fondo no puede cerrar con un onClick directo`
     );
   }

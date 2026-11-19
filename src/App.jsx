@@ -26,10 +26,11 @@ const ProtectedRoute = ({ children, isAuthenticated }) => {
 // Layout con Navbar para rutas protegidas
 const ProtectedLayout = ({ children, setIsAuthenticated }) => {
   return (
-    <>
+    <div className="marco">
+      <a href="#contenido" className="saltar-al-contenido">Saltar al contenido</a>
       <Navbar setIsAuthenticated={setIsAuthenticated} />
-      <main className="main-content">{children}</main>
-    </>
+      <main id="contenido" className="marco__contenido" tabIndex={-1}>{children}</main>
+    </div>
   );
 };
 

@@ -1,0 +1,191 @@
+/*
+ * Tokens del panel: la ÚNICA fuente de colores, tamaños, espacios y movimiento.
+ * Las pantallas usan var(--…); no escriben colores hex propios.
+ *
+ * Criterio (skills taste y emil-design-eng):
+ * - La interfaz es 90-95 % neutra: tinta casi negra y cálida, bordes finos (12-15 % de la tinta).
+ * - Un solo acento, el azul de la app Android (AzulConfianza #3451D1): botón principal, foco, enlaces y lo
+ *   seleccionado. Nada violeta.
+ * - Tema claro por defecto; el oscuro se activa solo si el sistema lo pide.
+ */
+:root {
+  color-scheme: light;
+
+  /* Superficies */
+  --fondo: #f7f7f5;
+  --superficie: #ffffff;
+  --superficie-2: #f3f3f1;
+  --superficie-hover: #ededea;
+  --borde: #e4e3df;
+  --borde-fuerte: #cfcdc8;
+  --borde-control: #8f8b85; /* 3:1 sobre el fondo: el borde de un campo se distingue */
+
+  /* Texto (contraste ≥ 4.5:1 sobre --superficie, --superficie-2 y --fondo) */
+  --texto: #1c1b19;
+  --texto-2: #55524d;
+  --texto-3: #6b6762;
+  --texto-invertido: #ffffff;
+
+  /* Acento: el azul de la app */
+  --acento: #3451d1;
+  --acento-hover: #2a43b4;
+  --acento-suave: #eaf0fc;
+  --acento-texto: #2f49bf;
+
+  /* Estados (los tonos de la app, oscurecidos para texto) */
+  --exito: #0b6b5f;
+  --exito-suave: #e3f4f0;
+  --exito-borde: #b6e0d7;
+  --aviso: #8f4f0a;
+  --aviso-suave: #fdf1e3;
+  --aviso-borde: #f0cfa7;
+  --peligro: #b42318;
+  --peligro-hover: #93190f;
+  --peligro-suave: #fdecea;
+  --peligro-borde: #f3c2bd;
+  --neutro: #55524d;
+  --neutro-suave: #f0efec;
+  --neutro-borde: #dcdad5;
+
+  /* Gráficos (orden fijo de series) */
+  --grafico-1: #3451d1;
+  --grafico-2: #c26a14;
+  --grafico-3: #0e8c7c;
+  --grafico-4: #8a857e;
+  --grafico-rejilla: #ebeae6;
+
+  /* Menú lateral: superficie clara con un borde fino; lo actual en el acento */
+  --lateral-fondo: #ffffff;
+  --lateral-borde: #e4e3df;
+  --lateral-texto: #1c1b19;
+  --lateral-texto-2: #55524d;
+  --lateral-texto-3: #6b6762;
+  --lateral-hover: #f3f3f1;
+  --lateral-activo: #eaf0fc;
+  --lateral-indicador: #3451d1;
+  --lateral-logo-fondo: #3451d1;
+  --lateral-logo-texto: #ffffff;
+
+  /* Esqueleto de carga */
+  --esqueleto: #ecebe7;
+
+  /* Foco visible y velo de diálogos */
+  --foco: #3451d1;
+  --velo: rgba(20, 19, 17, 0.4);
+
+  /* Tipografía: Funnel Display (títulos y cifras) + Funnel Sans (texto) */
+  --fuente: 'Funnel Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fuente-display: 'Funnel Display', 'Funnel Sans', system-ui, sans-serif;
+  --fuente-mono: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Consolas, 'Liberation Mono', monospace;
+  --texto-xs: 0.8125rem;  /* 13: lo mínimo (etiquetas, fechas) */
+  --texto-sm: 0.875rem;   /* 14 */
+  --texto-base: 0.9375rem; /* 15: interfaz y tablas */
+  --texto-md: 1rem;       /* 16: texto que se lee */
+  --texto-lg: 1.125rem;   /* 18 */
+  --texto-xl: 1.5rem;     /* 24 */
+  --texto-2xl: 2rem;      /* 32: cifras clave */
+  --texto-titulo: 1.875rem; /* 30: h1 de cada pantalla */
+  --peso-normal: 400;
+  --peso-medio: 500;
+  --peso-fuerte: 500; /* taste: el texto va en 400 y 500; la jerarquía la dan tamaño y color */
+  --interlineado: 1.55;
+  --tracking-titulo: -0.02em;
+
+  /* Espacios (escala de 4 px) */
+  --e-1: 0.25rem;
+  --e-2: 0.5rem;
+  --e-3: 0.75rem;
+  --e-4: 1rem;
+  --e-5: 1.25rem;
+  --e-6: 1.5rem;
+  --e-8: 2rem;
+  --e-10: 2.5rem;
+  --e-12: 3rem;
+
+  /* Formas */
+  --radio-sm: 6px;
+  --radio: 8px;
+  --radio-lg: 12px;
+  --sombra-sutil: 0 1px 1px rgba(28, 27, 25, 0.03);
+  --sombra-hover: 0 6px 20px rgba(28, 27, 25, 0.08);
+  --sombra-flotante: 0 16px 40px rgba(28, 27, 25, 0.14), 0 2px 6px rgba(28, 27, 25, 0.06);
+
+  /* Movimiento (emil-design-eng): curvas propias, nunca ease-in */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --m-in: 150ms;
+  --m-out: 120ms;
+  --m-press: 90ms;
+  --m-dialogo: 200ms;
+  --transicion: var(--m-in) var(--ease-out);
+
+  /* Medidas del layout */
+  --ancho-lateral: 240px;
+  --ancho-contenido: 1200px;
+  --alto-control: 2.5rem;
+  --alto-control-sm: 2rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --fondo: #141412;
+    --superficie: #1c1b19;
+    --superficie-2: #242320;
+    --superficie-hover: #2b2a27;
+    --borde: #33312d;
+    --borde-fuerte: #47443f;
+    --borde-control: #77736c;
+
+    --texto: #edece9;
+    --texto-2: #bab6b0;
+    --texto-3: #9d9992;
+    --texto-invertido: #141412;
+
+    --acento: #8db4ff;
+    --acento-hover: #a8c5ff;
+    --acento-suave: #1e2a40;
+    --acento-texto: #9cbdff;
+
+    --exito: #6fd3bf;
+    --exito-suave: #13302b;
+    --exito-borde: #1f4a42;
+    --aviso: #f2b071;
+    --aviso-suave: #33240f;
+    --aviso-borde: #5a3f1c;
+    --peligro: #ff9b8f;
+    --peligro-hover: #ffb4aa;
+    --peligro-suave: #3a1a16;
+    --peligro-borde: #5e2a24;
+    --neutro: #bab6b0;
+    --neutro-suave: #262522;
+    --neutro-borde: #47443f;
+
+    --grafico-1: #8db4ff;
+    --grafico-2: #f2a35a;
+    --grafico-3: #5fcbb9;
+    --grafico-4: #9d9992;
+    --grafico-rejilla: #33312d;
+
+    --lateral-fondo: #1c1b19;
+    --lateral-borde: #33312d;
+    --lateral-texto: #edece9;
+    --lateral-texto-2: #bab6b0;
+    --lateral-texto-3: #9d9992;
+    --lateral-hover: #242320;
+    --lateral-activo: #1e2a40;
+    --lateral-indicador: #8db4ff;
+    --lateral-logo-fondo: #8db4ff;
+    --lateral-logo-texto: #141412;
+
+    --esqueleto: #2b2a27;
+
+    --foco: #8db4ff;
+    --velo: rgba(0, 0, 0, 0.6);
+    --sombra-sutil: none;
+    --sombra-hover: 0 6px 20px rgba(0, 0, 0, 0.35);
+    --sombra-flotante: 0 16px 40px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+  }
+}

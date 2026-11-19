@@ -3,7 +3,7 @@
 // generación para responder 429 (tope_generacion_ia_alcanzado). Por eso el panel no recalcula si está agotado: usa los
 // booleanos tal como llegan (los montos vienen redondeados a 6 decimales y podrían decir otra cosa en el borde).
 // Funciones puras: se prueban en tests/topeGeneracion.test.mjs.
-import { formatearDiaUtc, formatearUsd } from './etiquetas.js';
+import { formatearDiaUtc, formatearPesos } from './etiquetas.js';
 
 /** Desde qué parte del tope (80 %) se avisa que queda poco. */
 export const UMBRAL_AVISO_TOPE = 0.8;
@@ -92,7 +92,7 @@ export const leerTopeGeneracion = (respuestaCostos) => {
   };
 };
 
-const usadoDeTope = (tope) => `${formatearUsd(tope.gastado)} de ${formatearUsd(tope.tope)}`;
+const usadoDeTope = (tope) => `${formatearPesos(tope.gastado)} de ${formatearPesos(tope.tope)}`;
 
 /**
  * Textos del bloque del tope: {estado, titulo, detalle}. El estado va en palabras (no solo con el color). Desactivado no
@@ -108,7 +108,7 @@ export const textoTope = (tope) => {
       titulo: 'Generación con IA desactivada en el servidor',
       detalle: `${VARIABLE_TOPE} vale 0 o no es un monto válido: el servidor rechaza cada generación sin llamar a la IA `
         + '(sin costo). Para activarla hay que darle un monto mayor que 0 y volver a desplegar el backend. '
-        + `Gastado en ${mes} (UTC): ${formatearUsd(tope.gastado)}.`,
+        + `Gastado en ${mes} (UTC): ${formatearPesos(tope.gastado)}.`,
     };
   }
   if (tope.agotado) {
@@ -122,7 +122,7 @@ export const textoTope = (tope) => {
   return {
     estado: tope.nivel === 'cerca' ? 'Cerca del tope' : 'Disponible',
     titulo: `${usadoDeTope(tope)} usados en ${mes} (UTC)`,
-    detalle: `Quedan ${formatearUsd(tope.restante)}. Se repone el ${repone} (UTC).`,
+    detalle: `Quedan ${formatearPesos(tope.restante)}. Se repone el ${repone} (UTC).`,
   };
 };
 
@@ -156,12 +156,12 @@ export const avisoAntesDeGenerar = (tope, costoEstimado) => {
   }
   const repone = formatearDiaUtc(tope.fechaReposicion);
   if (tope.agotado) {
-    return `Ya se alcanzó el tope del mes (${formatearUsd(tope.tope)}): el servidor responderá «tope alcanzado» sin `
+    return `Ya se alcanzó el tope del mes (${formatearPesos(tope.tope)}): el servidor responderá «tope alcanzado» sin `
       + `llamar a la IA (sin costo) hasta el ${repone} (UTC).`;
   }
   if (esMonto(costoEstimado) && costoEstimado > tope.restante) {
-    return `Esta generación (unos ${formatearUsd(costoEstimado)}) supera lo que queda del tope del mes `
-      + `(${formatearUsd(tope.restante)}). El servidor no reserva saldo: mientras el gasto esté bajo el tope la deja pasar `
+    return `Esta generación (unos ${formatearPesos(costoEstimado)}) supera lo que queda del tope del mes `
+      + `(${formatearPesos(tope.restante)}). El servidor no reserva saldo: mientras el gasto esté bajo el tope la deja pasar `
       + `y se cobra entera, pero lo más probable es que las siguientes respondan «tope alcanzado» hasta el ${repone} (UTC).`;
   }
   return null;
@@ -202,7 +202,7 @@ export const lineaTopeEnConfirmacion = (tope, costoEstimado, { actualizando = fa
   }
   const aviso = avisoAntesDeGenerar(tope, costoEstimado);
   const texto = aviso
-    || `Quedan ${formatearUsd(tope.restante)} del tope del mes (${formatearUsd(tope.tope)}); se repone el `
+    || `Quedan ${formatearPesos(tope.restante)} del tope del mes (${formatearPesos(tope.tope)}); se repone el `
       + `${formatearDiaUtc(tope.fechaReposicion)} (UTC).`;
   let prefijo = '';
   if (actualizando) prefijo = PREFIJO_LECTURA_ANTERIOR;

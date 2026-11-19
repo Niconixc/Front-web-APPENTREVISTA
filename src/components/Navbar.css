@@ -1,86 +1,164 @@
-/* Sitemark Black Minimalist Navbar */
-.navbar {
-  background: rgba(20, 20, 20, 0.95);
-  backdrop-filter: blur(20px);
-  color: white;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+/* Menú lateral fijo, claro y con un borde fino (escritorio), y cajón deslizable (celular). */
+.marca { display: inline-flex; align-items: center; gap: var(--e-2); color: var(--texto); }
+.marca__logo {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radio);
+  background: var(--acento);
+  color: var(--texto-invertido);
+  font-weight: var(--peso-fuerte);
+  font-size: var(--texto-sm);
 }
+.marca__texto { display: flex; flex-direction: column; font-weight: var(--peso-fuerte); line-height: 1.2; }
+.marca__sub { font-weight: var(--peso-normal); font-size: var(--texto-xs); color: var(--texto-3); }
 
-.navbar-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1rem 2rem;
+.lateral {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 40;
+  width: var(--ancho-lateral);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 2rem;
+  flex-direction: column;
+  background: var(--lateral-fondo);
+  border-right: 1px solid var(--lateral-borde);
+  color: var(--lateral-texto);
 }
 
-.navbar-brand {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: white;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  letter-spacing: -0.5px;
-  transition: opacity 0.2s ease;
-}
+/* Dentro del menú, la marca usa los colores del menú */
+.lateral .marca { color: var(--lateral-texto); }
+.lateral .marca__logo { background: var(--lateral-logo-fondo); color: var(--lateral-logo-texto); }
+.lateral .marca__sub { color: var(--lateral-texto-3); }
 
-.navbar-brand:hover {
-  opacity: 0.8;
-}
+.lateral__marca { padding: var(--e-5) var(--e-4) var(--e-4); }
 
-.navbar-menu {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.lateral__nav {
   flex: 1;
+  overflow-y: auto;
+  padding: var(--e-1) var(--e-3) var(--e-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-5);
+  scrollbar-color: var(--lateral-activo) transparent;
 }
 
-.nav-link {
-  color: rgba(255, 255, 255, 0.7);
-  text-decoration: none;
-  font-weight: 500;
-  padding: 0.625rem 1.25rem;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  font-size: 0.95rem;
+.lateral__grupo ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+
+.lateral__titulo-grupo {
+  padding: 0 var(--e-3) var(--e-2);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-fuerte);
+  color: var(--lateral-texto-3);
 }
 
-.nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.95);
-}
-
-.navbar-user {
+.lateral__enlace {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--e-3);
+  padding: 0.45rem var(--e-3);
+  border-radius: var(--radio);
+  color: var(--lateral-texto-2);
+  font-weight: var(--peso-medio);
+  text-decoration: none;
+  transition: background-color var(--transicion), color var(--transicion);
+}
+.lateral__enlace:hover { background: var(--lateral-hover); color: var(--lateral-texto); }
+.lateral__enlace[aria-current='page'] {
+  background: var(--lateral-activo);
+  color: var(--lateral-texto);
+}
+/* Indicador de la sección actual: barra a la izquierda (no depende solo del fondo) */
+.lateral__enlace[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  left: calc(-1 * var(--e-3));
+  top: 0.4rem;
+  bottom: 0.4rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--lateral-indicador);
+}
+.lateral__enlace .icono { color: var(--lateral-texto-3); }
+.lateral__enlace:hover .icono { color: var(--lateral-texto-2); }
+.lateral__enlace[aria-current='page'] .icono { color: var(--lateral-indicador); }
+.lateral__enlace:focus-visible { outline-color: var(--lateral-indicador); outline-offset: 0; }
+
+.lateral__pie {
+  border-top: 1px solid var(--lateral-borde);
+  padding: var(--e-3) var(--e-3) var(--e-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-1);
 }
 
-.user-email {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 400;
+.lateral__usuario { display: flex; align-items: center; gap: var(--e-2); padding: var(--e-1) var(--e-1) var(--e-2); min-width: 0; }
+.lateral__usuario-textos { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.lateral__rol { font-size: var(--texto-xs); color: var(--lateral-texto-3); }
+.lateral__correo { font-size: var(--texto-sm); color: var(--lateral-texto); }
+
+.lateral__salir.boton {
+  justify-content: flex-start;
+  width: 100%;
+  padding-left: var(--e-3);
+  color: var(--lateral-texto-2);
+}
+.lateral__salir.boton:hover:not(:disabled) { background: var(--lateral-hover); color: var(--lateral-texto); }
+.lateral__salir.boton:focus-visible { outline-color: var(--lateral-indicador); }
+
+/* Barra superior: solo en pantallas angostas */
+.barra-movil { display: none; }
+.lateral-fondo { display: none; }
+
+@media (max-width: 900px) {
+  .barra-movil {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--e-3);
+    padding: var(--e-2) var(--e-4);
+    background: var(--lateral-fondo);
+    border-bottom: 1px solid var(--lateral-borde);
+    color: var(--lateral-texto);
+  }
+  .barra-movil .marca { color: var(--lateral-texto); }
+  .barra-movil .marca__logo { background: var(--lateral-logo-fondo); color: var(--lateral-logo-texto); }
+  .barra-movil .marca__texto { flex-direction: row; }
+  .barra-movil .boton--sutil { color: var(--lateral-texto); }
+  .barra-movil .boton--sutil:hover:not(:disabled) { background: var(--lateral-hover); color: var(--lateral-texto); }
+  .barra-movil .boton:focus-visible { outline-color: var(--lateral-indicador); }
+
+  .lateral {
+    transform: translateX(-100%);
+    visibility: hidden;
+    /* Cajón: curva tipo iOS (emil-design-eng); cierra un poco más rápido de lo que abre */
+    transition: transform 240ms var(--ease-drawer), visibility 0s linear 240ms;
+    box-shadow: var(--sombra-flotante);
+  }
+  .lateral--abierto {
+    transform: none;
+    visibility: visible;
+    transition: transform 300ms var(--ease-drawer);
+  }
+  .lateral-fondo {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    background: var(--velo);
+    transition: opacity 300ms var(--ease-out);
+  }
+  @starting-style {
+    .lateral-fondo { opacity: 0; }
+  }
 }
 
-.btn-logout {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 0.625rem 1.25rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
-}
-
-.btn-logout:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
+@media (forced-colors: active) {
+  .lateral { border-right: 1px solid CanvasText; }
+  .lateral__enlace[aria-current='page'] { outline: 2px solid Highlight; }
+  .lateral__enlace[aria-current='page']::before { background: Highlight; }
 }

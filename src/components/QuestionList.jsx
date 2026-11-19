@@ -19,6 +19,7 @@ import {
   formatearFecha,
 } from '../services/etiquetas';
 import FondoModal from './FondoModal';
+import Icono from './Icono';
 import './QuestionList.css';
 
 // Filtros que viajan a V2 (y viven en la URL: /preguntas?estado=pendiente&generadaPorIa=true).
@@ -60,38 +61,38 @@ const leerFiltros = (params) => {
 
 const recortar = (texto, largo) => (texto.length > largo ? `${texto.substring(0, largo)}...` : texto);
 
-const nivelClase = (nivel) => (VALORES_VALIDOS.nivel.includes(nivel) ? `nivel-${nivel}` : 'badge-general');
-const categoriaClase = (categoria) => (VALORES_VALIDOS.categoria.includes(categoria) ? `badge-${categoria}` : 'badge-general');
-const estadoClase = (estado) => (VALORES_VALIDOS.estado.includes(estado) ? `badge-estado-${estado}` : 'badge-general');
+// Variante de insignia por estado; un estado desconocido queda con la insignia neutra.
+const INSIGNIA_ESTADO = { pendiente: 'insignia--aviso', aprobada: 'insignia--exito', rechazada: 'insignia--peligro' };
+const estadoClase = (estado) => (VALORES_VALIDOS.estado.includes(estado) ? INSIGNIA_ESTADO[estado] : '');
 
 /** Contenido de la rúbrica para la vista previa: lo conocido se muestra ordenado; el resto, como JSON. */
 const Rubrica = ({ rubrica }) => {
   if (!rubrica || typeof rubrica !== 'object' || Object.keys(rubrica).length === 0) {
-    return <p className="detalle-vacio">Sin rúbrica</p>;
+    return <p className="lista-preguntas__vacio">Sin rúbrica</p>;
   }
   const { metodo, criterios, palabras_clave: palabras, tiempo_esperado_seg: tiempo, ...resto } = rubrica;
   const conocida = Array.isArray(criterios) || Array.isArray(palabras) || tiempo != null || metodo != null;
-  if (!conocida) return <pre className="detalle-json">{JSON.stringify(rubrica, null, 2)}</pre>;
+  if (!conocida) return <pre className="lista-preguntas__json">{JSON.stringify(rubrica, null, 2)}</pre>;
   return (
-    <div className="detalle-rubrica">
-      {metodo != null && <p><strong>Método:</strong> {String(metodo)}</p>}
+    <div className="lista-preguntas__rubrica">
+      {metodo != null && <p><span className="lista-preguntas__clave">Método:</span> {String(metodo)}</p>}
       {Array.isArray(criterios) && criterios.length > 0 && (
         <div>
-          <strong>Criterios:</strong>
+          <span className="lista-preguntas__clave">Criterios:</span>
           <ul>
             {criterios.map((c, i) => <li key={i}>{typeof c === 'string' ? c : JSON.stringify(c)}</li>)}
           </ul>
         </div>
       )}
       {Array.isArray(palabras) && palabras.length > 0 && (
-        <p><strong>Palabras clave:</strong> {palabras.map(String).join(', ')}</p>
+        <p><span className="lista-preguntas__clave">Palabras clave:</span> {palabras.map(String).join(', ')}</p>
       )}
-      {tiempo != null && <p><strong>Tiempo esperado:</strong> {String(tiempo)} s</p>}
+      {tiempo != null && <p><span className="lista-preguntas__clave">Tiempo esperado:</span> <span className="num">{String(tiempo)} s</span></p>}
       {Object.keys(resto).length > 0 && (
-        <>
-          <strong>Otros datos:</strong>
-          <pre className="detalle-json">{JSON.stringify(resto, null, 2)}</pre>
-        </>
+        <div>
+          <span className="lista-preguntas__clave">Otros datos:</span>
+          <pre className="lista-preguntas__json">{JSON.stringify(resto, null, 2)}</pre>
+        </div>
       )}
     </div>
   );
@@ -402,33 +403,38 @@ const QuestionList = () => {
     return { texto: '—', titulo: 'Sin cargo ni skill' };
   };
 
-  const COLUMNAS = 11;
+  const COLUMNAS = 8;
 
   const renderDetalle = (question) => {
     const opciones = [...(question.opciones || [])].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     return (
-      <tr className="fila-detalle">
+      <tr className="lista-preguntas__fila-detalle">
         <td colSpan={COLUMNAS}>
-          <div className="detalle-contenido">
-            <div className="detalle-bloque">
-              <h4>Enunciado</h4>
-              <p className="detalle-enunciado">{question.enunciado}</p>
+          <div className="lista-preguntas__detalle">
+            <div className="lista-preguntas__bloque">
+              <h4 className="lista-preguntas__bloque-titulo">Enunciado</h4>
+              <p className="lista-preguntas__texto-largo">{question.enunciado}</p>
             </div>
 
             {question.tipo === 'opcion_multiple' ? (
-              <div className="detalle-bloque">
-                <h4>Opciones</h4>
+              <div className="lista-preguntas__bloque">
+                <h4 className="lista-preguntas__bloque-titulo">Opciones</h4>
                 {opciones.length === 0 ? (
-                  <p className="detalle-vacio">Sin opciones</p>
+                  <p className="lista-preguntas__vacio">Sin opciones</p>
                 ) : (
-                  <ol className="detalle-opciones">
+                  <ol className="lista-preguntas__opciones">
                     {opciones.map((o, i) => (
-                      <li key={o.id ?? i} className={o.esCorrecta ? 'opcion-correcta' : ''}>
-                        <span className="opcion-letra">{LETRAS[i] ?? i + 1}</span>
-                        <div>
+                      <li key={o.id ?? i} className={o.esCorrecta ? 'lista-preguntas__opcion--correcta' : ''}>
+                        <span className="lista-preguntas__letra">{LETRAS[i] ?? i + 1}</span>
+                        <div className="lista-preguntas__opcion-texto">
                           <span>{o.texto}</span>
-                          {o.esCorrecta && <span className="marca-correcta">Correcta</span>}
-                          {o.explicacion && <p className="opcion-explicacion">{o.explicacion}</p>}
+                          {o.esCorrecta && (
+                            <span className="insignia insignia--exito">
+                              <Icono nombre="check" tamano={12} />
+                              Correcta
+                            </span>
+                          )}
+                          {o.explicacion && <p className="lista-preguntas__explicacion">{o.explicacion}</p>}
                         </div>
                       </li>
                     ))}
@@ -437,27 +443,27 @@ const QuestionList = () => {
               </div>
             ) : (
               <>
-                <div className="detalle-bloque">
-                  <h4>Respuesta ideal</h4>
+                <div className="lista-preguntas__bloque">
+                  <h4 className="lista-preguntas__bloque-titulo">Respuesta ideal</h4>
                   {question.respuestaIdeal
-                    ? <p className="detalle-texto">{question.respuestaIdeal}</p>
-                    : <p className="detalle-vacio">Sin respuesta ideal</p>}
+                    ? <p className="lista-preguntas__texto-largo">{question.respuestaIdeal}</p>
+                    : <p className="lista-preguntas__vacio">Sin respuesta ideal</p>}
                 </div>
-                <div className="detalle-bloque">
-                  <h4>Rúbrica</h4>
+                <div className="lista-preguntas__bloque">
+                  <h4 className="lista-preguntas__bloque-titulo">Rúbrica</h4>
                   <Rubrica rubrica={question.rubrica} />
                 </div>
               </>
             )}
 
             {question.estado === 'rechazada' && question.motivoRechazo && (
-              <div className="detalle-bloque">
-                <h4>Motivo del rechazo</h4>
-                <p className="detalle-texto">{question.motivoRechazo}</p>
+              <div className="lista-preguntas__bloque">
+                <h4 className="lista-preguntas__bloque-titulo">Motivo del rechazo</h4>
+                <p className="lista-preguntas__texto-largo">{question.motivoRechazo}</p>
               </div>
             )}
 
-            <p className="detalle-meta">
+            <p className="lista-preguntas__meta mono">
               ID: {question.id}
               {question.cargoId && <> · Cargo: {question.cargoId}</>}
               {question.skillId && <> · Skill: {question.skillId}</>}
@@ -475,152 +481,195 @@ const QuestionList = () => {
     : `Total: ${totalQuestions} preguntas`;
 
   return (
-    <div className="question-list">
-      <div className="header">
-        <div className="header-content">
-          <div>
-            <h1>Gestión de Preguntas</h1>
-            <p className="subtitle">{loading && questions.length === 0 ? 'Cargando...' : subtitulo}</p>
-          </div>
-          <div className="header-actions">
-            <button onClick={() => navigate('/generar-preguntas')} className="btn btn-secondary btn-header">
-              Generar con IA
-            </button>
-            <button onClick={() => navigate('/crear-pregunta')} className="btn btn-primary">
-              Crear pregunta
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="filters-section">
-        <div className="search-box">
-          <input
-            type="text"
-            name="buscar"
-            value={filtros.buscar}
-            onChange={handleSearchChange}
-            placeholder="Buscar en esta página"
-            className="search-input"
-            aria-label="Buscar en esta página"
-          />
-          <p className="search-hint">
-            La búsqueda filtra solo las preguntas de la página actual; el servidor no ofrece búsqueda por texto.
+    <div className="pagina lista-preguntas">
+      <header className="encabezado-pagina">
+        <div className="encabezado-pagina__textos">
+          <h1 className="encabezado-pagina__titulo">Preguntas</h1>
+          <p className="encabezado-pagina__descripcion num">
+            {loading && questions.length === 0 ? 'Cargando...' : subtitulo}
           </p>
         </div>
+        <div className="encabezado-pagina__acciones">
+          <button type="button" onClick={() => navigate('/generar-preguntas')} className="boton">
+            <Icono nombre="generar" />
+            Generar con IA
+          </button>
+          <button type="button" onClick={() => navigate('/crear-pregunta')} className="boton boton--primario">
+            <Icono nombre="mas" />
+            Crear pregunta
+          </button>
+        </div>
+      </header>
 
-        <div className="filters-row">
-          <select name="estado" value={filtros.estado} onChange={handleFilterChange} className="filter-select" aria-label="Estado">
-            <option value="">Todos los estados</option>
-            {ESTADOS_PREGUNTA.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+      <div className="pila pila--chica">
+        <div className="filtros">
+          <div className="campo campo--busqueda">
+            <label htmlFor="lista-preguntas-buscar" className="campo__etiqueta">Buscar</label>
+            <input
+              id="lista-preguntas-buscar"
+              type="text"
+              name="buscar"
+              value={filtros.buscar}
+              onChange={handleSearchChange}
+              placeholder="Buscar en esta página"
+              aria-label="Buscar en esta página"
+              aria-describedby="lista-preguntas-buscar-ayuda"
+            />
+          </div>
 
-          <select name="categoria" value={filtros.categoria} onChange={handleFilterChange} className="filter-select" aria-label="Categoría">
-            <option value="">Todas las categorías</option>
-            {CATEGORIAS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          <div className="campo">
+            <label htmlFor="lista-preguntas-estado" className="campo__etiqueta">Estado</label>
+            <select id="lista-preguntas-estado" name="estado" value={filtros.estado} onChange={handleFilterChange} aria-label="Estado">
+              <option value="">Todos los estados</option>
+              {ESTADOS_PREGUNTA.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
 
-          <select name="tipo" value={filtros.tipo} onChange={handleFilterChange} className="filter-select" aria-label="Tipo">
-            <option value="">Todos los tipos</option>
-            {TIPOS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          <div className="campo">
+            <label htmlFor="lista-preguntas-categoria" className="campo__etiqueta">Categoría</label>
+            <select id="lista-preguntas-categoria" name="categoria" value={filtros.categoria} onChange={handleFilterChange} aria-label="Categoría">
+              <option value="">Todas las categorías</option>
+              {CATEGORIAS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
 
-          <select name="nivel" value={filtros.nivel} onChange={handleFilterChange} className="filter-select" aria-label="Nivel">
-            <option value="">Todos los niveles</option>
-            {NIVELES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          <div className="campo">
+            <label htmlFor="lista-preguntas-tipo" className="campo__etiqueta">Tipo</label>
+            <select id="lista-preguntas-tipo" name="tipo" value={filtros.tipo} onChange={handleFilterChange} aria-label="Tipo">
+              <option value="">Todos los tipos</option>
+              {TIPOS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
 
-          <select name="cargoId" value={filtros.cargoId} onChange={handleFilterChange} className="filter-select" aria-label="Cargo">
-            <option value="">Todos los cargos</option>
-            {filtros.cargoId && !nombreCargo.has(filtros.cargoId) && (
-              <option value={filtros.cargoId}>Cargo seleccionado</option>
-            )}
-            {cargosPorArea.map(([area, lista]) => (
-              <optgroup key={area} label={area}>
-                {lista.map((c) => <option key={c.cargoId} value={c.cargoId}>{c.nombre}</option>)}
-              </optgroup>
-            ))}
-          </select>
+          <div className="campo">
+            <label htmlFor="lista-preguntas-nivel" className="campo__etiqueta">Nivel</label>
+            <select id="lista-preguntas-nivel" name="nivel" value={filtros.nivel} onChange={handleFilterChange} aria-label="Nivel">
+              <option value="">Todos los niveles</option>
+              {NIVELES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
 
-          <select name="generadaPorIa" value={filtros.generadaPorIa} onChange={handleFilterChange} className="filter-select" aria-label="Origen">
-            <option value="">Todos los orígenes</option>
-            <option value="true">Generadas con IA</option>
-            <option value="false">Manuales</option>
-          </select>
+          <div className="campo">
+            <label htmlFor="lista-preguntas-cargo" className="campo__etiqueta">Cargo</label>
+            <select id="lista-preguntas-cargo" name="cargoId" value={filtros.cargoId} onChange={handleFilterChange} aria-label="Cargo">
+              <option value="">Todos los cargos</option>
+              {filtros.cargoId && !nombreCargo.has(filtros.cargoId) && (
+                <option value={filtros.cargoId}>Cargo seleccionado</option>
+              )}
+              {cargosPorArea.map(([area, lista]) => (
+                <optgroup key={area} label={area}>
+                  {lista.map((c) => <option key={c.cargoId} value={c.cargoId}>{c.nombre}</option>)}
+                </optgroup>
+              ))}
+            </select>
+          </div>
 
-          <select value={String(tamano)} onChange={handleTamanoChange} className="filter-select filter-select-sm" aria-label="Preguntas por página">
-            {TAMANOS_PAGINA.map((n) => <option key={n} value={n}>{n} por página</option>)}
-          </select>
+          <div className="campo">
+            <label htmlFor="lista-preguntas-origen" className="campo__etiqueta">Origen</label>
+            <select id="lista-preguntas-origen" name="generadaPorIa" value={filtros.generadaPorIa} onChange={handleFilterChange} aria-label="Origen">
+              <option value="">Todos los orígenes</option>
+              <option value="true">Generadas con IA</option>
+              <option value="false">Manuales</option>
+            </select>
+          </div>
+
+          <div className="campo lista-preguntas__campo-tamano">
+            <label htmlFor="lista-preguntas-tamano" className="campo__etiqueta">Por página</label>
+            <select id="lista-preguntas-tamano" value={String(tamano)} onChange={handleTamanoChange} aria-label="Preguntas por página">
+              {TAMANOS_PAGINA.map((n) => <option key={n} value={n}>{n} por página</option>)}
+            </select>
+          </div>
 
           {hayFiltros && (
-            <button onClick={clearFilters} className="btn btn-secondary btn-header">
+            <button type="button" onClick={clearFilters} className="boton boton--sutil">
               Limpiar filtros
             </button>
           )}
         </div>
+
+        <p id="lista-preguntas-buscar-ayuda" className="nota nota--chica">
+          La búsqueda filtra solo las preguntas de la página actual; el servidor no ofrece búsqueda por texto.
+        </p>
+
         {(filtros.skillId || filtros.paraCargoId) && (
-          <p className="search-hint">
-            {filtros.paraCargoId
-              ? `Mostrando las preguntas de una skill que sirven para ${nombreCargo.get(filtros.paraCargoId) || 'un cargo'} (las de ese cargo y las sin cargo), abierto desde Cobertura.`
-              : 'Mostrando solo las preguntas de una skill (abierto desde Cobertura).'}{' '}
-            <button
-              type="button"
-              className="btn-link-inline"
-              onClick={() => {
-                const nuevos = new URLSearchParams(searchParams);
-                ['skillId', 'paraCargoId', 'pagina'].forEach((clave) => nuevos.delete(clave));
-                setSearchParams(nuevos);
-              }}
-            >
-              Ver todas las skills
-            </button>
-          </p>
+          <div className="aviso aviso--info">
+            <Icono nombre="filtro" className="aviso__icono" />
+            <p className="aviso__contenido">
+              <span>
+                {filtros.paraCargoId
+                  ? `Mostrando las preguntas de una skill que sirven para ${nombreCargo.get(filtros.paraCargoId) || 'un cargo'} (las de ese cargo y las sin cargo), abierto desde Cobertura.`
+                  : 'Mostrando solo las preguntas de una skill (abierto desde Cobertura).'}{' '}
+                <button
+                  type="button"
+                  className="boton-enlace"
+                  onClick={() => {
+                    const nuevos = new URLSearchParams(searchParams);
+                    ['skillId', 'paraCargoId', 'pagina'].forEach((clave) => nuevos.delete(clave));
+                    setSearchParams(nuevos);
+                  }}
+                >
+                  Ver todas las skills
+                </button>
+              </span>
+            </p>
+          </div>
         )}
-        {errorCargos && <p className="search-hint">{errorCargos}</p>}
+        {errorCargos && <p className="nota nota--chica texto-peligro">{errorCargos}</p>}
       </div>
 
       {error && (
-        <div className="alert alert-error">
-          {error}
-          {preguntaEnUso && (
-            <button
-              type="button"
-              className="btn btn-sm btn-danger alert-action"
-              onClick={() => abrirRechazo(preguntaEnUso)}
-            >
-              Rechazar en su lugar
-            </button>
-          )}
+        <div className="aviso aviso--peligro">
+          <Icono nombre="alerta" className="aviso__icono" />
+          <div className="aviso__contenido">
+            <span>{error}</span>
+            {preguntaEnUso && (
+              <div>
+                <button
+                  type="button"
+                  className="boton boton--chico"
+                  onClick={() => abrirRechazo(preguntaEnUso)}
+                >
+                  Rechazar en su lugar
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
-      {successMessage && <div className="alert alert-success">{successMessage}</div>}
+      {successMessage && (
+        <div className="aviso aviso--exito">
+          <Icono nombre="check-circulo" className="aviso__icono" />
+          <div className="aviso__contenido">{successMessage}</div>
+        </div>
+      )}
 
       {(seleccionadas.size > 0 || masivo) && (
-        <div className="bulk-bar">
+        <div className="lista-preguntas__masivo">
           {seleccionadas.size > 0 && (
             <button
               type="button"
-              className="btn btn-sm btn-success"
+              className="boton boton--chico"
               onClick={handleApproveSelected}
               disabled={Boolean(masivo?.corriendo)}
             >
+              <Icono nombre="check" />
               Aprobar seleccionadas ({seleccionadas.size})
             </button>
           )}
           {masivo && (
-            <div className="bulk-progress">
-              <span>
+            <div className="lista-preguntas__masivo-progreso">
+              <span className="num">
                 {masivo.corriendo
                   ? `Aprobando ${masivo.hechas} de ${masivo.total}...`
                   : `Listo: ${masivo.total - masivo.errores.length} aprobadas, ${masivo.errores.length} con error`}
               </span>
               {masivo.errores.length > 0 && (
-                <ul className="bulk-errors">
+                <ul className="lista-preguntas__masivo-errores">
                   {masivo.errores.map((e) => <li key={e.id}>"{e.enunciado}": {e.mensaje}</li>)}
                 </ul>
               )}
               {!masivo.corriendo && (
-                <button type="button" className="btn btn-sm btn-secondary" onClick={() => setMasivo(null)}>
+                <button type="button" className="boton boton--sutil boton--chico" onClick={() => setMasivo(null)}>
                   Cerrar
                 </button>
               )}
@@ -629,11 +678,11 @@ const QuestionList = () => {
         </div>
       )}
 
-      <div className="table-container">
-        <table className="questions-table">
+      <div className="tabla-contenedor">
+        <table className="tabla tabla--compacta lista-preguntas__tabla">
           <thead>
             <tr>
-              <th className="col-check">
+              <th className="lista-preguntas__col-check">
                 <input
                   type="checkbox"
                   checked={todasSeleccionadas}
@@ -643,23 +692,20 @@ const QuestionList = () => {
                   aria-label="Seleccionar todas"
                 />
               </th>
-              <th>Enunciado</th>
+              <th className="lista-preguntas__col-enunciado">Enunciado</th>
               <th>Categoría</th>
               <th>Tipo</th>
-              <th>Nivel</th>
               <th>Contexto</th>
-              <th>Estado</th>
-              <th>Origen</th>
-              <th>Usos</th>
-              <th>Creada</th>
-              <th>Acciones</th>
+              <th>Estado y origen</th>
+              <th>Creada y usos</th>
+              <th className="celda-acciones">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {loading && questions.length === 0 ? (
               <tr>
                 <td colSpan={COLUMNAS}>
-                  <div className="loading">Cargando preguntas...</div>
+                  <div className="cargando cargando--bloque">Cargando preguntas...</div>
                 </td>
               </tr>
             ) : visibles.map((question) => {
@@ -670,8 +716,8 @@ const QuestionList = () => {
               const numOpciones = Array.isArray(question.opciones) ? question.opciones.length : 0;
               return (
                 <Fragment key={question.id}>
-                <tr className={abierta ? 'fila-abierta' : ''}>
-                  <td className="col-check">
+                <tr className={abierta ? 'lista-preguntas__fila--abierta' : ''}>
+                  <td className="lista-preguntas__col-check">
                     {question.estado !== 'aprobada' && (
                       <input
                         type="checkbox"
@@ -682,65 +728,59 @@ const QuestionList = () => {
                       />
                     )}
                   </td>
-                  <td className="question-text">
-                    <div className="text-preview" title={question.enunciado}>
-                      {recortar(String(question.enunciado || ''), 140)}
+                  <td className="lista-preguntas__col-enunciado">
+                    <div className="lista-preguntas__enunciado" title={question.enunciado}>
+                      {String(question.enunciado || '')}
                     </div>
-                    <button type="button" className="link-detalle" onClick={() => toggleExpandida(question.id)}>
+                    <button
+                      type="button"
+                      className="boton-enlace"
+                      aria-expanded={abierta}
+                      onClick={() => toggleExpandida(question.id)}
+                    >
                       {abierta ? 'Ocultar detalle' : 'Ver detalle'}
                     </button>
                   </td>
                   <td>
-                    <span className={`badge ${categoriaClase(question.categoria)}`}>
-                      {etiqueta(CATEGORIAS, question.categoria)}
-                    </span>
+                    {etiqueta(CATEGORIAS, question.categoria)}
+                    <span className="lista-preguntas__sub">{etiqueta(NIVELES, question.nivel)}</span>
                   </td>
-                  <td className="col-tipo">
+                  <td>
                     {etiqueta(TIPOS, question.tipo)}
                     {question.tipo === 'opcion_multiple' && (
-                      <span className="texto-secundario">{numOpciones} opciones</span>
+                      <span className="lista-preguntas__sub num">{numOpciones} opciones</span>
                     )}
                   </td>
-                  <td>
-                    <span className={`badge ${nivelClase(question.nivel)}`}>
-                      {etiqueta(NIVELES, question.nivel)}
-                    </span>
+                  <td className="lista-preguntas__col-contexto" title={ctx.titulo}>
+                    <div className="lista-preguntas__contexto">{ctx.texto}</div>
                   </td>
-                  <td title={ctx.titulo}>{ctx.texto}</td>
                   <td>
                     <span
-                      className={`badge ${estadoClase(question.estado)}`}
+                      className={`insignia insignia--punto ${estadoClase(question.estado)}`.trim()}
                       title={question.estado === 'rechazada' && question.motivoRechazo ? question.motivoRechazo : undefined}
                     >
                       {etiqueta(ESTADOS_PREGUNTA, question.estado)}
                     </span>
                     {question.estado === 'rechazada' && question.motivoRechazo && (
-                      <div className="motivo-rechazo" title={question.motivoRechazo}>
+                      <div className="lista-preguntas__motivo" title={question.motivoRechazo}>
                         {recortar(question.motivoRechazo, 60)}
                       </div>
                     )}
+                    <span className="lista-preguntas__sub">{question.generadaPorIa ? 'Generada con IA' : 'Manual'}</span>
                   </td>
-                  <td>
-                    {question.generadaPorIa
-                      ? <span className="badge badge-ia">IA</span>
-                      : <span className="texto-secundario">Manual</span>}
+                  <td className="lista-preguntas__col-fecha">
+                    {formatearFecha(question.fechaCreacion)}
+                    <span className="lista-preguntas__sub">
+                      {question.vecesUsada ?? 0} {Number(question.vecesUsada) === 1 ? 'uso' : 'usos'}
+                    </span>
                   </td>
-                  <td className="col-numero">{question.vecesUsada ?? 0}</td>
-                  <td className="col-fecha">{formatearFecha(question.fechaCreacion)}</td>
-                  <td>
-                    <div className="actions">
-                      <button
-                        onClick={() => navigate(`/editar-pregunta/${question.id}`)}
-                        className="btn btn-sm btn-secondary"
-                        title="Editar pregunta"
-                        disabled={ocupada}
-                      >
-                        Editar
-                      </button>
+                  <td className="celda-acciones">
+                    <div className="grupo-botones">
                       {question.estado !== 'aprobada' && (
                         <button
+                          type="button"
                           onClick={() => handleApprove(question)}
-                          className="btn btn-sm btn-success"
+                          className="boton boton--chico"
                           title="Aprobar: quedará visible para los usuarios"
                           disabled={ocupada}
                         >
@@ -749,8 +789,9 @@ const QuestionList = () => {
                       )}
                       {question.estado !== 'rechazada' && (
                         <button
+                          type="button"
                           onClick={() => abrirRechazo(question)}
-                          className="btn btn-sm btn-warning"
+                          className="boton boton--chico"
                           title="Rechazar con un motivo"
                           disabled={ocupada}
                         >
@@ -758,12 +799,24 @@ const QuestionList = () => {
                         </button>
                       )}
                       <button
+                        type="button"
+                        onClick={() => navigate(`/editar-pregunta/${question.id}`)}
+                        className="boton boton--chico boton--icono"
+                        title="Editar pregunta"
+                        aria-label="Editar"
+                        disabled={ocupada}
+                      >
+                        <Icono nombre="editar" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleDeleteQuestion(question)}
-                        className="btn btn-sm btn-danger"
+                        className="boton boton--chico boton--icono boton--peligro-suave"
                         title={enUso ? 'Ya se usó en entrevistas; recházala en su lugar' : 'Eliminar pregunta'}
+                        aria-label="Eliminar"
                         disabled={ocupada || enUso}
                       >
-                        Eliminar
+                        <Icono nombre="borrar" />
                       </button>
                     </div>
                   </td>
@@ -776,7 +829,7 @@ const QuestionList = () => {
         </table>
 
         {!loading && visibles.length === 0 && !error && (
-          <div className="empty-state">
+          <div className="vacio">
             <p>
               {textoBusqueda && questions.length > 0
                 ? 'Ninguna pregunta de esta página coincide con la búsqueda'
@@ -786,68 +839,87 @@ const QuestionList = () => {
             </p>
           </div>
         )}
-        {loading && questions.length > 0 && <div className="loading-inline">Actualizando...</div>}
+        {loading && questions.length > 0 && (
+          <div className="lista-preguntas__actualizando">
+            <span className="cargando">Actualizando...</span>
+          </div>
+        )}
       </div>
 
       {totalPages > 1 && (
-        <div className="pagination">
-          <button
-            onClick={() => irAPagina(pagina - 1)}
-            disabled={pagina <= 1 || loading}
-            className="btn btn-secondary"
-          >
-            Anterior
-          </button>
-
-          <span className="pagination-info">
+        <nav className="paginacion" aria-label="Paginación">
+          <span>
             Página {Math.min(pagina, totalPages)} de {totalPages}
           </span>
-
-          <button
-            onClick={() => irAPagina(pagina + 1)}
-            disabled={pagina >= totalPages || loading}
-            className="btn btn-secondary"
-          >
-            Siguiente
-          </button>
-        </div>
+          <div className="grupo-botones">
+            <button
+              type="button"
+              onClick={() => irAPagina(pagina - 1)}
+              disabled={pagina <= 1 || loading}
+              className="boton boton--chico"
+            >
+              <Icono nombre="chevron-izquierda" />
+              Anterior
+            </button>
+            <button
+              type="button"
+              onClick={() => irAPagina(pagina + 1)}
+              disabled={pagina >= totalPages || loading}
+              className="boton boton--chico"
+            >
+              Siguiente
+              <Icono nombre="chevron-derecha" />
+            </button>
+          </div>
+        </nav>
       )}
 
       {rechazo && (
         // El fondo no cierra con el 2.º clic de un doble clic en «Rechazar» ni al arrastrar desde el motivo (FondoModal).
         <FondoModal onCerrar={cerrarRechazo}>
           <form
-            className="modal"
+            className="dialogo"
             role="dialog"
             aria-modal="true"
             aria-labelledby="titulo-rechazo"
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleReject}
           >
-            <h2 id="titulo-rechazo">Rechazar pregunta</h2>
-            <p className="modal-enunciado" title={rechazo.pregunta.enunciado}>
-              "{recortar(String(rechazo.pregunta.enunciado || ''), 160)}"
-            </p>
-            <label htmlFor="motivo-rechazo">Motivo del rechazo (obligatorio)</label>
-            <textarea
-              id="motivo-rechazo"
-              value={rechazo.motivo}
-              onChange={(e) => setRechazo((actual) => ({ ...actual, motivo: e.target.value }))}
-              maxLength={LIMITES.motivoRechazo}
-              rows={5}
-              autoFocus
-              disabled={rechazo.enviando}
-              placeholder="Explica qué debe corregirse"
-            />
-            <div className="contador-caracteres">
-              {rechazo.motivo.length}/{LIMITES.motivoRechazo}
+            <div className="dialogo__encabezado">
+              <h2 id="titulo-rechazo" className="dialogo__titulo">Rechazar pregunta</h2>
             </div>
-            {rechazo.error && <div className="alert alert-error">{rechazo.error}</div>}
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary btn-header" onClick={cerrarRechazo} disabled={rechazo.enviando}>
+            <div className="dialogo__cuerpo">
+              <blockquote className="lista-preguntas__cita" title={rechazo.pregunta.enunciado}>
+                {recortar(String(rechazo.pregunta.enunciado || ''), 160)}
+              </blockquote>
+              <div className="campo">
+                <label htmlFor="motivo-rechazo" className="campo__etiqueta">Motivo del rechazo (obligatorio)</label>
+                <textarea
+                  id="motivo-rechazo"
+                  value={rechazo.motivo}
+                  onChange={(e) => setRechazo((actual) => ({ ...actual, motivo: e.target.value }))}
+                  maxLength={LIMITES.motivoRechazo}
+                  rows={5}
+                  autoFocus
+                  disabled={rechazo.enviando}
+                  placeholder="Explica qué debe corregirse"
+                />
+                <div className="campo__contador">
+                  {rechazo.motivo.length}/{LIMITES.motivoRechazo}
+                </div>
+              </div>
+              {rechazo.error && (
+                <div className="aviso aviso--peligro">
+                  <Icono nombre="alerta" className="aviso__icono" />
+                  <div className="aviso__contenido">{rechazo.error}</div>
+                </div>
+              )}
+            </div>
+            <div className="dialogo__pie">
+              <button type="button" className="boton" onClick={cerrarRechazo} disabled={rechazo.enviando}>
                 Cancelar
               </button>
-              <button type="submit" className="btn btn-danger btn-header" disabled={!motivoValido || rechazo.enviando}>
+              <button type="submit" className="boton boton--peligro" disabled={!motivoValido || rechazo.enviando}>
                 {rechazo.enviando ? 'Rechazando...' : 'Rechazar'}
               </button>
             </div>

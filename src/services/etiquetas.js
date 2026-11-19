@@ -71,6 +71,9 @@ export const formatearDiaUtc = (dia) => {
 };
 
 /** 'AAAA-MM-DD' de hoy en UTC menos [dias] días (para rangos de costos de IA). */
+/** Fecha sin zona (LocalDateTime del backend, p. ej. fechaCreacion de usuarios): el día tal cual, sin new Date. */
+export const formatearDiaSinZona = (valor) => (valor ? formatearDiaUtc(String(valor).slice(0, 10)) : '—');
+
 export const diaUtc = (diasAtras = 0) => new Date(Date.now() - diasAtras * 86_400_000).toISOString().slice(0, 10);
 
 /** Todos los días 'AAAA-MM-DD' entre desde y hasta (incluidos). */
@@ -83,11 +86,70 @@ export const diasEntre = (desde, hasta) => {
   return dias;
 };
 
-/** USD con 4 decimales, o 6 si es un monto muy chico (los costos de IA suelen ser fracciones de centavo). */
+/** USD con 4 decimales, o 6 si es un monto muy chico (los costos de IA suelen ser fracciones de centavo). Solo CSV. */
 export const formatearUsd = (monto) => {
   const n = Number(monto) || 0;
   return `US$ ${n.toFixed(n !== 0 && Math.abs(n) < 0.01 ? 6 : 4)}`;
 };
+
+// ---------- Pesos chilenos ----------
+// El backend guarda los costos en USD (así cobra el proveedor de IA). El panel los muestra en pesos chilenos con un
+// tipo de cambio referencial: VITE_DOLAR_CLP en Vercel (o en .env) y, si no está, 950. No consulta servicios externos.
+
+const leerTipoCambio = () => {
+  let valor;
+  try {
+    valor = Number(import.meta.env?.VITE_DOLAR_CLP);
+  } catch {
+    valor = NaN;
+  }
+  return Number.isFinite(valor) && valor > 0 ? valor : 950;
+};
+
+/** Pesos chilenos por 1 dólar que usa el panel para convertir. */
+export const TIPO_CAMBIO_CLP = leerTipoCambio();
+
+/** Separador de miles con punto, como se escribe en Chile (sin depender del Intl del navegador). */
+const conPuntos = (entero) => String(entero).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+/**
+ * Monto en USD mostrado en pesos chilenos, simple: «$3.990», «$4,2» (bajo $10 se muestra un decimal) o «menos de $0,1».
+ * Es una referencia: el cobro real es en dólares.
+ */
+export const formatearPesos = (montoUsd, tipoCambio = TIPO_CAMBIO_CLP) => {
+  const pesos = (Number(montoUsd) || 0) * tipoCambio;
+  const signo = pesos < 0 ? '-' : '';
+  const abs = Math.abs(pesos);
+  if (abs === 0) return '$0';
+  if (abs < 0.05) return 'menos de $0,1';
+  if (abs < 10) return `${signo}$${abs.toFixed(1).replace('.', ',').replace(/,0$/, '')}`;
+  return `${signo}$${conPuntos(Math.round(abs))}`;
+};
+
+// ---------- Avatares ----------
+
+/**
+ * Dos iniciales para el avatar: del nombre («Camila Rojas» → «CR») o, sin nombre, del correo («diego.fuentes@…» → «DF»,
+ * «admin@…» → «AD»). Sin nada, «?».
+ */
+export const iniciales = (nombreOCorreo) => {
+  const texto = String(nombreOCorreo || '').trim();
+  if (!texto) return '?';
+  const base = texto.includes('@') ? texto.split('@')[0] : texto;
+  const partes = base.split(/[\s._-]+/).filter(Boolean);
+  const letras = partes.length >= 2 ? partes[0][0] + partes[1][0] : (partes[0] || '?').slice(0, 2);
+  return letras.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase() || '?';
+};
+
+/** Tono estable del avatar (0 a 3) según el texto: la misma persona siempre tiene el mismo color. */
+export const tonoAvatar = (texto) => {
+  let h = 0;
+  for (const c of String(texto || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return h % 4;
+};
+
+/** Texto corto para explicar la conversión (notas de Informes y Generar con IA). */
+export const NOTA_TIPO_CAMBIO = `Montos en pesos chilenos aproximados: el proveedor de IA cobra en dólares y se convierte con 1 US$ = $${conPuntos(TIPO_CAMBIO_CLP)}.`;
 
 // ---------- Preguntas: formulario ↔ API ----------
 

@@ -154,21 +154,21 @@ test('desactivado: sin medidor, sin fecha y sin prometer que se repone', () => {
     assert.doesNotMatch(texto, /repon/i, texto);
   }
   assert.match(detalle, /vale 0 o no es un monto válido/);
-  assert.match(detalle, /Gastado en noviembre de 2026 \(UTC\): US\$ 1\.2500/);
+  assert.match(detalle, /Gastado en noviembre de 2026 \(UTC\): \$1\.188/);
   assert.equal(valorTextoMedidor(tope), '');
 });
 
 test('textos del bloque: estado en palabras y fechas DD-MM-AAAA sin correrse un día en Chile', () => {
   assert.deepEqual(textoTope(leerTopeGeneracion(respuesta())), {
     estado: 'Disponible',
-    titulo: 'US$ 1.2500 de US$ 5.0000 usados en noviembre de 2026 (UTC)',
-    detalle: 'Quedan US$ 3.7500. Se repone el 01-12-2026 (UTC).',
+    titulo: '$1.188 de $4.750 usados en noviembre de 2026 (UTC)',
+    detalle: 'Quedan $3.563. Se repone el 01-12-2026 (UTC).',
   });
   assert.equal(textoTope(leerTopeGeneracion(respuesta({ gastadoUsd: 4.5, restanteUsd: 0.5 }))).estado, 'Cerca del tope');
 
   const agotadoTexto = textoTope(leerTopeGeneracion(agotado()));
   assert.equal(agotadoTexto.estado, 'Tope alcanzado');
-  assert.equal(agotadoTexto.titulo, 'Tope mensual alcanzado: US$ 5.3000 de US$ 5.0000');
+  assert.equal(agotadoTexto.titulo, 'Tope mensual alcanzado: $5.035 de $4.750');
   assert.match(agotadoTexto.detalle, /^Hasta el 01-12-2026 \(UTC\)/);
   assert.match(agotadoTexto.detalle, /sin llamar a la IA \(sin costo\)/);
 
@@ -191,15 +191,15 @@ test('formatearMesUtc: mes en palabras sin new Date, el crudo si no sirve y — 
 });
 
 test('valor del medidor para lectores de pantalla: montos y porcentaje', () => {
-  assert.equal(valorTextoMedidor(leerTopeGeneracion(respuesta())), 'US$ 1.2500 de US$ 5.0000 (25 %)');
-  assert.equal(valorTextoMedidor(leerTopeGeneracion(agotado())), 'US$ 5.3000 de US$ 5.0000 (100 %)');
+  assert.equal(valorTextoMedidor(leerTopeGeneracion(respuesta())), '$1.188 de $4.750 (25 %)');
+  assert.equal(valorTextoMedidor(leerTopeGeneracion(agotado())), '$5.035 de $4.750 (100 %)');
   assert.equal(valorTextoMedidor(null), '');
 });
 
 test('aviso antes de generar: solo si está agotado, desactivado o si esta generación supera lo que queda', () => {
   const casiSinSaldo = leerTopeGeneracion(respuesta({ gastadoUsd: 4.99, restanteUsd: 0.01 }));
   const aviso = avisoAntesDeGenerar(casiSinSaldo, 0.02);
-  assert.match(aviso, /supera lo que queda del tope del mes \(US\$ 0\.0100\)/);
+  assert.match(aviso, /supera lo que queda del tope del mes \(\$9,5\)/);
   assert.match(aviso, /no reserva saldo/);
   assert.match(aviso, /01-12-2026/);
   assert.equal(avisoAntesDeGenerar(casiSinSaldo, null), null, 'sin referencia de costo no se adivina');
@@ -208,14 +208,14 @@ test('aviso antes de generar: solo si está agotado, desactivado o si esta gener
   assert.equal(avisoAntesDeGenerar(null, 0.02), null);
 
   const agotadoAviso = avisoAntesDeGenerar(leerTopeGeneracion(agotado()), null);
-  assert.match(agotadoAviso, /Ya se alcanzó el tope del mes \(US\$ 5\.0000\)/);
+  assert.match(agotadoAviso, /Ya se alcanzó el tope del mes \(\$4\.750\)/);
   assert.match(agotadoAviso, /«tope alcanzado» sin llamar a la IA \(sin costo\) hasta el 01-12-2026 \(UTC\)/);
   assert.match(avisoAntesDeGenerar(leerTopeGeneracion(desactivado()), 0.02), /desactivada en el servidor/);
 });
 
 test('línea del tope en la confirmación: el aviso o cuánto queda', () => {
   assert.deepEqual(lineaTopeEnConfirmacion(leerTopeGeneracion(respuesta()), 0.05), {
-    texto: 'Quedan US$ 3.7500 del tope del mes (US$ 5.0000); se repone el 01-12-2026 (UTC).',
+    texto: 'Quedan $3.563 del tope del mes ($4.750); se repone el 01-12-2026 (UTC).',
     esAviso: false,
   });
   assert.equal(lineaTopeEnConfirmacion(leerTopeGeneracion(agotado()), 0.05).esAviso, true);
@@ -227,7 +227,7 @@ test('línea del tope en la confirmación: el aviso o cuánto queda', () => {
 test('línea del tope mientras se vuelve a leer al abrir la confirmación: se presenta como la última lectura', () => {
   assert.equal(PREFIJO_LECTURA_ANTERIOR, 'Según la última lectura (se está actualizando), ');
   assert.deepEqual(lineaTopeEnConfirmacion(leerTopeGeneracion(respuesta()), 0.05, { actualizando: true }), {
-    texto: 'Según la última lectura (se está actualizando), quedan US$ 3.7500 del tope del mes (US$ 5.0000); se repone '
+    texto: 'Según la última lectura (se está actualizando), quedan $3.563 del tope del mes ($4.750); se repone '
       + 'el 01-12-2026 (UTC).',
     esAviso: false,
   });
@@ -241,7 +241,7 @@ test('línea del tope mientras se vuelve a leer al abrir la confirmación: se pr
     leerTopeGeneracion(respuesta({ gastadoUsd: 4.99, restanteUsd: 0.01 })), 0.02, { actualizando: true }
   );
   assert.equal(supera.esAviso, true);
-  assert.match(supera.texto, /^Según la última lectura \(se está actualizando\), esta generación \(unos US\$ 0\.0200\)/);
+  assert.match(supera.texto, /^Según la última lectura \(se está actualizando\), esta generación \(unos \$19\)/);
 
   const desactivadoViejo = lineaTopeEnConfirmacion(leerTopeGeneracion(desactivado()), 0.02, { actualizando: true });
   assert.match(desactivadoViejo.texto, /^Según la última lectura \(se está actualizando\), la generación con IA está desactivada/);
@@ -262,14 +262,14 @@ test('línea del tope si falla la relectura: se mantiene la última lectura, mar
     leerTopeGeneracion(respuesta({ gastadoUsd: 4.99, restanteUsd: 0.01 })), 0.02, { sinActualizar: true }
   );
   assert.equal(supera.esAviso, true);
-  assert.match(supera.texto, /^Según la última lectura \(no se pudo actualizar\), esta generación \(unos US\$ 0\.0200\)/);
+  assert.match(supera.texto, /^Según la última lectura \(no se pudo actualizar\), esta generación \(unos \$19\)/);
 
   const desactivadoFallido = lineaTopeEnConfirmacion(leerTopeGeneracion(desactivado()), 0.02, { sinActualizar: true });
   assert.equal(desactivadoFallido.esAviso, true);
   assert.match(desactivadoFallido.texto, /^Según la última lectura \(no se pudo actualizar\), la generación con IA está desactivada/);
 
   assert.deepEqual(lineaTopeEnConfirmacion(leerTopeGeneracion(respuesta()), 0.05, { sinActualizar: true }), {
-    texto: 'Según la última lectura (no se pudo actualizar), quedan US$ 3.7500 del tope del mes (US$ 5.0000); se '
+    texto: 'Según la última lectura (no se pudo actualizar), quedan $3.563 del tope del mes ($4.750); se '
       + 'repone el 01-12-2026 (UTC).',
     esAviso: false,
   });
@@ -342,7 +342,7 @@ test('anuncio al llegar la lectura nueva con la confirmación abierta: solo si c
   const repuesto = leerTopeGeneracion(respuesta({ mes: '2026-12', gastadoUsd: 0, restanteUsd: 5, fechaReposicion: '2027-01-01' }));
   assert.equal(
     anuncioTopeActualizado({ avisoAlAbrir: avisoAgotado, tope: repuesto, costoEstimado: 0.05 }),
-    'Tope del mes actualizado. Quedan US$ 5.0000 del tope del mes (US$ 5.0000); se repone el 01-01-2027 (UTC).'
+    'Tope del mes actualizado. Quedan $4.750 del tope del mes ($4.750); se repone el 01-01-2027 (UTC).'
   );
 
   // Mismo aviso que se oyó al abrir, o sin aviso antes ni ahora: nada que anunciar.
@@ -383,10 +383,10 @@ test('anuncio si la relectura falla con la confirmación abierta: se dice en pal
 });
 
 test('resumen corto para el Dashboard', () => {
-  assert.equal(resumenCortoTope(leerTopeGeneracion(respuesta())), 'Tope de generación del mes: 25 % usado (US$ 1.2500 de US$ 5.0000)');
+  assert.equal(resumenCortoTope(leerTopeGeneracion(respuesta())), 'Tope de generación del mes: 25 % usado ($1.188 de $4.750)');
   assert.equal(
     resumenCortoTope(leerTopeGeneracion(respuesta({ gastadoUsd: 4.5, restanteUsd: 0.5 }))),
-    'Cerca del tope de generación: 90 % usado (US$ 4.5000 de US$ 5.0000)'
+    'Cerca del tope de generación: 90 % usado ($4.275 de $4.750)'
   );
   assert.equal(resumenCortoTope(leerTopeGeneracion(agotado())), 'Tope de generación alcanzado: se repone el 01-12-2026 (UTC)');
   assert.equal(resumenCortoTope(leerTopeGeneracion(desactivado())), 'Generación con IA desactivada en el servidor');
