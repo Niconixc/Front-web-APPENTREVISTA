@@ -160,93 +160,93 @@
   --alto-control-sm: 2rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
+/* Tema oscuro. Lo activa data-tema="oscuro" en <html>: lo pone el script de index.html antes de pintar y
+   src/services/tema.js después, según lo elegido en el menú (Claro, Oscuro o Auto). */
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
 
-    --lienzo: #121211;
-    --fondo: #181816;
-    --superficie: #1f1e1c;
-    --superficie-2: #262522;
-    --superficie-hover: #2c2b28;
-    --borde: #33312d;
-    --borde-fuerte: #45423d;
-    --borde-control: #77736c;
+  --lienzo: #121211;
+  --fondo: #181816;
+  --superficie: #1f1e1c;
+  --superficie-2: #262522;
+  --superficie-hover: #2c2b28;
+  --borde: #33312d;
+  --borde-fuerte: #45423d;
+  --borde-control: #77736c;
 
-    --texto: #edece9;
-    --texto-2: #c3bfb8;
-    --texto-3: #a29e96;
-    --texto-invertido: #ffffff;
+  --texto: #edece9;
+  --texto-2: #c3bfb8;
+  --texto-3: #a29e96;
+  --texto-invertido: #ffffff;
 
-    --acento: #3f5fd8;
-    --acento-hover: #3d5bd9;
-    --acento-suave: #1e2a44;
-    --acento-tinte: #1b2236;
-    --acento-texto: #9cbdff;
+  --acento: #3f5fd8;
+  --acento-hover: #3d5bd9;
+  --acento-suave: #1e2a44;
+  --acento-tinte: #1b2236;
+  --acento-texto: #9cbdff;
 
-    --verde: #3fb8a6;
-    --verde-texto: #6fd3bf;
-    --verde-tinte: #142824;
-    --verde-suave: #183530;
-    --ambar: #e09a4a;
-    --ambar-texto: #f2b071;
-    --ambar-tinte: #2a2012;
-    --ambar-suave: #3a2b16;
-    --coral: #ec8a71;
-    --coral-texto: #f4a48f;
-    --coral-tinte: #2c1b16;
-    --coral-suave: #3c231c;
+  --verde: #3fb8a6;
+  --verde-texto: #6fd3bf;
+  --verde-tinte: #142824;
+  --verde-suave: #183530;
+  --ambar: #e09a4a;
+  --ambar-texto: #f2b071;
+  --ambar-tinte: #2a2012;
+  --ambar-suave: #3a2b16;
+  --coral: #ec8a71;
+  --coral-texto: #f4a48f;
+  --coral-tinte: #2c1b16;
+  --coral-suave: #3c231c;
 
-    --exito: #6fd3bf;
-    --exito-suave: #142824;
-    --exito-borde: #1f4a42;
-    --aviso: #f2b071;
-    --aviso-suave: #2a2012;
-    --aviso-borde: #5a3f1c;
-    --peligro: #ff9b8f;
-    --peligro-hover: #ffb4aa;
-    --peligro-boton: #c23a2c;
-    --peligro-suave: #3a1a16;
-    --peligro-borde: #5e2a24;
-    --neutro: #c3bfb8;
-    --neutro-suave: #262522;
-    --neutro-borde: #45423d;
+  --exito: #6fd3bf;
+  --exito-suave: #142824;
+  --exito-borde: #1f4a42;
+  --aviso: #f2b071;
+  --aviso-suave: #2a2012;
+  --aviso-borde: #5a3f1c;
+  --peligro: #ff9b8f;
+  --peligro-hover: #ffb4aa;
+  --peligro-boton: #c23a2c;
+  --peligro-suave: #3a1a16;
+  --peligro-borde: #5e2a24;
+  --neutro: #c3bfb8;
+  --neutro-suave: #262522;
+  --neutro-borde: #45423d;
 
-    --grafico-1: #6b93ff;
-    --grafico-2: #e09a4a;
-    --grafico-3: #3fb8a6;
-    --grafico-4: #e09a4a;
-    --grafico-5: #ec8a71;
-    --grafico-rejilla: #33312d;
+  --grafico-1: #6b93ff;
+  --grafico-2: #e09a4a;
+  --grafico-3: #3fb8a6;
+  --grafico-4: #e09a4a;
+  --grafico-5: #ec8a71;
+  --grafico-rejilla: #33312d;
 
-    --primario-arriba: #3f5fd8;
-    --primario-abajo: #2f4cc0;
-    --primario-sombra: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px -8px rgba(63, 95, 216, 0.6);
-    --primario-sombra-hover: 0 2px 4px rgba(0, 0, 0, 0.4), 0 10px 22px -10px rgba(63, 95, 216, 0.7);
-    --brillo-interior: rgba(255, 255, 255, 0.12);
-    --brillo-tarjeta: rgba(255, 255, 255, 0.04);
-    --sombra-boton-hover: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 14px -8px rgba(0, 0, 0, 0.5);
-    --sombra-icono: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --primario-arriba: #3f5fd8;
+  --primario-abajo: #2f4cc0;
+  --primario-sombra: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px -8px rgba(63, 95, 216, 0.6);
+  --primario-sombra-hover: 0 2px 4px rgba(0, 0, 0, 0.4), 0 10px 22px -10px rgba(63, 95, 216, 0.7);
+  --brillo-interior: rgba(255, 255, 255, 0.12);
+  --brillo-tarjeta: rgba(255, 255, 255, 0.04);
+  --sombra-boton-hover: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 14px -8px rgba(0, 0, 0, 0.5);
+  --sombra-icono: 0 1px 2px rgba(0, 0, 0, 0.3);
 
-    --lateral-fondo: #121211;
-    --lateral-borde: #2a2926;
-    --lateral-texto: #edece9;
-    --lateral-texto-2: #c3bfb8;
-    --lateral-texto-3: #a29e96;
-    --lateral-hover: rgba(255, 255, 255, 0.05);
-    --lateral-activo: #1e2a44;
-    --lateral-indicador: #8db4ff;
-    --lateral-logo-fondo: #3f5fd8;
-    --lateral-logo-texto: #ffffff;
+  --lateral-fondo: #121211;
+  --lateral-borde: #2a2926;
+  --lateral-texto: #edece9;
+  --lateral-texto-2: #c3bfb8;
+  --lateral-texto-3: #a29e96;
+  --lateral-hover: rgba(255, 255, 255, 0.05);
+  --lateral-activo: #1e2a44;
+  --lateral-indicador: #8db4ff;
+  --lateral-logo-fondo: #3f5fd8;
+  --lateral-logo-texto: #ffffff;
 
-    --esqueleto: #2c2b28;
+  --esqueleto: #2c2b28;
 
-    --foco: #8db4ff;
-    --velo: rgba(0, 0, 0, 0.6);
-    --sombra-sutil: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --sombra-tarjeta: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px -14px rgba(0, 0, 0, 0.5);
-    --sombra-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 30px -18px rgba(0, 0, 0, 0.6);
-    --sombra-flotante: 0 16px 40px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
-    --sombra-hoja: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 40px -24px rgba(0, 0, 0, 0.5);
-  }
+  --foco: #8db4ff;
+  --velo: rgba(0, 0, 0, 0.6);
+  --sombra-sutil: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sombra-tarjeta: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px -14px rgba(0, 0, 0, 0.5);
+  --sombra-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 30px -18px rgba(0, 0, 0, 0.6);
+  --sombra-flotante: 0 16px 40px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --sombra-hoja: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 40px -24px rgba(0, 0, 0, 0.5);
 }

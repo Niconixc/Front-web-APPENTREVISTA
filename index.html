@@ -7,6 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f1efea" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#141412" media="(prefers-color-scheme: dark)" />
+    <script>
+      // Tema antes de pintar (sin parpadeo): la misma regla que src/services/tema.js (clave 'panel-tema').
+      (function () {
+        var p = null;
+        try { p = localStorage.getItem('panel-tema'); } catch (e) {}
+        var oscuro = p === 'oscuro' ||
+          (p !== 'claro' && !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.setAttribute('data-tema', oscuro ? 'oscuro' : 'claro');
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@500&family=Funnel+Sans:wght@400;500&family=Geist+Mono:wght@400&display=swap" rel="stylesheet" />

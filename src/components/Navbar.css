@@ -117,6 +117,41 @@
 .lateral__correo { font-size: var(--texto-xs); font-weight: var(--peso-medio); color: var(--lateral-texto); }
 .lateral__rol { font-size: var(--texto-xs); color: var(--lateral-texto-3); }
 
+/* Selector de tema: tres opciones juntas; la elegida se ve como una pastilla levantada. */
+.selector-tema {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--superficie-2);
+  border: 1px solid var(--borde);
+}
+.selector-tema__opcion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 1.875rem;
+  padding: 0 0.25rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--lateral-texto-3);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+  transition: background-color var(--m-in) var(--ease-out), color var(--m-in) var(--ease-out),
+    box-shadow var(--m-in) var(--ease-out), transform 160ms var(--ease-out);
+}
+.selector-tema__opcion .icono { flex: none; }
+.selector-tema__opcion:hover:not(.selector-tema__opcion--activa) { color: var(--lateral-texto); background: var(--lateral-hover); }
+.selector-tema__opcion:active { transform: scale(0.96); transition-duration: var(--m-press); }
+.selector-tema__opcion--activa {
+  background: var(--superficie);
+  color: var(--lateral-texto);
+  box-shadow: var(--sombra-sutil);
+}
+
 .lateral__salir {
   display: flex;
   align-items: center;

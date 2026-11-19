@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { contarPreguntas, logout, usuarioActual } from '../services/api';
 import Icono from './Icono';
+import SelectorTema from './SelectorTema';
 import { iniciales } from '../services/etiquetas';
 import './Navbar.css';
 
@@ -148,6 +149,7 @@ const Navbar = ({ setIsAuthenticated }) => {
               <span className="lateral__rol">Administrador</span>
             </span>
           </div>
+          <SelectorTema />
           <button
             type="button"
             onClick={handleLogout}
