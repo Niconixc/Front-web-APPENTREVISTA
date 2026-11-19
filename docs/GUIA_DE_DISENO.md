@@ -15,7 +15,7 @@ sobrio y confiable, como un panel de un producto real. No tiene que parecer una 
      - coral `--coral`: el gasto.
    - Nada violeta: las mezclas se hacen con `color-mix(in oklch, …)` para no correr el tono.
    - Tipografía: Funnel Display para títulos y cifras, Funnel Sans para el texto y Geist Mono para fechas y cifras chicas. Solo pesos 400 y 500, y nada bajo 13 px.
-   - El tema oscuro se activa solo si el sistema lo pide.
+   - El tema se elige en el menú lateral: Claro, Oscuro o Auto (sigue a Windows o al navegador, por defecto). Se guarda en el navegador y se aplica con `<html data-tema="claro|oscuro">` (ver `src/services/tema.js`); en CSS, el oscuro va en `:root[data-tema="oscuro"]`, nunca en `@media (prefers-color-scheme)`.
 2. **Los datos primero.** Las tablas son compactas, los números se alinean a la derecha con `tabular-nums`, los títulos
    son cortos y las explicaciones largas van en texto secundario o dentro de un `<details>`.
 3. **Nada decorativo que no informe.** No se usan:

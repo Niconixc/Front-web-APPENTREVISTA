@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { EVENTO_TEMA } from '../services/tema';
 
 /** Colores de los gráficos (recharts) leídos de los tokens de tokens.css: cambian con el tema claro u oscuro. */
 export const leerPaleta = () => {
@@ -18,15 +19,13 @@ export const leerPaleta = () => {
   };
 };
 
-/** La paleta actual; se vuelve a leer si el sistema cambia entre claro y oscuro. */
+/** La paleta actual; se vuelve a leer cada vez que cambia el tema (botón del menú o el sistema, con «Sistema»). */
 const usePaletaGrafico = () => {
   const [paleta, setPaleta] = useState(leerPaleta);
   useEffect(() => {
-    const consulta = window.matchMedia?.('(prefers-color-scheme: dark)');
-    if (!consulta) return undefined;
     const alCambiar = () => setPaleta(leerPaleta());
-    consulta.addEventListener('change', alCambiar);
-    return () => consulta.removeEventListener('change', alCambiar);
+    window.addEventListener(EVENTO_TEMA, alCambiar);
+    return () => window.removeEventListener(EVENTO_TEMA, alCambiar);
   }, []);
   return paleta;
 };
