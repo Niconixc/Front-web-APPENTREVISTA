@@ -11,6 +11,7 @@ import QuestionEdit from './components/QuestionEdit';
 import BillingCodes from './components/BillingCodes';
 import GenerarPreguntas from './components/GenerarPreguntas';
 import CoberturaMercado from './components/CoberturaMercado';
+import PreguntasDuplicadas from './components/PreguntasDuplicadas';
 import Navbar from './components/Navbar';
 import { sesionVigente } from './services/api';
 import './App.css';
@@ -164,6 +165,17 @@ function App() {
               <ProtectedRoute isAuthenticated={isAuthenticated}>
                 <ProtectedLayout setIsAuthenticated={setIsAuthenticated}>
                   <CoberturaMercado />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/duplicadas"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedLayout setIsAuthenticated={setIsAuthenticated}>
+                  <PreguntasDuplicadas />
                 </ProtectedLayout>
               </ProtectedRoute>
             }

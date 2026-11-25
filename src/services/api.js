@@ -263,12 +263,30 @@ export const getQuestions = async (filtros = {}) => (await api.get(PREGUNTAS, { 
 export const contarPreguntas = async (filtros = {}) => (await getQuestions({ ...filtros, pagina: 1, tamano: 1 })).total;
 
 export const getQuestion = async (id) => (await api.get(`${PREGUNTAS}/${id}`)).data;
+// Similitud: crear, editar y aprobar responden además `similares` (las parecidas del banco; solo avisa, nunca bloquea).
+// Un backend anterior no lo manda: se lee con leerSimilares/traeSimilares (similitud.js).
 /** Una pregunta creada por un admin queda aprobada. */
 export const createQuestion = async (solicitud) => (await api.post(PREGUNTAS, solicitud)).data;
 /** PUT completo: la pregunta vuelve a 'pendiente' y sus opciones se reemplazan. */
 export const updateQuestion = async (id, solicitud) => (await api.put(`${PREGUNTAS}/${id}`, solicitud)).data;
 export const approveQuestion = async (id) => (await api.patch(`${PREGUNTAS}/${id}/aprobar`)).data;
+/** Una duplicada se rechaza igual, con motivo MOTIVO_DUPLICADA ('duplicada'): no hay endpoint aparte. */
 export const rejectQuestion = async (id, motivo) => (await api.patch(`${PREGUNTAS}/${id}/rechazar`, { motivo })).data;
+
+/**
+ * Similitud. Aprobadas y pendientes del mismo skill (o cargo), tipo, categoría y nivel que se parecen a esta pregunta, de
+ * mayor a menor (hasta 5, similitud de 0 a 1). umbral 0.5..1 opcional (por defecto el del servidor). No llama a la IA.
+ * Un backend anterior responde 404: ver esRutaNoDisponible (similitud.js).
+ */
+export const getSimilares = async (id, { umbral } = {}) =>
+  (await api.get(`${PREGUNTAS}/${id}/similares`, { params: limpiarVacios({ umbral }) })).data;
+
+/**
+ * Similitud. Grupos de preguntas parecidas entre sí dentro de un alcance (hasta las 200 más recientes). Exige skillId o
+ * cargoId, más nivel, tipo y categoria; umbral opcional. Cada grupo trae preguntas y similitudMaxima. No llama a la IA.
+ */
+export const getDuplicadas = async (params) =>
+  (await api.get(`${PREGUNTAS}/duplicadas`, { params: limpiarVacios(params) })).data;
 /** Solo se puede borrar si nunca se usó (vecesUsada == 0); si no, V2 responde 409 pregunta_en_uso. */
 export const deleteQuestion = async (id) => (await api.delete(`${PREGUNTAS}/${id}`)).data;
 
@@ -286,6 +304,9 @@ export const getCoberturaPreguntas = async ({ cargoId, minimo } = {}) =>
  * modelo, usar_mercado?}. Con usar_mercado (por defecto true en V2) el prompt lleva lo que piden las ofertas de empleo
  * del cargo y la respuesta trae contexto_mercado. Nunca se reintenta sola: si se corta, puede que el servidor igual
  * haya terminado y cobrado.
+ * Similitud: las que se parecen a otras del banco (o del mismo lote) no se guardan y vienen en descartadas
+ * ([{enunciado, similar_a: {id, enunciado, estado, similitud}}]), contadas en preguntas_descartadas, con un resumen;
+ * se cobran igual. Si se descartan todas responde 200 con preguntas: [] (no 201). Se lee con resumenGeneracion.
  */
 export const generateQuestionsAi = async (solicitud) => {
   await renovarSiVencePronto();
