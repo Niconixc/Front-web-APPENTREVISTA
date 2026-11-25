@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createQuestion, mensajeDeError } from '../services/api';
 import { aSolicitudPregunta, formularioVacio, validarFormularioPregunta } from '../services/etiquetas';
+import { avisoSimilares, leerSimilares } from '../services/similitud';
 import Icono from './Icono';
 import QuestionFields from './QuestionFields';
+import { ListaParecidas, NotaParecido } from './PreguntasParecidas';
 import './QuestionForm.css';
 
 /** Tiempo que se muestra el mensaje de éxito antes de volver al listado. */
@@ -15,6 +17,8 @@ const QuestionForm = () => {
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
   const [loading, setLoading] = useState(false);
+  // Similitud: la pregunta creada se parece a otras del banco. Solo avisa: ya quedó creada y aprobada.
+  const [creada, setCreada] = useState(null); // {id, similares}
   const temporizador = useRef(null);
 
   useEffect(() => () => clearTimeout(temporizador.current), []);
@@ -35,6 +39,12 @@ const QuestionForm = () => {
       const data = await createQuestion(aSolicitudPregunta(form));
       const mensaje = data?.mensaje || 'Pregunta creada y aprobada';
       setExito(mensaje);
+      const similares = leerSimilares(data);
+      if (similares.length > 0) {
+        // Con parecidas no se vuelve solo al listado: el admin decide si la deja o la revisa.
+        setCreada({ id: typeof data?.id === 'string' ? data.id : null, similares });
+        return;
+      }
       // El listado puede leer location.state.mensaje para repetir el aviso.
       temporizador.current = setTimeout(() => navigate('/preguntas', { state: { mensaje } }), ESPERA_ANTES_DE_VOLVER_MS);
     } catch (err) {
@@ -85,21 +95,47 @@ const QuestionForm = () => {
               <div className="aviso__contenido">{error}</div>
             </div>
           )}
-          {exito && (
+          {exito && !creada && (
             <div className="aviso aviso--exito" role="status">
               <Icono nombre="check-circulo" className="aviso__icono" />
               <div className="aviso__contenido">{exito}. Volviendo al listado...</div>
             </div>
           )}
+          {exito && creada && (
+            <div className="aviso aviso--aviso qform-aviso-parecidas" role="status">
+              <Icono nombre="copiar" className="aviso__icono" />
+              <div className="aviso__contenido">
+                <p className="aviso__titulo">{exito}. {avisoSimilares(creada.similares)}</p>
+                <p>Si es la misma pregunta, ábrela y recházala como duplicada.</p>
+                <ListaParecidas similares={creada.similares} etiquetaLista="Preguntas del banco parecidas a la creada" />
+                <NotaParecido />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="tarjeta__pie qform-pie">
-          <button type="button" onClick={() => navigate('/preguntas')} className="boton" disabled={loading}>
-            Cancelar
-          </button>
-          <button type="submit" className="boton boton--primario" disabled={bloqueado}>
-            {loading ? 'Creando...' : 'Crear pregunta'}
-          </button>
+          {creada ? (
+            <>
+              {creada.id && (
+                <button type="button" onClick={() => navigate(`/editar-pregunta/${creada.id}`)} className="boton">
+                  Revisar la creada
+                </button>
+              )}
+              <button type="button" onClick={() => navigate('/preguntas', { state: { mensaje: exito } })} className="boton boton--primario">
+                Volver al listado
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={() => navigate('/preguntas')} className="boton" disabled={loading}>
+                Cancelar
+              </button>
+              <button type="submit" className="boton boton--primario" disabled={bloqueado}>
+                {loading ? 'Creando...' : 'Crear pregunta'}
+              </button>
+            </>
+          )}
         </div>
       </form>
     </div>

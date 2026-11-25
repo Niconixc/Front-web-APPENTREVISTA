@@ -17,9 +17,11 @@ import {
   formatearFecha,
   validarFormularioPregunta,
 } from '../services/etiquetas';
+import { MOTIVO_DUPLICADA, avisoSimilares, leerSimilares, traeSimilares } from '../services/similitud';
 import FondoModal from './FondoModal';
 import Icono from './Icono';
 import QuestionFields from './QuestionFields';
+import { CuerpoParecidas, NotaParecido, useParecidas, useRechazoDuplicada } from './PreguntasParecidas';
 import './QuestionForm.css';
 
 /** Variante de insignia según el estado de la pregunta (el texto lo da ESTADOS_PREGUNTA). */
@@ -44,6 +46,17 @@ const QuestionEdit = () => {
   const [modalRechazo, setModalRechazo] = useState(false);
   const [motivo, setMotivo] = useState('');
   const [errorRechazo, setErrorRechazo] = useState('');
+
+  // Similitud: con qué se parece (aprobadas y pendientes del mismo alcance). No se busca para una rechazada. Con un backend
+  // anterior (sin /similares) la sección no aparece.
+  const parecidas = useParecidas(id, Boolean(pregunta) && pregunta.estado !== 'rechazada');
+  const { reemplazar: reemplazarParecidas } = parecidas;
+  const rechazoDuplicada = useRechazoDuplicada((_, data) => {
+    // Solo se actualiza la cabecera: los cambios del formulario que no se guardaron se mantienen.
+    setPregunta((actual) => (data?.id ? data : { ...actual, estado: 'rechazada', motivoRechazo: MOTIVO_DUPLICADA }));
+    setError('');
+    setExito(data?.mensaje ? `${data.mensaje} (duplicada)` : 'Pregunta rechazada por duplicada');
+  });
 
   const cargarPregunta = useCallback(async () => {
     setCargando(true);
@@ -71,11 +84,18 @@ const QuestionEdit = () => {
     cargarPregunta();
   }, [cargarPregunta]);
 
-  /** Refresca la cabecera y el formulario con la pregunta que devolvió V2. */
+  /** Refresca la cabecera y el formulario con la pregunta que devolvió V2 (y sus parecidas, si las trae). */
   const aplicarRespuesta = (data) => {
     if (!data || typeof data !== 'object' || !data.id) return;
     setPregunta(data);
     setForm(desdeRespuestaPregunta(data));
+    if (traeSimilares(data) && data.estado !== 'rechazada') reemplazarParecidas(leerSimilares(data));
+  };
+
+  /** «Mensaje. Se parece a 2 preguntas del banco…» cuando la respuesta trae parecidas. */
+  const conAvisoParecidas = (mensaje, data) => {
+    const aviso = traeSimilares(data) ? avisoSimilares(leerSimilares(data)) : '';
+    return aviso ? `${mensaje}. ${aviso}` : mensaje;
   };
 
   const guardar = async (aprobar) => {
@@ -102,7 +122,7 @@ const QuestionEdit = () => {
     }
 
     if (!aprobar) {
-      setExito(guardada?.mensaje || 'Pregunta actualizada; queda pendiente de aprobación');
+      setExito(conAvisoParecidas(guardada?.mensaje || 'Pregunta actualizada; queda pendiente de aprobación', guardada));
       setAccion(null);
       return;
     }
@@ -110,7 +130,10 @@ const QuestionEdit = () => {
     try {
       const aprobada = await approveQuestion(id);
       aplicarRespuesta(aprobada);
-      setExito(aprobada?.mensaje ? `Cambios guardados. ${aprobada.mensaje}` : 'Cambios guardados. Pregunta aprobada');
+      setExito(conAvisoParecidas(
+        aprobada?.mensaje ? `Cambios guardados. ${aprobada.mensaje}` : 'Cambios guardados. Pregunta aprobada',
+        aprobada
+      ));
     } catch (err) {
       console.error('Error al aprobar pregunta:', err);
       setError(
@@ -219,7 +242,8 @@ const QuestionEdit = () => {
     );
   }
 
-  const ocupado = Boolean(accion);
+  const ocupado = Boolean(accion) || Boolean(rechazoDuplicada.enviandoId);
+  const mostrarParecidas = parecidas.estado !== 'inactivo' && parecidas.estado !== 'no_disponible';
   const reemplazaOpciones = pregunta.vecesUsada > 0 && form.tipo === 'opcion_multiple';
 
   return (
@@ -260,6 +284,44 @@ const QuestionEdit = () => {
             <span>{pregunta.motivoRechazo || 'Sin motivo registrado'}</span>
           </div>
         </div>
+      )}
+
+      {mostrarParecidas && (
+        <section className="tarjeta qform-parecidas" aria-labelledby="qform-parecidas-titulo" aria-busy={parecidas.estado === 'cargando'}>
+          <div className="qform-cabecera">
+            <span className="qform-cabecera__icono qform-cabecera__icono--ambar" aria-hidden="true"><Icono nombre="copiar" tamano={18} /></span>
+            <div className="qform-cabecera__textos">
+              <h2 id="qform-parecidas-titulo" className="qform-cabecera__titulo">
+                Se parece a…
+                {parecidas.estado === 'listo' && parecidas.similares.length > 0 && (
+                  <span className="qform-parecidas__contador mono">{parecidas.similares.length}</span>
+                )}
+              </h2>
+              <p className="qform-cabecera__sub">
+                Aprobadas y pendientes del mismo cargo o skill, tipo, categoría y nivel, de la más parecida a la menos.
+              </p>
+            </div>
+          </div>
+          <div className="tarjeta__cuerpo qform-parecidas__cuerpo">
+            <CuerpoParecidas
+              parecidas={parecidas}
+              accion={pregunta.estado !== 'rechazada' && (
+                <div className="qform-parecidas__accion">
+                  <p className="nota">¿Es la misma pregunta? Recházala como duplicada y deja la otra.</p>
+                  <button
+                    type="button"
+                    className="boton boton--peligro-suave"
+                    onClick={() => rechazoDuplicada.abrir(pregunta, parecidas.similares[0])}
+                    disabled={ocupado}
+                  >
+                    Rechazar por duplicada
+                  </button>
+                </div>
+              )}
+            />
+            <NotaParecido />
+          </div>
+        </section>
       )}
 
       <form onSubmit={handleSubmit} className="tarjeta qform-tarjeta" noValidate>
@@ -382,6 +444,8 @@ const QuestionEdit = () => {
           </div>
         </FondoModal>
       )}
+
+      {rechazoDuplicada.elemento}
     </div>
   );
 };

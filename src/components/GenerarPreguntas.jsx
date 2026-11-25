@@ -20,6 +20,7 @@ import {
   NOTA_TIPO_CAMBIO,
 } from '../services/etiquetas';
 import { textoContextoMercado } from '../services/cobertura';
+import { VARIABLE_UMBRAL, resumenGeneracion, tituloResultadoGeneracion } from '../services/similitud';
 import {
   anuncioTopeActualizado,
   avisoAntesDeGenerar,
@@ -31,6 +32,7 @@ import {
 import FondoModal from './FondoModal';
 import Icono from './Icono';
 import TopeGeneracionIa from './TopeGeneracionIa';
+import { ListaParecidas } from './PreguntasParecidas';
 import './GenerarPreguntas.css';
 
 const RUTA_PENDIENTES_IA = '/preguntas?estado=pendiente&generadaPorIa=true';
@@ -463,11 +465,23 @@ const GenerarPreguntas = () => {
       const data = await generateQuestionsAi(solicitud);
       if (!montadoRef.current) return;
       setMostrarOrigen(false); // lo que faltaba ya cambió: el aviso dejaría de ser cierto
+      // Similitud: las que se parecían a otras vienen en `descartadas` (se cobran igual) y, si se descartan todas, V2
+      // responde 200 con preguntas: []. Un backend anterior no manda nada de esto y el resultado se ve como antes.
+      const similitud = resumenGeneracion(data);
+      const preguntas = Array.isArray(data?.preguntas) ? data.preguntas : [];
+      const descartadasCrudas = Array.isArray(data?.descartadas) ? data.descartadas.filter((d) => d && typeof d === 'object') : [];
       setResultado({
         mensaje: typeof data?.mensaje === 'string' ? data.mensaje : '',
-        generadas: data?.preguntas_generadas ?? (data?.preguntas?.length || 0),
-        conError: data?.preguntas_con_error ?? 0,
-        preguntas: Array.isArray(data?.preguntas) ? data.preguntas : [],
+        generadas: similitud.generadas,
+        conError: similitud.conError,
+        preguntas,
+        descartadas: similitud.descartadas,
+        numDescartadas: similitud.numDescartadas,
+        todasDescartadas: similitud.todasDescartadas,
+        modoSombra: similitud.modoSombra,
+        resumen: similitud.resumen,
+        // Para el costo total: si las descartadas traen tokens o costo, también cuentan (se cobran igual).
+        filasCosto: [...preguntas, ...descartadasCrudas],
         modelo: form.modelo,
         mercado: textoContextoMercado(data?.contexto_mercado),
       });
@@ -516,9 +530,17 @@ const GenerarPreguntas = () => {
     : '';
 
   const preguntasResultado = resultado?.preguntas || [];
-  const costoTotal = sumar(preguntasResultado, 'costo_usd');
-  const tokensEntrada = sumar(preguntasResultado, 'tokens_input');
-  const tokensSalida = sumar(preguntasResultado, 'tokens_output');
+  const filasCosto = resultado?.filasCosto || preguntasResultado;
+  const costoTotal = sumar(filasCosto, 'costo_usd');
+  const tokensEntrada = sumar(filasCosto, 'tokens_input');
+  const tokensSalida = sumar(filasCosto, 'tokens_output');
+  // Totales al pie de la lista de guardadas: solo las de la lista.
+  const costoGuardadas = sumar(preguntasResultado, 'costo_usd');
+  const tokensEntradaGuardadas = sumar(preguntasResultado, 'tokens_input');
+  const tokensSalidaGuardadas = sumar(preguntasResultado, 'tokens_output');
+  const descartadas = resultado?.descartadas || [];
+  // Modo sombra: guardadas que el filtro habría descartado (se marcan en la lista de generadas).
+  const idsParecidas = new Set(descartadas.map((d) => d.guardadaId).filter(Boolean));
 
   return (
     <div className="pagina gp-pagina">
@@ -753,12 +775,41 @@ const GenerarPreguntas = () => {
 
       {resultado && (
         <section className="seccion" aria-label="Resultado de la generación">
-          <div className="aviso aviso--exito">
-            <Icono nombre="check-circulo" className="aviso__icono" />
-            <p className="aviso__contenido">
-              {resultado.mensaje || `Preguntas generadas: ${resultado.generadas}. Quedan pendientes de aprobación`}
-            </p>
-          </div>
+          {resultado.todasDescartadas ? (
+            <div className="aviso aviso--aviso" role="status">
+              <Icono nombre="copiar" className="aviso__icono" />
+              <div className="aviso__contenido">
+                <p className="aviso__titulo">{tituloResultadoGeneracion(resultado)}</p>
+                <p>
+                  La IA sí respondió, así que el intento se cobró igual y aparece en{' '}
+                  <Link to="/informes">Costos IA</Link>. Prueba con otra skill, otro nivel u otro tipo de pregunta.
+                </p>
+                {resultado.resumen?.texto && <p className="gp-resumen__texto">{resultado.resumen.texto}</p>}
+              </div>
+            </div>
+          ) : (
+            <div className="aviso aviso--exito" role="status">
+              <Icono nombre="check-circulo" className="aviso__icono" />
+              <div className="aviso__contenido">
+                <p>
+                  {resultado.numDescartadas > 0
+                    ? tituloResultadoGeneracion(resultado)
+                    : (resultado.mensaje || `Preguntas generadas: ${resultado.generadas}. Quedan pendientes de aprobación`)}
+                </p>
+                {resultado.resumen?.texto && <p className="gp-resumen__texto">{resultado.resumen.texto}</p>}
+              </div>
+            </div>
+          )}
+          {resultado.resumen?.filas.length > 0 && (
+            <dl className="datos gp-resumen" aria-label="Resumen de la generación">
+              {resultado.resumen.filas.map((f) => (
+                <div key={f.clave} className="gp-resumen__fila">
+                  <dt>{f.etiqueta}</dt>
+                  <dd>{f.valor}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
 
           <dl className="metricas gp-metricas">
             <div className="metrica metrica--ambar">
@@ -768,6 +819,15 @@ const GenerarPreguntas = () => {
               </dt>
               <dd className="metrica__valor">{resultado.generadas}</dd>
             </div>
+            {resultado.numDescartadas > 0 && (
+              <div className="metrica metrica--neutra">
+                <dt className="metrica__etiqueta">
+                  <span className="metrica__icono" aria-hidden="true"><Icono nombre="copiar" tamano={15} /></span>
+                  {resultado.modoSombra ? 'Se habrían descartado' : 'Descartadas por parecidas'}
+                </dt>
+                <dd className="metrica__valor">{resultado.numDescartadas}</dd>
+              </div>
+            )}
             {resultado.conError > 0 && (
               <div className="metrica metrica--neutra">
                 <dt className="metrica__etiqueta">
@@ -858,6 +918,7 @@ const GenerarPreguntas = () => {
                       <p className="gp-fila__enunciado">{p.enunciado}</p>
                       <p className="gp-fila__datos">
                         <span className={`insignia ${INSIGNIA_ESTADO[p.estado] || ''}`.trim()}>{etiqueta(ESTADOS_PREGUNTA, p.estado)}</span>
+                        {idsParecidas.has(p.pregunta_id) && <span className="insignia insignia--aviso">Parecida a otra</span>}
                         <span className="gp-dato">Tokens entrada <span className="mono">{p.tokens_input ?? '—'}</span></span>
                         <span className="gp-dato">Tokens salida <span className="mono">{p.tokens_output ?? '—'}</span></span>
                         <span className="gp-dato">
@@ -879,11 +940,68 @@ const GenerarPreguntas = () => {
               </ul>
               <div className="tarjeta__pie gp-totales">
                 <span className="gp-totales__etiqueta">Total</span>
-                <span className="gp-dato">Tokens entrada <span className="mono">{tokensEntrada ?? '—'}</span></span>
-                <span className="gp-dato">Tokens salida <span className="mono">{tokensSalida ?? '—'}</span></span>
+                <span className="gp-dato">Tokens entrada <span className="mono">{tokensEntradaGuardadas ?? '—'}</span></span>
+                <span className="gp-dato">Tokens salida <span className="mono">{tokensSalidaGuardadas ?? '—'}</span></span>
                 <span className="gp-dato">
-                  Costo <span className="mono gp-totales__costo">{costoTotal === null ? '—' : formatearPesos(costoTotal)}</span>
+                  Costo <span className="mono gp-totales__costo">{costoGuardadas === null ? '—' : formatearPesos(costoGuardadas)}</span>
                 </span>
+              </div>
+            </div>
+          )}
+
+          {descartadas.length > 0 && (
+            <div className="tarjeta gp-lista gp-descartadas">
+              <div className="gp-cabecera">
+                <span className="gp-cabecera__icono gp-cabecera__icono--ambar" aria-hidden="true"><Icono nombre="copiar" tamano={18} /></span>
+                <div className="gp-cabecera__textos">
+                  <h2 className="gp-cabecera__titulo">
+                    {resultado.modoSombra ? 'Se habrían descartado por parecidas' : 'Descartadas por parecerse a otras'}
+                    <span className="gp-contador mono">{descartadas.length}</span>
+                  </h2>
+                  <p className="gp-cabecera__sub">
+                    {resultado.modoSombra
+                      ? 'El filtro está en modo sombra: solo informa y las que lo dicen se guardaron igual. Revísalas antes de aprobar.'
+                      : 'No se guardaron: se parecían a una aprobada o pendiente del mismo alcance, o a otra de este lote. Se cobraron igual.'}
+                  </p>
+                </div>
+              </div>
+              <ul className="gp-filas">
+                {descartadas.map((d, i) => (
+                  <li key={`${i}-${d.enunciado}`} className="gp-fila">
+                    <span className="gp-fila__numero mono">{i + 1}</span>
+                    <div className="gp-fila__textos">
+                      <p className="gp-fila__enunciado">{d.enunciado || 'Sin enunciado'}</p>
+                      <p className="gp-fila__datos">
+                        {d.guardada
+                          ? <span className="insignia insignia--aviso">Se guardó igual</span>
+                          : <span className="insignia">No se guardó</span>}
+                      </p>
+                      {d.similarA && (
+                        <div className="gp-descartada__parecida">
+                          <span className="gp-descartada__etiqueta">Se parece a</span>
+                          <ListaParecidas
+                            similares={[d.similarA]}
+                            etiquetaLista={`Pregunta a la que se parece la descartada ${i + 1}`}
+                            extra={(s) => (s.id ? null : <span>Otra de este lote</span>)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="gp-fila__lado">
+                      {d.guardadaId && (
+                        <Link to={`/editar-pregunta/${d.guardadaId}`} className="boton boton--chico gp-revisar">
+                          Revisar <Icono nombre="flecha-derecha" tamano={14} />
+                        </Link>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="tarjeta__pie gp-descartadas__pie">
+                <p className="nota nota--chica">
+                  El parecido solo mide palabras compartidas (variable <span className="mono">{VARIABLE_UMBRAL}</span> del
+                  servidor, 80 % por defecto): una pregunta dicha con otras palabras no se detecta.
+                </p>
               </div>
             </div>
           )}

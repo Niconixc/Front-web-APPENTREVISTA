@@ -337,3 +337,32 @@
   .lista-preguntas .filtros .lista-preguntas__campo-tamano { flex: 1 1 140px; }
   .lista-preguntas__cabecera { flex-wrap: wrap; padding: var(--e-4); }
 }
+
+/* ---------- Preguntas parecidas ---------- */
+/* En el detalle de una pendiente: «Se parece a…» con su acción */
+.lista-preguntas__parecidas-accion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2) var(--e-3);
+  padding-top: var(--e-2);
+}
+
+/* Aviso después de aprobar: la lista va sobre fondo blanco para leerla bien */
+.lista-preguntas__aviso-parecidas .parecidas {
+  margin: var(--e-1) 0;
+  padding: 0 var(--e-3);
+  border-radius: var(--radio);
+  background: var(--superficie);
+}
+
+/* Aprobación masiva: las que se parecen a otras */
+.lista-preguntas__masivo-parecidas {
+  flex-basis: 100%;
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--radio);
+  background: var(--aviso-suave);
+  color: var(--aviso);
+  font-size: var(--texto-xs);
+}
+.lista-preguntas__masivo-parecidas ul { margin: var(--e-1) 0 0; padding-left: var(--e-5); }
