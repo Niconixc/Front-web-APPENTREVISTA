@@ -1,0 +1,74 @@
+/*
+ * Preguntas duplicadas, dirección «Claro con color». Las piezas (campos, tarjetas, insignias, lista de parecidas,
+ * avisos) vienen de componentes.css; aquí va solo el layout propio. Prefijo dup-.
+ */
+
+.dup-formulario .tarjeta__cuerpo { gap: var(--e-5); }
+.dup-seccion { display: flex; flex-direction: column; gap: var(--e-3); }
+.dup-seccion + .dup-seccion { padding-top: var(--e-5); border-top: 1px solid var(--borde); }
+.dup-seccion__titulo {
+  font-family: var(--fuente-display);
+  font-size: var(--texto-md);
+  font-weight: var(--peso-medio);
+  letter-spacing: -0.01em;
+}
+
+.dup-rejilla { grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); }
+.dup-rejilla--cuatro { grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); }
+
+.dup-formulario__pie {
+  align-items: center;
+  flex-wrap: wrap;
+}
+.dup-formulario__falta { margin-right: auto; }
+
+/* Región viva de carga: vacía no ocupa lugar, pero sigue en el árbol de accesibilidad. */
+.dup-estado { min-height: 1.25rem; font-size: var(--texto-sm); color: var(--texto-2); }
+.dup-estado:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.dup-vacio { display: flex; flex-direction: column; align-items: center; gap: var(--e-3); text-align: center; }
+
+.dup-resultado__encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e-2) var(--e-4);
+}
+.dup-resultado__conteo { font-size: var(--texto-sm); color: var(--texto-2); }
+
+/* ---------- Cada grupo de parecidas ---------- */
+.dup-grupo__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2) var(--e-3);
+  padding: var(--e-3) var(--e-5);
+  border-bottom: 1px solid var(--borde);
+}
+.dup-grupo__titulo { font-size: var(--texto-base); font-weight: var(--peso-medio); }
+.dup-grupo__parecido {
+  padding: 0.125rem var(--e-2);
+  border-radius: var(--radio-sm);
+  background: var(--ambar-tinte);
+  color: var(--ambar-texto);
+  font-size: var(--texto-xs);
+}
+.dup-grupo__cabecera .insignia { margin-left: auto; }
+.dup-grupo__cuerpo { padding: 0 var(--e-5); }
+
+@media (max-width: 480px) {
+  .dup-grupo__cabecera,
+  .dup-grupo__cuerpo { padding-left: var(--e-4); padding-right: var(--e-4); }
+}
+
+@media (forced-colors: active) {
+  .dup-grupo__parecido { border: 1px solid CanvasText; }
+}

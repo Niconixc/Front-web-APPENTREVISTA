@@ -81,6 +81,7 @@ sobrio y confiable, como un panel de un producto real. No tiene que parecer una 
 - `.barra-apilada` con sus `__parte` (`--2`, `--3`, `--4`, `--peligro`) muestra las partes de un total. Va siempre con una `.leyenda` en texto, porque el color solo no basta.
 - `.filas` con `.fila-item` (`__textos`, `__titulo`, `__detalle`, `__lado`) es una lista de filas dentro de una tarjeta.
 - `.esqueleto` es el bloque de carga: un fondo plano que late y se queda quieto con `prefers-reduced-motion`.
+- `.parecidas` es la lista de preguntas parecidas: `__item` con `__porcentaje` (parecido en ámbar, solo si hay dato), `__textos`, `__enunciado`, `__datos` y `__lado`. Se pinta con `<ListaParecidas>` de `components/PreguntasParecidas.jsx`, que también trae `useParecidas` (GET `/similares`) y `useRechazoDuplicada` (diálogo que rechaza con el motivo «duplicada»). `.parecidas-par` es el par «se rechaza / se queda» de ese diálogo.
 
 **Tablas**
 - `.tabla-contenedor` envuelve la tabla, que es `.tabla` (`--compacta` para la versión densa).

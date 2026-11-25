@@ -32,6 +32,7 @@ const SECCIONES = [
       { a: '/crear-pregunta', texto: 'Crear pregunta', icono: 'pregunta-mas' },
       { a: '/generar-preguntas', texto: 'Generar con IA', icono: 'generar' },
       { a: '/cobertura', texto: 'Cobertura', icono: 'cobertura' },
+      { a: '/duplicadas', texto: 'Duplicadas', icono: 'copiar' },
     ],
   },
   {

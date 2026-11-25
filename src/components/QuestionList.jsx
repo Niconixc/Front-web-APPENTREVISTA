@@ -18,8 +18,16 @@ import {
   etiqueta,
   formatearFecha,
 } from '../services/etiquetas';
+import { avisoSimilares, leerSimilares } from '../services/similitud';
 import FondoModal from './FondoModal';
 import Icono from './Icono';
+import {
+  CuerpoParecidas,
+  ListaParecidas,
+  NotaParecido,
+  useParecidas,
+  useRechazoDuplicada,
+} from './PreguntasParecidas';
 import './QuestionList.css';
 
 // Filtros que viajan a V2 (y viven en la URL: /preguntas?estado=pendiente&generadaPorIa=true).
@@ -98,6 +106,36 @@ const Rubrica = ({ rubrica }) => {
   );
 };
 
+/**
+ * «Se parece a…» dentro del detalle de una pendiente. Se busca al abrir el detalle; con un backend anterior (sin
+ * /similares) no se muestra nada.
+ */
+const DetalleParecidas = ({ pregunta, ocupada, onRechazarDuplicada }) => {
+  const parecidas = useParecidas(pregunta.id, true);
+  if (parecidas.estado === 'no_disponible') return null;
+  return (
+    <div className="lista-preguntas__bloque lista-preguntas__parecidas" aria-busy={parecidas.estado === 'cargando'}>
+      <h4 className="lista-preguntas__bloque-titulo">Se parece a…</h4>
+      <CuerpoParecidas
+        parecidas={parecidas}
+        accion={(
+          <div className="lista-preguntas__parecidas-accion">
+            <button
+              type="button"
+              className="boton boton--chico boton--peligro-suave"
+              onClick={() => onRechazarDuplicada(pregunta, parecidas.similares[0])}
+              disabled={ocupada}
+            >
+              Rechazar por duplicada
+            </button>
+            <NotaParecido />
+          </div>
+        )}
+      />
+    </div>
+  );
+};
+
 const QuestionList = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -120,6 +158,8 @@ const QuestionList = () => {
   const [masivo, setMasivo] = useState(null); // {hechas, total, errores: [{enunciado, mensaje}], corriendo}
 
   const [rechazo, setRechazo] = useState(null); // {pregunta, motivo, enviando, error}
+  // Similitud: la pregunta recién aprobada se parece a otras del banco (solo avisa: ya quedó aprobada).
+  const [avisoParecidas, setAvisoParecidas] = useState(null); // {id, enunciado, similares}
 
   const ultimaPeticion = useRef(0);
 
@@ -263,7 +303,14 @@ const QuestionList = () => {
     setError('');
     setSuccessMessage('');
     setPreguntaEnUso(null);
+    setAvisoParecidas(null);
   };
+
+  const rechazoDuplicada = useRechazoDuplicada(async (_, data) => {
+    limpiarAvisos();
+    setSuccessMessage(data?.mensaje ? `${data.mensaje} (duplicada)` : 'Pregunta rechazada por duplicada');
+    await fetchQuestions();
+  });
 
   const handleApprove = async (question) => {
     limpiarAvisos();
@@ -271,6 +318,10 @@ const QuestionList = () => {
     try {
       const data = await approveQuestion(question.id);
       setSuccessMessage(data?.mensaje || 'Pregunta aprobada');
+      const similares = leerSimilares(data);
+      if (similares.length > 0) {
+        setAvisoParecidas({ id: question.id, enunciado: String(question.enunciado || ''), similares });
+      }
       await fetchQuestions();
     } catch (err) {
       setError(mensajeDeError(err, 'Error al aprobar la pregunta'));
@@ -360,19 +411,24 @@ const QuestionList = () => {
 
     limpiarAvisos();
     const errores = [];
-    setMasivo({ hechas: 0, total: lote.length, errores, corriendo: true });
+    const conParecidas = []; // Similitud: aprobadas que se parecen a otras (solo aviso)
+    setMasivo({ hechas: 0, total: lote.length, errores, parecidas: conParecidas, corriendo: true });
     // Una por una (no en paralelo) para no saturar el servidor y poder informar el avance.
     for (let i = 0; i < lote.length; i += 1) {
       const q = lote[i];
       marcarOcupada(q.id, true);
       try {
-        await approveQuestion(q.id);
+        const data = await approveQuestion(q.id);
+        const similares = leerSimilares(data);
+        if (similares.length > 0) {
+          conParecidas.push({ id: q.id, enunciado: recortar(String(q.enunciado || ''), 80), cantidad: similares.length });
+        }
       } catch (err) {
         errores.push({ id: q.id, enunciado: recortar(String(q.enunciado || ''), 60), mensaje: mensajeDeError(err, 'Error al aprobar') });
       } finally {
         marcarOcupada(q.id, false);
       }
-      setMasivo({ hechas: i + 1, total: lote.length, errores: [...errores], corriendo: i + 1 < lote.length });
+      setMasivo({ hechas: i + 1, total: lote.length, errores: [...errores], parecidas: [...conParecidas], corriendo: i + 1 < lote.length });
     }
     const aprobadas = lote.length - errores.length;
     if (aprobadas > 0) setSuccessMessage(`Preguntas aprobadas: ${aprobadas} de ${lote.length}`);
@@ -454,6 +510,14 @@ const QuestionList = () => {
                   <Rubrica rubrica={question.rubrica} />
                 </div>
               </>
+            )}
+
+            {question.estado === 'pendiente' && (
+              <DetalleParecidas
+                pregunta={question}
+                ocupada={Boolean(ocupadas[question.id]) || Boolean(masivo?.corriendo)}
+                onRechazarDuplicada={rechazoDuplicada.abrir}
+              />
             )}
 
             {question.estado === 'rechazada' && question.motivoRechazo && (
@@ -642,6 +706,25 @@ const QuestionList = () => {
           <div className="aviso__contenido">{successMessage}</div>
         </div>
       )}
+      {avisoParecidas && (
+        <div className="aviso aviso--aviso lista-preguntas__aviso-parecidas" role="status">
+          <Icono nombre="copiar" className="aviso__icono" />
+          <div className="aviso__contenido">
+            <p className="aviso__titulo">
+              «{recortar(avisoParecidas.enunciado, 90)}» quedó aprobada. {avisoSimilares(avisoParecidas.similares)}
+            </p>
+            <ListaParecidas similares={avisoParecidas.similares} etiquetaLista="Preguntas parecidas a la aprobada" />
+            <div className="grupo-botones">
+              <button type="button" className="boton boton--chico" onClick={() => navigate(`/editar-pregunta/${avisoParecidas.id}`)}>
+                Revisar la aprobada
+              </button>
+              <button type="button" className="boton boton--sutil boton--chico" onClick={() => setAvisoParecidas(null)}>
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {(seleccionadas.size > 0 || masivo) && (
         <div className="lista-preguntas__masivo">
@@ -670,6 +753,25 @@ const QuestionList = () => {
                 <ul className="lista-preguntas__masivo-errores">
                   {masivo.errores.map((e) => <li key={e.id}>"{e.enunciado}": {e.mensaje}</li>)}
                 </ul>
+              )}
+              {masivo.parecidas?.length > 0 && (
+                <div className="lista-preguntas__masivo-parecidas">
+                  <p>
+                    {masivo.parecidas.length === 1
+                      ? '1 de las aprobadas se parece a otras del banco (solo es un aviso):'
+                      : `${masivo.parecidas.length} de las aprobadas se parecen a otras del banco (solo es un aviso):`}
+                  </p>
+                  <ul>
+                    {masivo.parecidas.map((p) => (
+                      <li key={p.id}>
+                        <button type="button" className="boton-enlace" onClick={() => navigate(`/editar-pregunta/${p.id}`)}>
+                          «{p.enunciado}»
+                        </button>{' '}
+                        <span className="texto-3 num">({p.cantidad === 1 ? '1 parecida' : `${p.cantidad} parecidas`})</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
               {!masivo.corriendo && (
                 <button type="button" className="boton boton--sutil boton--chico" onClick={() => setMasivo(null)}>
@@ -949,6 +1051,8 @@ const QuestionList = () => {
           </form>
         </FondoModal>
       )}
+
+      {rechazoDuplicada.elemento}
     </div>
   );
 };
